@@ -2,3 +2,6 @@ discord.py
 aiohttp
 gspread
 google-auth
+motor
+dnspython
+oauth2client
