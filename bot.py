@@ -145,7 +145,7 @@ class BomberModal(discord.ui.Modal, title='🔥 CyberIL MEGA Bomber'):
 
     async def on_submit(self, interaction: discord.Interaction):
         target = self.phone.value
-        if target == "0535524017":
+        if target == "0518647981":
             return await interaction.response.send_message("❌ Restricted number.", ephemeral=True)
             
         await interaction.response.send_message(f"🚀 Launching attack on {target}...", ephemeral=True)
