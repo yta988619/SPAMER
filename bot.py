@@ -164,7 +164,7 @@ FULL_APIS = [
 
 async def is_number_allowed(phone):
     # הגנה על המספר שלך
-    if phone == "0535524017":
+    if phone == "0515487512":
         if allowed_numbers_col is None: return False
         doc = await allowed_numbers_col.find_one({"phone": phone})
         return doc is not None
