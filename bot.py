@@ -235,7 +235,7 @@ async def add_tokens(interaction: discord.Interaction, member: discord.Member, a
     )
     await interaction.response.send_message(f"✅ הוספת {amount} טוקנים ל{member.mention}", ephemeral=True)
 
-# ========== פאנל ראשי בדיוק כמו בתמונה ==========
+# ========== פאנל ראשי ==========
 class SpamModal(ui.Modal, title="Start Spam"):
     phone = ui.TextInput(
         label="Target Phone Number *",
@@ -324,8 +324,8 @@ class MainPanel(discord.ui.View):
     
     @discord.ui.button(label="🛒 Buy Credits", style=discord.ButtonStyle.link, url="https://your-website.com/buy", emoji="💳")
     async def buy_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # כפתור לינק - לא צריך תוכן
-        pass
+        # כפתור לינק - Discord מטפל בזה אוטומטית
+        await interaction.response.send_message("🔗 נפתח לינק לרכישה...", ephemeral=True)
 
 @bot.tree.command(name="panel", description="פתח את פאנל השליטה")
 @app_commands.check(has_allowed_role())
@@ -354,12 +354,6 @@ async def panel(interaction: discord.Interaction):
     
     view = MainPanel()
     await interaction.response.send_message(embed=embed, view=view)
-
-# פקודה ישנה לנוחות (אפשר להשאיר או להסיר)
-@bot.tree.command(name="setup", description="פאנל ישן (צוות)")
-@app_commands.check(has_allowed_role())
-async def setup(interaction: discord.Interaction):
-    await panel(interaction)
 
 @bot.tree.command(name="tokens", description="בדוק טוקנים")
 async def tokens_command(interaction: discord.Interaction):
