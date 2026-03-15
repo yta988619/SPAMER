@@ -45,12 +45,7 @@ class CyberBot(commands.Bot):
 
 bot = CyberBot()
 
-# ========== PROXIES ==========
-PROXIES = [
-    f"http://185.162.230.{i}:80" for i in range(100, 250, 2)
-] + [
-    f"http://185.162.231.{i}:80" for i in range(100, 250, 2)
-]
+
 
 # ========== USER AGENTS ==========
 USER_AGENTS = [
