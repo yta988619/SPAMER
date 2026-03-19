@@ -58,7 +58,6 @@ import threading
 import queue
 import multiprocessing
 import concurrent.futures
-import asyncio
 import aiofiles
 import aiofiles.os
 import aiofiles.ospath
@@ -69,7 +68,6 @@ import jinja2
 import markdown
 import html
 import xml.etree.ElementTree as ET
-import csv
 import yaml
 import toml
 import configparser
@@ -430,7 +428,7 @@ APIS = [
     {"name": "Haifa Uni", "url": "https://www.haifa.ac.il/api/auth/sms", "type": "json", "category": "education", "data": {"phone": "PHONE"}},
     {"name": "Open Uni", "url": "https://www.openu.ac.il/api/auth/sms", "type": "json", "category": "education", "data": {"phone": "PHONE"}},
     {"name": "IDC", "url": "https://www.idc.ac.il/api/auth/sms", "type": "json", "category": "education", "data": {"phone": "PHONE"}},
-        {"name": "Reichman", "url": "https://www.runi.ac.il/api/auth/sms", "type": "json", "category": "education", "data": {"phone": "PHONE"}},
+    {"name": "Reichman", "url": "https://www.runi.ac.il/api/auth/sms", "type": "json", "category": "education", "data": {"phone": "PHONE"}},
     {"name": "Shenkar", "url": "https://www.shenkar.ac.il/api/auth/sms", "type": "json", "category": "education", "data": {"phone": "PHONE"}},
     {"name": "Bezalel", "url": "https://www.bezalel.ac.il/api/auth/sms", "type": "json", "category": "education", "data": {"phone": "PHONE"}},
     {"name": "Wizo", "url": "https://www.wizo.ac.il/api/auth/sms", "type": "json", "category": "education", "data": {"phone": "PHONE"}},
@@ -577,7 +575,7 @@ class UserData:
     def __init__(self, user_id, username=None):
         self.user_id = user_id
         self.username = username
-        self.coins = 0
+        self.coins = 200
         self.last_claim = None
         self.referral_code = generate_referral_code()
         self.referred_by = None
@@ -627,7 +625,7 @@ class UserData:
     @classmethod
     def from_dict(cls, data):
         user = cls(data["user_id"], data.get("username"))
-        user.coins = data.get("coins", 0)
+        user.coins = data.get("coins", 200)
         user.last_claim = datetime.fromisoformat(data["last_claim"]) if data.get("last_claim") else None
         user.referral_code = data.get("referral_code", generate_referral_code())
         user.referred_by = data.get("referred_by")
@@ -947,12 +945,11 @@ async def free_coin_function(interaction: discord.Interaction):
         if not user_data:
             # משתמש חדש - יצירת פרופיל עם 200 מטבעות התחלתיים
             user = UserData(user_id, str(interaction.user))
-            user.coins = 200
             await users_col.insert_one(user.to_dict())
             user_data = user.to_dict()
             coins = 200
         else:
-            coins = user_data.get("coins", 0)
+            coins = user_data.get("coins", 200)
         
         # בדיקת קליים אחרון
         last_claim = user_data.get("last_claim")
@@ -1084,24 +1081,23 @@ async def start_attack_function(interaction, phone, duration, attack_type, inten
         user_data = await users_col.find_one({"user_id": user_id})
         if not user_data:
             user = UserData(user_id, str(interaction.user))
-            user.coins = 200
             await users_col.insert_one(user.to_dict())
             user_data = user.to_dict()
         
         # חישוב עלות
         cost = max(1, duration // 5)
         
-        if user_data.get("coins", 0) < cost:
+        if user_data.get("coins", 200) < cost:
             embed = discord.Embed(
                 title="❌ Not Enough Coins",
-                description=f"You need **{cost}** coins but you only have **{user_data.get('coins', 0)}**",
+                description=f"You need **{cost}** coins but you only have **{user_data.get('coins', 200)}**",
                 color=0xFF0000
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
         
         # הורדת מטבעות
-        new_balance = user_data.get("coins", 0) - cost
+        new_balance = user_data.get("coins", 200) - cost
         await users_col.update_one(
             {"user_id": user_id},
             {
@@ -1406,7 +1402,7 @@ async def show_stats_function(interaction: discord.Interaction):
         total_coins = 0
         
         async for user in users_col.find():
-            total_coins += user.get("coins", 0)
+            total_coins += user.get("coins", 200)
         
         # סטטיסטיקות של היום
         today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -1515,7 +1511,6 @@ async def show_referrals_function(interaction: discord.Interaction):
         
         if not user_data:
             user = UserData(user_id, str(interaction.user))
-            user.coins = 200
             await users_col.insert_one(user.to_dict())
             user_data = user.to_dict()
         
@@ -1626,7 +1621,6 @@ async def show_settings_function(interaction: discord.Interaction):
         
         if not user_data:
             user = UserData(user_id, str(interaction.user))
-            user.coins = 200
             await users_col.insert_one(user.to_dict())
             user_data = user.to_dict()
         
@@ -1757,11 +1751,10 @@ async def panel_command(ctx):
         if not user_data:
             # משתמש חדש
             user = UserData(user_id, str(ctx.author))
-            user.coins = 200
             await users_col.insert_one(user.to_dict())
             coins = 200
         else:
-            coins = user_data.get("coins", 0)
+            coins = user_data.get("coins", 200)
         
         # Embed ראשי - Just Spam
         main_embed = discord.Embed(
@@ -1834,9 +1827,9 @@ async def balance_command(ctx):
         user_data = await users_col.find_one({"user_id": user_id})
         
         if not user_data:
-            coins = 0
+            coins = 200
         else:
-            coins = user_data.get("coins", 0)
+            coins = user_data.get("coins", 200)
         
         embed = discord.Embed(
             title="💰 Your Balance",
@@ -1981,7 +1974,7 @@ async def addcoins_command(ctx, user: discord.User, amount: int):
         
         # קבלת יתרה חדשה
         user_data = await users_col.find_one({"user_id": user_id})
-        new_balance = user_data.get("coins", 0) if user_data else amount
+        new_balance = user_data.get("coins", 200) if user_data else amount
         
         embed = discord.Embed(
             title="✅ Coins Added",
@@ -2023,7 +2016,7 @@ async def removecoins_command(ctx, user: discord.User, amount: int):
         
         # קבלת יתרה חדשה
         user_data = await users_col.find_one({"user_id": user_id})
-        new_balance = user_data.get("coins", 0) if user_data else 0
+        new_balance = user_data.get("coins", 200) if user_data else 0
         
         embed = discord.Embed(
             title="✅ Coins Removed",
@@ -2166,6 +2159,18 @@ async def adminstats_command(ctx):
 async def on_ready():
     """כאשר הבוט מתחבר"""
     try:
+        print(f"""
+    ╔═══════════════════════════════════════╗
+    ║     Just Spam Bot - Online!           ║
+    ║         Version 2.0.0                  ║
+    ║         © 2026 Just Spam               ║
+    ╠═══════════════════════════════════════╣
+    ║ User: {bot.user}                         ║
+    ║ Servers: {len(bot.guilds)}                           ║
+    ║ APIs: {len(APIS)}                             ║
+    ╚═══════════════════════════════════════╝
+        """)
+        
         logger.info(f"🚀 Starting Just Spam Bot...")
         logger.info(f"✅ Connected to MongoDB on Railway")
         logger.info(f"✅ Logged in as {bot.user} (ID: {bot.user.id})")
@@ -2191,6 +2196,7 @@ async def on_ready():
         
     except Exception as e:
         logger.error(f"Error in on_ready: {e}")
+        traceback.print_exc()
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -2202,7 +2208,20 @@ async def on_command_error(ctx, error):
         await ctx.send("❌ You don't have permission to use this command")
         return
     
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f"❌ Missing required argument: {error.param.name}")
+        return
+    
+    if isinstance(error, commands.BadArgument):
+        await ctx.send("❌ Invalid argument provided")
+        return
+    
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(f"❌ Command on cooldown. Try again in {error.retry_after:.2f}s")
+        return
+    
     logger.error(f"Command error: {error}")
+    traceback.print_exc()
     await ctx.send(f"❌ An error occurred: {str(error)[:100]}")
 
 @bot.event
@@ -2213,20 +2232,54 @@ async def on_message(message):
     
     await bot.process_commands(message)
 
+@bot.event
+async def on_guild_join(guild):
+    """כאשר הבוט מצטרף לשרת חדש"""
+    logger.info(f"✅ Joined new guild: {guild.name} (ID: {guild.id})")
+    
+    # מציאת ערוץ כללי לשליחת הודעה
+    for channel in guild.text_channels:
+        if channel.permissions_for(guild.me).send_messages:
+            embed = discord.Embed(
+                title="🎉 Thanks for adding Just Spam Bot!",
+                description="I'm here to help you with spam attacks!\n\n"
+                            "**Get Started:**\n"
+                            "• Type `!panel` to open the main panel\n"
+                            "• Type `!freecoins` to claim free coins\n"
+                            "• Type `!help` for all commands\n\n"
+                            "⚠️ **Remember to use responsibly!**",
+                color=0x00FF00
+            )
+            embed.set_footer(text="Just Spam © 2026")
+            await channel.send(embed=embed)
+            break
+
+@bot.event
+async def on_guild_remove(guild):
+    """כאשר הבוט עוזב שרת"""
+    logger.info(f"❌ Left guild: {guild.name} (ID: {guild.id})")
+
 # ========== הרצת הבוט ==========
 if __name__ == "__main__":
     try:
         # הגדרת uvloop לביצועים טובים יותר
         try:
+            import uvloop
             uvloop.install()
             logger.info("✅ uvloop installed")
-        except:
+        except ImportError:
+            logger.warning("⚠️ uvloop not installed, using default asyncio")
             pass
+        
+        # הגדרת אינטנטס
+        intents = discord.Intents.default()
+        intents.message_content = True
+        intents.members = True
         
         # יצירת הבוט
         bot = commands.Bot(
             command_prefix='!',
-            intents=discord.Intents.all(),
+            intents=intents,
             help_command=None,
             case_insensitive=True
         )
@@ -2248,12 +2301,31 @@ if __name__ == "__main__":
         bot.add_command(unban_command)
         bot.add_command(adminstats_command)
         
+        # בדיקת טוקן
+        if not TOKEN:
+            logger.error("❌ DISCORD_TOKEN not found in environment variables!")
+            logger.error("Please set your Discord bot token in the .env file")
+            sys.exit(1)
+        
         # הרצת הבוט
         logger.info("🚀 Starting Just Spam Bot...")
-        bot.run(TOKEN, log_handler=None)
+        bot.run(TOKEN, log_handler=None, reconnect=True)
         
     except KeyboardInterrupt:
         logger.info("🛑 Bot stopped by user")
+        try:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(bot.close())
+        except:
+            pass
+        sys.exit(0)
+    except discord.LoginFailure:
+        logger.error("❌ Failed to login! Invalid token.")
+        sys.exit(1)
+    except discord.PrivilegedIntentsRequired:
+        logger.error("❌ Privileged intents required! Please enable them in Discord Developer Portal.")
+        sys.exit(1)
     except Exception as e:
         logger.error(f"Fatal error: {e}")
-        traceback.print_exc() 
+        traceback.print_exc()
+        sys.exit(1)
