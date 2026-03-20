@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import app_commands, ui
+from discord import ui
 import asyncio
 import aiohttp
 import random
@@ -15,74 +15,12 @@ import hashlib
 import uuid
 import re
 import string
-import secrets
-import base64
-import zlib
-import pickle
-import sqlite3
-import csv
-import io
-import math
-import itertools
-import functools
-import collections
-import enum
-import dataclasses
-import typing
-import inspect
 import traceback
-import signal
 import socket
-import ipaddress
-import requests
-import urllib.parse
-import urllib.request
-import urllib.error
-import http.client
-import http.cookies
-import http.cookiejar
-import ssl
-import certifi
-import colorama
 import platform
 import psutil
-import subprocess
-import shutil
-import tempfile
-import zipfile
-import tarfile
-import gzip
-import bz2
-import lzma
-import threading
-import queue
-import multiprocessing
-import concurrent.futures
-import aiofiles
-import aiofiles.os
-import aiofiles.ospath
-import aiofiles.tempfile
-import aioprocessing
-import uvloop
-import jinja2
-import markdown
-import html
-import xml.etree.ElementTree as ET
-import yaml
-import toml
-import configparser
-import argparse
-import click
-import typer
-import rich
+import colorama
 from rich.console import Console
-from rich.table import Table
-from rich.progress import Progress
-from rich.panel import Panel
-from rich.text import Text
-from rich.columns import Columns
-from rich.layout import Layout
-from rich.live import Live
 from rich.traceback import install
 install()
 
