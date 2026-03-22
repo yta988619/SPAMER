@@ -31,7 +31,7 @@ CHANNELS = {
 
 FREE_CREDITS_CHANNEL = 1485104425625325709
 BOMB_AUTO_CHANNEL = 1481957038241353779
-INFO_CHANNEL = 1478206395420643539
+INFO_CHANNEL = 1485125569690603692
 
 ALLOWED_ROLE_ID = 1480762750052601886
 BUY_URL = "https://discord.gg/3CxwPGuGyq"
@@ -429,14 +429,35 @@ async def fire_all_senders(phone: str) -> tuple[int, list[str]]:
 
 def panel_embed() -> discord.Embed:
     embed = discord.Embed(
-        title="CyberIL Spamer - לוח בקרה",
-        color=0x000000,
-        description=f"השתמש בכפתורים למטה כדי להפעיל את הבוט.\nלמידע נוסף עבור ל<#{INFO_CHANNEL}>."
+        title="⚡ CyberIL Operations | לוח בקרה",
+        color=0x2b2d31,  # צבע כהה יוקרתי (מתמזג עם הדיסקורד)
+        description=(
+            f"ברוך הבא למרכז השליטה.\n"
+            f"למדריך והסברים מפורטים: <#{INFO_CHANNEL}>\n"
+            "──────────────────────────"
+        )
     )
-    embed.add_field(name="💣 ספאם לטלפון", value="שולח SMS, שיחות ו-Whatsapp (עולה קרדיטים)", inline=False)
-    embed.add_field(name="💰 הקרדיטים שלי", value="בדוק את היתרה שלך", inline=True)
-    embed.add_field(name="💳 רכישת קרדיטים", value=f"רכוש עוד קרדיטים דרך האתר שלנו", inline=True)
-    embed.set_footer(text="CyberIL Spamer © 2026")
+    
+    embed.add_field(
+        name="🚀 שיגור מתקפה", 
+        value="`SMS` • `Calls` • `WhatsApp`\n*(צריכת קרדיטים בהתאם לשימוש)*", 
+        inline=False
+    )
+    
+    embed.add_field(
+        name="📊 היתרה שלי", 
+        value="לחץ לבדיקת קרדיטים", 
+        inline=True
+    )
+    
+    embed.add_field(
+        name="💳 טעינת חשבון", 
+        value=f"[לרכישה באתר הישיר]({WEBSITE_URL})", 
+        inline=True
+    )
+    
+    embed.set_footer(text="CyberIL System • Secure Connection • 2026", icon_url=bot.user.avatar.url if bot.user.avatar else None)
+    
     return embed
 
 # ─── תצוגות ────────────────────────────────────────────────────────────────────
