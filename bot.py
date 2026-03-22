@@ -707,7 +707,7 @@ async def on_ready():
 
 # ─── פקודות סלאש ───────────────────────────────────────────────────────────
 
-@tree.command(name="בדיקהקרדיט", description="בדוק את היתרה הנוכחית שלך")
+@tree.command(name="checkmycredit", description="בדוק את היתרה הנוכחית שלך")
 @app_commands.describe(member="משתמש לבדיקה (השאר ריק לעצמך)")
 async def slash_credits(interaction: discord.Interaction, member: discord.Member = None):
     target = member or interaction.user
@@ -719,7 +719,7 @@ async def slash_credits(interaction: discord.Interaction, member: discord.Member
     )
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="הוספתקרדיט", description="[ADMIN] הוסף קרדיטים למשתמש")
+@tree.command(name="addcredit", description="[ADMIN] הוסף קרדיטים למשתמש")
 @app_commands.describe(member="משתמש יעד", amount="כמות להוספה")
 async def slash_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_admin(interaction):
@@ -736,7 +736,7 @@ async def slash_addcredit(interaction: discord.Interaction, member: discord.Memb
     embed.add_field(name="יתרה", value=new_bal_str, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="הסרתקרדיט", description="[ADMIN] הסר קרדיטים ממשתמש")
+@tree.command(name="removecredit", description="[ADMIN] הסר קרדיטים ממשתמש")
 @app_commands.describe(member="משתמש יעד", amount="כמות להסרה")
 async def slash_removecredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_admin(interaction):
@@ -753,7 +753,7 @@ async def slash_removecredit(interaction: discord.Interaction, member: discord.M
     embed.add_field(name="יתרה", value=new_bal_str, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="ללא_הגבלה", description="[ADMIN] הענק קרדיטים ללא הגבלה למשתמש")
+@tree.command(name="lifetime", description="[ADMIN] הענק קרדיטים ללא הגבלה למשתמש")
 @app_commands.describe(member="משתמש יעד")
 async def slash_add_lifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
@@ -768,7 +768,7 @@ async def slash_add_lifetime(interaction: discord.Interaction, member: discord.M
     )
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="הסרללא_הגבלה", description="[ADMIN] הסר קרדיטים ללא הגבלה ממשתמש")
+@tree.command(name="removelifetime", description="[ADMIN] הסר קרדיטים ללא הגבלה ממשתמש")
 @app_commands.describe(member="משתמש יעד")
 async def slash_removelifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
@@ -783,7 +783,7 @@ async def slash_removelifetime(interaction: discord.Interaction, member: discord
     )
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="קרדיטיםחינמיים", description="[ADMIN] פרסם את הודעת הקרדיטים החינמיים")
+@tree.command(name="freecredits", description="[ADMIN] פרסם את הודעת הקרדיטים החינמיים")
 async def slash_freecredits(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
@@ -798,7 +798,7 @@ async def slash_freecredits(interaction: discord.Interaction):
     )
     await interaction.response.send_message(embed=embed, view=FreeCreditsView())
 
-@tree.command(name="תןלכולם", description="[ADMIN] תן קרדיטים לכולם")
+@tree.command(name="giveall", description="[ADMIN] תן קרדיטים לכולם")
 @app_commands.describe(amount="כמות לתת לכולם")
 async def slash_giveall(interaction: discord.Interaction, amount: int):
     if not is_admin(interaction):
@@ -811,7 +811,7 @@ async def slash_giveall(interaction: discord.Interaction, amount: int):
     await credits_col.update_many({}, {"$inc": {"credits": amount}})
     await interaction.followup.send(f"✅ נתת **{amount}** קרדיטים לכולם!", ephemeral=True)
 
-@tree.command(name="בדוקהקרדיט_אדמין", description="[ADMIN] בדוק יתרה של משתמש ספציפי")
+@tree.command(name="checkcredit", description="[ADMIN] בדוק יתרה של משתמש ספציפי")
 @app_commands.describe(member="משתמש לבדיקה")
 async def slash_checkcredit(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
@@ -825,7 +825,7 @@ async def slash_checkcredit(interaction: discord.Interaction, member: discord.Me
     embed.set_footer(text=f"נבדק על ידי {interaction.user.name}")
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="העברתקרדיט", description="העבר קרדיטים למשתמש אחר (מינימום 20)")
+@tree.command(name="transfercredit", description="העבר קרדיטים למשתמש אחר (מינימום 20)")
 @app_commands.describe(member="מקבל", amount="כמות להעברה (מינימום 20)")
 async def slash_transfercredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     await interaction.response.defer(ephemeral=True)
@@ -852,7 +852,7 @@ async def slash_transfercredit(interaction: discord.Interaction, member: discord
     embed.add_field(name="כמות", value=f"**{amount}** קרדיטים", inline=True)
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="הפעלמחדש", description="[ADMIN] הפעל מחדש את הבוט")
+@tree.command(name="restart", description="[ADMIN] הפעל מחדש את הבוט")
 async def slash_restart(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
@@ -861,7 +861,7 @@ async def slash_restart(interaction: discord.Interaction):
     await bot.close()
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
-@tree.command(name="בדוקAPI", description="[ADMIN] בדוק כמה APIs עובדים")
+@tree.command(name="checkstatus", description="[ADMIN] בדוק כמה APIs עובדים")
 async def slash_checkstatus(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
