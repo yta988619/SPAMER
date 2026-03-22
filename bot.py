@@ -34,7 +34,7 @@ BOMB_AUTO_CHANNEL = 1481957038241353779
 INFO_CHANNEL = 1478206395420643539
 
 ALLOWED_ROLE_ID = 1480762750052601886
-BUY_URL = ""
+BUY_URL = "https://discord.gg/3CxwPGuGyq"
 
 COOLDOWN_SECONDS = 20
 ROUNDS_PER_CREDIT = 3
@@ -684,12 +684,14 @@ async def on_ready():
     await asyncio.sleep(2)
     
     try:
-        bomb_ch = bot.get_channel(BOMB_AUTO_CHANNEL) or await bot.fetch_channel(BOMB_AUTO_CHANNEL)
+        bomb_ch = bot.get_channel(BOMB_AUTO_CHANNEL)
         if bomb_ch:
             await bomb_ch.purge(limit=5)
             await bomb_ch.send(embed=panel_embed(), view=ControlPanelView())
+        else:
+            print(f"❌ לא נמצא ערוץ עם ID: {BOMB_AUTO_CHANNEL}")
 
-        free_ch = bot.get_channel(FREE_CREDITS_CHANNEL) or await bot.fetch_channel(FREE_CREDITS_CHANNEL)
+        free_ch = bot.get_channel(FREE_CREDITS_CHANNEL)
         if free_ch:
             embed = discord.Embed(
                 title="🎁 מתנה חינם!",
@@ -701,6 +703,8 @@ async def on_ready():
             )
             await free_ch.purge(limit=5)
             await free_ch.send(embed=embed, view=FreeCreditsView())
+        else:
+            print(f"❌ לא נמצא ערוץ עם ID: {FREE_CREDITS_CHANNEL}")
             
     except Exception as e:
         print(f"שגיאה בהתחברות: {e}")
