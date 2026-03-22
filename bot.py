@@ -31,7 +31,7 @@ CHANNELS = {
 
 FREE_CREDITS_CHANNEL = 1485104425625325709
 BOMB_AUTO_CHANNEL = 1481957038241353779
-INFO_CHANNEL = 1485125569690603692
+INFO_CHANNEL = 1478206395420643539
 
 ALLOWED_ROLE_ID = 1480762750052601886
 BUY_URL = "https://discord.gg/3CxwPGuGyq"
@@ -54,6 +54,7 @@ CLAUDE_COOKIE = "activitySessionId=8e5e644c-d640-4b9f-be61-59b9a138a42b; anthrop
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
@@ -429,35 +430,14 @@ async def fire_all_senders(phone: str) -> tuple[int, list[str]]:
 
 def panel_embed() -> discord.Embed:
     embed = discord.Embed(
-        title="⚡ CyberIL Operations | לוח בקרה",
-        color=0x2b2d31,  # צבע כהה יוקרתי (מתמזג עם הדיסקורד)
-        description=(
-            f"ברוך הבא למרכז השליטה.\n"
-            f"למדריך והסברים מפורטים: <#{INFO_CHANNEL}>\n"
-            "──────────────────────────"
-        )
+        title="CyberIL Spamer - לוח בקרה",
+        color=0x000000,
+        description=f"השתמש בכפתורים למטה כדי להפעיל את הבוט.\nלמידע נוסף עבור ל<#{INFO_CHANNEL}>."
     )
-    
-    embed.add_field(
-        name="🚀 שיגור מתקפה", 
-        value="`SMS` • `Calls` • `WhatsApp`\n*(צריכת קרדיטים בהתאם לשימוש)*", 
-        inline=False
-    )
-    
-    embed.add_field(
-        name="📊 היתרה שלי", 
-        value="לחץ לבדיקת קרדיטים", 
-        inline=True
-    )
-    
-    embed.add_field(
-        name="💳 טעינת חשבון", 
-        value=f"[לרכישה באתר הישיר]({WEBSITE_URL})", 
-        inline=True
-    )
-    
-    embed.set_footer(text="CyberIL System • Secure Connection • 2026", icon_url=bot.user.avatar.url if bot.user.avatar else None)
-    
+    embed.add_field(name="💣 ספאם לטלפון", value="שולח SMS, שיחות ו-Whatsapp (עולה קרדיטים)", inline=False)
+    embed.add_field(name="💰 הקרדיטים שלי", value="בדוק את היתרה שלך", inline=True)
+    embed.add_field(name="💳 רכישת קרדיטים", value=f"רכוש עוד קרדיטים דרך האתר שלנו", inline=True)
+    embed.set_footer(text="CyberIL Spamer © 2026")
     return embed
 
 # ─── תצוגות ────────────────────────────────────────────────────────────────────
@@ -697,23 +677,54 @@ class FreeCreditsView(discord.ui.View):
 
 @bot.event
 async def on_ready():
+    print(f"✅ CyberIL Spamer התחבר → {bot.user}")
+    print(f"📡 מחובר ל-{len(bot.guilds)} שרתים")
+    
+    # הוספת Views קבועים
     bot.add_view(ControlPanelView())
     bot.add_view(FreeCreditsView())
+    
+    # סנכרון פקודות
     await tree.sync()
-    print(f"✅ CyberIL Spamer התחבר → {bot.user}")
-
+    print("✅ פקודות סלאש סונכרנו")
+    
     await asyncio.sleep(2)
     
+    # מציאת הערוץ הנכון
     try:
+        # חפש את הערוץ לפי ID
         bomb_ch = bot.get_channel(BOMB_AUTO_CHANNEL)
+        if bomb_ch is None:
+            # אם לא נמצא, נסה להביא אותו מה-API
+            bomb_ch = await bot.fetch_channel(BOMB_AUTO_CHANNEL)
+        
         if bomb_ch:
+            print(f"✅ נמצא ערוץ פאנל: {bomb_ch.name} (ID: {bomb_ch.id})")
             await bomb_ch.purge(limit=5)
             await bomb_ch.send(embed=panel_embed(), view=ControlPanelView())
+            print("✅ לוח בקרה נשלח")
         else:
             print(f"❌ לא נמצא ערוץ עם ID: {BOMB_AUTO_CHANNEL}")
-
+            print("📝 רשימת הערוצים הזמינים:")
+            for guild in bot.guilds:
+                for channel in guild.text_channels:
+                    print(f"   {channel.name} - {channel.id}")
+                    
+    except discord.NotFound:
+        print(f"❌ הערוץ {BOMB_AUTO_CHANNEL} לא קיים")
+    except discord.Forbidden:
+        print(f"❌ אין הרשאה לשלוח לערוץ {BOMB_AUTO_CHANNEL}")
+    except Exception as e:
+        print(f"❌ שגיאה בשליחת לוח בקרה: {e}")
+    
+    # שליחת הודעת קרדיטים חינמיים
+    try:
         free_ch = bot.get_channel(FREE_CREDITS_CHANNEL)
+        if free_ch is None:
+            free_ch = await bot.fetch_channel(FREE_CREDITS_CHANNEL)
+        
         if free_ch:
+            print(f"✅ נמצא ערוץ קרדיטים: {free_ch.name} (ID: {free_ch.id})")
             embed = discord.Embed(
                 title="🎁 מתנה חינם!",
                 description=(
@@ -724,11 +735,11 @@ async def on_ready():
             )
             await free_ch.purge(limit=5)
             await free_ch.send(embed=embed, view=FreeCreditsView())
+            print("✅ הודעת קרדיטים חינמיים נשלחה")
         else:
             print(f"❌ לא נמצא ערוץ עם ID: {FREE_CREDITS_CHANNEL}")
-            
     except Exception as e:
-        print(f"שגיאה בהתחברות: {e}")
+        print(f"❌ שגיאה בשליחת קרדיטים: {e}")
 
 # ─── פקודות סלאש ───────────────────────────────────────────────────────────
 
