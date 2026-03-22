@@ -31,7 +31,7 @@ CHANNELS = {
 
 FREE_CREDITS_CHANNEL = 1485104425625325709
 BOMB_AUTO_CHANNEL = 1481957038241353779
-INFO_CHANNEL = 1478206395420643539
+INFO_CHANNEL = 1485125569690603692
 
 ALLOWED_ROLE_ID = 1480762750052601886
 BUY_URL = "https://discord.gg/3CxwPGuGyq"
@@ -64,11 +64,108 @@ db = mongo_client[DB_NAME]
 credits_col = db["users"]
 cooldowns_col = db["cooldowns"]
 settings_col = db["settings"]
+logs_col = db["attack_logs"]
 
 logging.basicConfig(level=logging.WARNING)
 
 active_attacks: dict[int, asyncio.Event] = {}
 _launch_cooldowns: dict[int, float] = {}
+
+# ─── פונקציות לוגים ──────────────────────────────────────────────────────────────
+
+async def add_attack_log(user_id: int, user_name: str, phone: str, credits_used: int, success_count: int, failed_count: int, duration: int):
+    """מוסיף לוג של מתקפה למסד הנתונים"""
+    log_entry = {
+        "user_id": user_id,
+        "user_name": user_name,
+        "phone": phone,
+        "credits_used": credits_used,
+        "success_count": success_count,
+        "failed_count": failed_count,
+        "total_requests": success_count + failed_count,
+        "duration": duration,
+        "timestamp": datetime.now(timezone.utc),
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "time": datetime.now(timezone.utc).strftime("%H:%M:%S")
+    }
+    await logs_col.insert_one(log_entry)
+    return log_entry
+
+async def get_user_attack_logs(user_id: int, limit: int = 20) -> list:
+    """מחזיר את לוגי המתקפות האחרונים של משתמש"""
+    cursor = logs_col.find({"user_id": user_id}).sort("timestamp", -1).limit(limit)
+    return await cursor.to_list(length=limit)
+
+async def get_all_attack_logs(limit: int = 100) -> list:
+    """מחזיר את כל לוגי המתקפות האחרונים"""
+    cursor = logs_col.find().sort("timestamp", -1).limit(limit)
+    return await cursor.to_list(length=limit)
+
+async def get_user_attack_stats(user_id: int) -> dict:
+    """מחזיר סטטיסטיקות של משתמש"""
+    pipeline = [
+        {"$match": {"user_id": user_id}},
+        {"$group": {
+            "_id": "$user_id",
+            "total_attacks": {"$sum": 1},
+            "total_credits_used": {"$sum": "$credits_used"},
+            "total_success": {"$sum": "$success_count"},
+            "total_failed": {"$sum": "$failed_count"},
+            "total_requests": {"$sum": "$total_requests"},
+            "last_attack": {"$max": "$timestamp"}
+        }}
+    ]
+    result = await logs_col.aggregate(pipeline).to_list(1)
+    return result[0] if result else None
+
+async def get_global_attack_stats() -> dict:
+    """מחזיר סטטיסטיקות כלליות"""
+    pipeline = [
+        {"$group": {
+            "_id": None,
+            "total_attacks": {"$sum": 1},
+            "total_credits_used": {"$sum": "$credits_used"},
+            "total_success": {"$sum": "$success_count"},
+            "total_failed": {"$sum": "$failed_count"},
+            "total_requests": {"$sum": "$total_requests"},
+            "unique_users": {"$addToSet": "$user_id"}
+        }}
+    ]
+    result = await logs_col.aggregate(pipeline).to_list(1)
+    if result:
+        result[0]["unique_users"] = len(result[0]["unique_users"])
+        return result[0]
+    return None
+
+async def get_most_attacked_phones(limit: int = 10) -> list:
+    """מחזיר את המספרים שהותקפו הכי הרבה"""
+    pipeline = [
+        {"$group": {
+            "_id": "$phone",
+            "count": {"$sum": 1},
+            "total_success": {"$sum": "$success_count"},
+            "total_requests": {"$sum": "$total_requests"}
+        }},
+        {"$sort": {"count": -1}},
+        {"$limit": limit}
+    ]
+    return await logs_col.aggregate(pipeline).to_list(length=limit)
+
+async def get_daily_attack_stats(days: int = 7) -> list:
+    """מחזיר סטטיסטיקות יומיות"""
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
+    pipeline = [
+        {"$match": {"timestamp": {"$gte": start_date}}},
+        {"$group": {
+            "_id": "$date",
+            "attacks": {"$sum": 1},
+            "success": {"$sum": "$success_count"},
+            "failed": {"$sum": "$failed_count"},
+            "credits": {"$sum": "$credits_used"}
+        }},
+        {"$sort": {"_id": -1}}
+    ]
+    return await logs_col.aggregate(pipeline).to_list(length=days)
 
 # ─── סוכני משתמש אקראיים ───────────────────────────────────────────────────────
 USER_AGENTS = [
@@ -430,14 +527,35 @@ async def fire_all_senders(phone: str) -> tuple[int, list[str]]:
 
 def panel_embed() -> discord.Embed:
     embed = discord.Embed(
-        title="CyberIL Spamer - לוח בקרה",
-        color=0x000000,
-        description=f"השתמש בכפתורים למטה כדי להפעיל את הבוט.\nלמידע נוסף עבור ל<#{INFO_CHANNEL}>."
+        title="⚡ CyberIL Operations | לוח בקרה",
+        color=0x2b2d31,
+        description=(
+            f"ברוך הבא למרכז השליטה.\n"
+            f"למדריך והסברים מפורטים: <#{INFO_CHANNEL}>\n"
+            "──────────────────────────"
+        )
     )
-    embed.add_field(name="💣 ספאם לטלפון", value="שולח SMS, שיחות ו-Whatsapp (עולה קרדיטים)", inline=False)
-    embed.add_field(name="💰 הקרדיטים שלי", value="בדוק את היתרה שלך", inline=True)
-    embed.add_field(name="💳 רכישת קרדיטים", value=f"רכוש עוד קרדיטים דרך האתר שלנו", inline=True)
-    embed.set_footer(text="CyberIL Spamer © 2026")
+    
+    embed.add_field(
+        name="🚀 שיגור מתקפה", 
+        value="`SMS` • `Calls` • `WhatsApp`\n*(צריכת קרדיטים בהתאם לשימוש)*", 
+        inline=False
+    )
+    
+    embed.add_field(
+        name="📊 היתרה שלי", 
+        value="לחץ לבדיקת קרדיטים", 
+        inline=True
+    )
+    
+    embed.add_field(
+        name="💳 טעינת חשבון", 
+        value=f"[לרכישה באתר הישיר]({BUY_URL})", 
+        inline=True
+    )
+    
+    embed.set_footer(text="CyberIL System • Secure Connection • 2026")
+    
     return embed
 
 # ─── תצוגות ────────────────────────────────────────────────────────────────────
@@ -494,14 +612,30 @@ class ConfirmView(discord.ui.View):
         embed.set_footer(text="לחץ על עצור כדי לבטל.")
         await interaction.edit_original_response(embed=embed, view=StopView(self.user_id))
 
+        success_total = 0
+        failed_total = 0
+        
         try:
             for _ in range(self.rounds):
                 if stop_event.is_set(): break
-                await fire_all_senders(self.phone)
+                s, f = await fire_all_senders(self.phone)
+                success_total += s
+                failed_total += f
 
             await set_cooldown(self.phone)
             active_attacks.pop(self.user_id, None)
             stopped = stop_event.is_set()
+
+            # שמירת לוג למסד הנתונים
+            await add_attack_log(
+                user_id=self.user_id,
+                user_name=str(interaction.user),
+                phone=self.phone,
+                credits_used=self.credits_cost,
+                success_count=success_total,
+                failed_count=failed_total,
+                duration=self.credits_cost * 35
+            )
 
             bal_str = await get_balance_display(self.user_id)
             final = discord.Embed(
@@ -510,6 +644,8 @@ class ConfirmView(discord.ui.View):
             )
             final.add_field(name="📱 יעד", value=self.phone, inline=True)
             final.add_field(name="⏱️ משך", value=f"~{self.credits_cost * 35} שניות", inline=True)
+            final.add_field(name="✅ הצלחות", value=str(success_total), inline=True)
+            final.add_field(name="❌ כשלונות", value=str(failed_total), inline=True)
             final.add_field(name="💰 קרדיטים נותרים", value=bal_str, inline=True)
             
             await interaction.edit_original_response(embed=final, view=None)
@@ -625,11 +761,22 @@ class ControlPanelView(discord.ui.View):
     async def balance_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         bal_str = await get_balance_display(uid)
+        
+        # קבלת סטטיסטיקות אישיות
+        user_stats = await get_user_attack_stats(uid)
+        
         embed = discord.Embed(
             title="💰 היתרה שלך",
             description=f"**{bal_str}** קרדיטים",
             color=RED
         )
+        
+        if user_stats:
+            embed.add_field(name="📊 סך התקפות", value=str(user_stats.get("total_attacks", 0)), inline=True)
+            embed.add_field(name="✅ סך הצלחות", value=str(user_stats.get("total_success", 0)), inline=True)
+            embed.add_field(name="❌ סך כשלונות", value=str(user_stats.get("total_failed", 0)), inline=True)
+            embed.add_field(name="💎 קרדיטים ששימשו", value=str(user_stats.get("total_credits_used", 0)), inline=True)
+        
         try:
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except discord.errors.NotFound:
@@ -677,54 +824,25 @@ class FreeCreditsView(discord.ui.View):
 
 @bot.event
 async def on_ready():
-    print(f"✅ CyberIL Spamer התחבר → {bot.user}")
-    print(f"📡 מחובר ל-{len(bot.guilds)} שרתים")
-    
-    # הוספת Views קבועים
     bot.add_view(ControlPanelView())
     bot.add_view(FreeCreditsView())
-    
-    # סנכרון פקודות
     await tree.sync()
-    print("✅ פקודות סלאש סונכרנו")
-    
+    print(f"✅ CyberIL Spamer התחבר → {bot.user}")
+    print(f"📡 מחובר ל-{len(bot.guilds)} שרתים")
+
     await asyncio.sleep(2)
     
-    # מציאת הערוץ הנכון
     try:
-        # חפש את הערוץ לפי ID
         bomb_ch = bot.get_channel(BOMB_AUTO_CHANNEL)
-        if bomb_ch is None:
-            # אם לא נמצא, נסה להביא אותו מה-API
-            bomb_ch = await bot.fetch_channel(BOMB_AUTO_CHANNEL)
-        
         if bomb_ch:
-            print(f"✅ נמצא ערוץ פאנל: {bomb_ch.name} (ID: {bomb_ch.id})")
             await bomb_ch.purge(limit=5)
             await bomb_ch.send(embed=panel_embed(), view=ControlPanelView())
-            print("✅ לוח בקרה נשלח")
+            print(f"✅ לוח בקרה נשלח לערוץ {bomb_ch.name}")
         else:
             print(f"❌ לא נמצא ערוץ עם ID: {BOMB_AUTO_CHANNEL}")
-            print("📝 רשימת הערוצים הזמינים:")
-            for guild in bot.guilds:
-                for channel in guild.text_channels:
-                    print(f"   {channel.name} - {channel.id}")
-                    
-    except discord.NotFound:
-        print(f"❌ הערוץ {BOMB_AUTO_CHANNEL} לא קיים")
-    except discord.Forbidden:
-        print(f"❌ אין הרשאה לשלוח לערוץ {BOMB_AUTO_CHANNEL}")
-    except Exception as e:
-        print(f"❌ שגיאה בשליחת לוח בקרה: {e}")
-    
-    # שליחת הודעת קרדיטים חינמיים
-    try:
+
         free_ch = bot.get_channel(FREE_CREDITS_CHANNEL)
-        if free_ch is None:
-            free_ch = await bot.fetch_channel(FREE_CREDITS_CHANNEL)
-        
         if free_ch:
-            print(f"✅ נמצא ערוץ קרדיטים: {free_ch.name} (ID: {free_ch.id})")
             embed = discord.Embed(
                 title="🎁 מתנה חינם!",
                 description=(
@@ -735,11 +853,12 @@ async def on_ready():
             )
             await free_ch.purge(limit=5)
             await free_ch.send(embed=embed, view=FreeCreditsView())
-            print("✅ הודעת קרדיטים חינמיים נשלחה")
+            print(f"✅ הודעת קרדיטים נשלחה לערוץ {free_ch.name}")
         else:
             print(f"❌ לא נמצא ערוץ עם ID: {FREE_CREDITS_CHANNEL}")
+            
     except Exception as e:
-        print(f"❌ שגיאה בשליחת קרדיטים: {e}")
+        print(f"שגיאה בהתחברות: {e}")
 
 # ─── פקודות סלאש ───────────────────────────────────────────────────────────
 
@@ -748,11 +867,19 @@ async def on_ready():
 async def slash_credits(interaction: discord.Interaction, member: discord.Member = None):
     target = member or interaction.user
     bal_str = await get_balance_display(target.id)
+    user_stats = await get_user_attack_stats(target.id)
+    
     embed = discord.Embed(
         title="💰 קרדיטים",
         description=f"{target.mention} — **{bal_str}** קרדיטים",
         color=RED
     )
+    
+    if user_stats:
+        embed.add_field(name="📊 סך התקפות", value=str(user_stats.get("total_attacks", 0)), inline=True)
+        embed.add_field(name="✅ הצלחות", value=str(user_stats.get("total_success", 0)), inline=True)
+        embed.add_field(name="❌ כשלונות", value=str(user_stats.get("total_failed", 0)), inline=True)
+    
     await interaction.response.send_message(embed=embed)
 
 @tree.command(name="addcredit", description="[ADMIN] הוסף קרדיטים למשתמש")
@@ -855,9 +982,17 @@ async def slash_checkcredit(interaction: discord.Interaction, member: discord.Me
         return
     await interaction.response.defer(ephemeral=True)
     status = await get_balance_display(member.id)
+    user_stats = await get_user_attack_stats(member.id)
+    
     embed = discord.Embed(title="💳 מידע ארנק (תצוגת אדמין)", color=0x2b2d31)
     embed.add_field(name="משתמש:", value=member.mention, inline=True)
     embed.add_field(name="יתרה נוכחית:", value=f"**{status}**", inline=True)
+    
+    if user_stats:
+        embed.add_field(name="סך התקפות", value=str(user_stats.get("total_attacks", 0)), inline=True)
+        embed.add_field(name="סך הצלחות", value=str(user_stats.get("total_success", 0)), inline=True)
+        embed.add_field(name="סך כשלונות", value=str(user_stats.get("total_failed", 0)), inline=True)
+    
     embed.set_footer(text=f"נבדק על ידי {interaction.user.name}")
     await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -921,6 +1056,105 @@ async def slash_checkstatus(interaction: discord.Interaction):
             failed_str = failed_str[:1020] + "..."
         embed.add_field(name="API שנכשלו:", value=failed_str, inline=False)
 
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@tree.command(name="attacklogs", description="[ADMIN] הצג לוגי התקפות אחרונים")
+@app_commands.describe(limit="כמות לוגים להצגה (1-50)")
+async def slash_attacklogs(interaction: discord.Interaction, limit: int = 10):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    logs = await get_all_attack_logs(min(limit, 50))
+    
+    if not logs:
+        await interaction.followup.send("📭 אין לוגים עדיין.", ephemeral=True)
+        return
+    
+    embed = discord.Embed(title="📋 לוגי התקפות אחרונים", color=RED)
+    
+    for log in logs[:10]:
+        embed.add_field(
+            name=f"{log['user_name']} | {log['date']} {log['time']}",
+            value=f"📱 {log['phone']}\n✅ {log['success_count']} | ❌ {log['failed_count']} | 💎 {log['credits_used']}",
+            inline=False
+        )
+    
+    if len(logs) > 10:
+        embed.set_footer(text=f"+ {len(logs) - 10} לוגים נוספים")
+    
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@tree.command(name="topnumbers", description="[ADMIN] המספרים שהותקפו הכי הרבה")
+async def slash_topnumbers(interaction: discord.Interaction):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    top = await get_most_attacked_phones(10)
+    
+    if not top:
+        await interaction.followup.send("📭 אין נתונים עדיין.", ephemeral=True)
+        return
+    
+    embed = discord.Embed(title="🎯 המספרים שהותקפו הכי הרבה", color=RED)
+    
+    for i, item in enumerate(top, 1):
+        embed.add_field(
+            name=f"{i}. {item['_id']}",
+            value=f"התקפות: {item['count']} | הצלחות: {item['total_success']}",
+            inline=False
+        )
+    
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@tree.command(name="globalstats", description="[ADMIN] סטטיסטיקות גלובליות")
+async def slash_globalstats(interaction: discord.Interaction):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ רק אדמינים.", ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    stats = await get_global_attack_stats()
+    
+    if not stats:
+        await interaction.followup.send("📭 אין נתונים עדיין.", ephemeral=True)
+        return
+    
+    embed = discord.Embed(title="📊 סטטיסטיקות גלובליות", color=RED)
+    embed.add_field(name="🎯 סך התקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+    embed.add_field(name="👥 משתמשים ייחודיים", value=str(stats.get("unique_users", 0)), inline=True)
+    embed.add_field(name="💎 קרדיטים ששימשו", value=str(stats.get("total_credits_used", 0)), inline=True)
+    embed.add_field(name="✅ סך הצלחות", value=str(stats.get("total_success", 0)), inline=True)
+    embed.add_field(name="❌ סך כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
+    embed.add_field(name="📨 סך בקשות", value=str(stats.get("total_requests", 0)), inline=True)
+    
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@tree.command(name="mylogs", description="הצג את לוגי ההתקפות שלך")
+async def slash_mylogs(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    
+    logs = await get_user_attack_logs(interaction.user.id, 10)
+    
+    if not logs:
+        await interaction.followup.send("📭 אין לך התקפות עדיין.", ephemeral=True)
+        return
+    
+    embed = discord.Embed(title="📋 לוגי ההתקפות שלך", color=RED)
+    
+    for log in logs:
+        embed.add_field(
+            name=f"{log['date']} {log['time']}",
+            value=f"📱 {log['phone']}\n✅ {log['success_count']} | ❌ {log['failed_count']} | 💎 {log['credits_used']}",
+            inline=False
+        )
+    
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 if __name__ == "__main__":
