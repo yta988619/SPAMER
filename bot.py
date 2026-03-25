@@ -11,7 +11,7 @@ import logging
 import re
 import sys
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import certifi
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -52,11 +52,13 @@ users_collection = database["users"]
 cooldown_collection = database["cooldowns"]
 settings_collection = database["settings"]
 logs_collection = database["attack_logs"]
+lifetime_collection = database["lifetime"]
 
 logging.basicConfig(level=logging.WARNING)
 
 active_missions = {}
 cooldown_tracker = {}
+stop_events = {}
 
 BROWSER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36",
@@ -79,10 +81,24 @@ async def fetch_balance(user_id: int) -> int:
 
 async def has_unlimited(user_id: int) -> bool:
     record = await users_collection.find_one({"_id": user_id})
-    return bool(record and record.get("unlimited"))
+    if record and record.get("unlimited"):
+        return True
+    lifetime_record = await lifetime_collection.find_one({"_id": user_id})
+    if lifetime_record:
+        if lifetime_record.get("expires_at", 0) > time.time():
+            return True
+        else:
+            await lifetime_collection.delete_one({"_id": user_id})
+    return False
 
 async def format_balance(user_id: int) -> str:
     if await has_unlimited(user_id):
+        lifetime_record = await lifetime_collection.find_one({"_id": user_id})
+        if lifetime_record:
+            remaining = int(lifetime_record.get("expires_at", 0) - time.time())
+            days = remaining // 86400
+            hours = (remaining % 86400) // 3600
+            return f"ללא הגבלה ({days} ימים {hours} שעות)"
         return "ללא הגבלה"
     return str(await fetch_balance(user_id))
 
@@ -92,8 +108,16 @@ async def add_credits(user_id: int, amount: int):
 async def remove_credits(user_id: int, amount: int):
     await users_collection.update_one({"_id": user_id}, {"$inc": {"credits": -amount}}, upsert=True)
 
-async def set_unlimited(user_id: int, status: bool):
-    await users_collection.update_one({"_id": user_id}, {"$set": {"unlimited": status}}, upsert=True)
+async def set_lifetime(user_id: int, duration_seconds: int):
+    expires_at = time.time() + duration_seconds
+    await lifetime_collection.update_one(
+        {"_id": user_id},
+        {"$set": {"expires_at": expires_at, "type": "lifetime"}},
+        upsert=True
+    )
+
+async def remove_lifetime(user_id: int):
+    await lifetime_collection.delete_one({"_id": user_id})
 
 async def use_credit(user_id: int) -> bool:
     if await has_unlimited(user_id):
@@ -147,7 +171,7 @@ async def send_request(session, url, form=None, json_data=None, headers_extra=No
         headers.update(headers_extra)
     
     try:
-        timeout = aiohttp.ClientTimeout(total=5)
+        timeout = aiohttp.ClientTimeout(total=8)
         
         if method == "GET":
             async with session.get(url, headers=headers, timeout=timeout, ssl=False) as resp:
@@ -1239,9 +1263,10 @@ def create_gift_panel():
     return embed
 
 class StopAttack(discord.ui.View):
-    def __init__(self, user_id: int):
+    def __init__(self, user_id: int, mission_id: str = None):
         super().__init__(timeout=None)
         self.user_id = user_id
+        self.mission_id = mission_id
 
     @discord.ui.button(label="עצור ספאם", style=discord.ButtonStyle.danger, emoji="🛑", custom_id="stop_attack")
     async def stop_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -1283,8 +1308,8 @@ class ConfirmAttack(discord.ui.View):
                 await interaction.edit_original_response(embed=embed, view=None)
                 return
 
-        event = asyncio.Event()
-        active_missions[self.user_id] = event
+        stop_event = asyncio.Event()
+        active_missions[self.user_id] = stop_event
 
         embed = discord.Embed(title="🔄 ספאם בתהליך", description=f"מספמם את **{self.phone}**\nזמן: ~{self.cost} דקות", color=COLOR_WARNING)
         await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
@@ -1297,7 +1322,7 @@ class ConfirmAttack(discord.ui.View):
 
         try:
             while time.time() < end_time:
-                if event.is_set():
+                if stop_event.is_set():
                     break
                 
                 s, f = await run_all(self.phone)
@@ -1313,10 +1338,12 @@ class ConfirmAttack(discord.ui.View):
                     )
                     await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
                     last_update = time.time()
+                
+                await asyncio.sleep(0.1)
 
             await apply_cooldown(self.phone)
             active_missions.pop(self.user_id, None)
-            stopped = event.is_set()
+            stopped = stop_event.is_set()
 
             await save_log(
                 user_id=self.user_id,
@@ -1571,6 +1598,12 @@ async def on_ready():
     print(f"✅ CyberIL Spamer פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
 
+    # בדיקת lifetime שפג תוקף
+    now = time.time()
+    expired = await lifetime_collection.find({"expires_at": {"$lt": now}}).to_list(length=None)
+    for item in expired:
+        await lifetime_collection.delete_one({"_id": item["_id"]})
+
     await asyncio.sleep(2)
 
     try:
@@ -1642,15 +1675,40 @@ async def cmd_removecredit(interaction: discord.Interaction, member: discord.Mem
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="lifetime", description="[ADMIN] הענק ללא הגבלה")
-@app_commands.describe(member="משתמש")
-async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member):
+@tree.command(name="lifetime", description="[ADMIN] הענק ללא הגבלה לזמן מוגדר")
+@app_commands.describe(member="משתמש", duration="משך הזמן (במספרים)", unit="יחידת זמן (minutes/hours/days/months)")
+async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member, duration: int, unit: str):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
+    
+    unit = unit.lower()
+    if unit in ["minute", "minutes", "min", "m"]:
+        seconds = duration * 60
+        unit_text = f"{duration} דקות"
+    elif unit in ["hour", "hours", "h"]:
+        seconds = duration * 3600
+        unit_text = f"{duration} שעות"
+    elif unit in ["day", "days", "d"]:
+        seconds = duration * 86400
+        unit_text = f"{duration} ימים"
+    elif unit in ["month", "months", "mon"]:
+        seconds = duration * 2592000  # 30 ימים
+        unit_text = f"{duration} חודשים"
+    else:
+        await interaction.response.send_message("❌ יחידה לא תקינה. השתמש ב: minutes, hours, days, months", ephemeral=True)
+        return
+    
     await interaction.response.defer()
-    await set_unlimited(member.id, True)
-    embed = discord.Embed(title="♾️ ללא הגבלה הוענק", description=f"{member.mention} קיבל ללא הגבלה", color=COLOR_SUCCESS)
+    await set_lifetime(member.id, seconds)
+    
+    expires_at = time.time() + seconds
+    expires_date = datetime.fromtimestamp(expires_at).strftime("%d/%m/%Y %H:%M")
+    
+    embed = discord.Embed(title="♾️ Lifetime הוענק", color=COLOR_SUCCESS)
+    embed.add_field(name="משתמש", value=member.mention, inline=True)
+    embed.add_field(name="משך", value=unit_text, inline=True)
+    embed.add_field(name="תפוגה", value=expires_date, inline=True)
     await interaction.followup.send(embed=embed)
 
 @tree.command(name="removelifetime", description="[ADMIN] הסר ללא הגבלה")
@@ -1660,9 +1718,35 @@ async def cmd_removelifetime(interaction: discord.Interaction, member: discord.M
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.defer()
-    await set_unlimited(member.id, False)
-    embed = discord.Embed(title="♾️ ללא הגבלה הוסר", description=f"{member.mention} איבד את ה-lifetime", color=COLOR_WARNING)
+    await remove_lifetime(member.id)
+    embed = discord.Embed(title="♾️ Lifetime הוסר", description=f"{member.mention} איבד את ה-lifetime", color=COLOR_WARNING)
     await interaction.followup.send(embed=embed)
+
+@tree.command(name="checklifetime", description="[ADMIN] בדוק סטטוס lifetime")
+@app_commands.describe(member="משתמש")
+async def cmd_checklifetime(interaction: discord.Interaction, member: discord.Member):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
+        return
+    
+    record = await lifetime_collection.find_one({"_id": member.id})
+    if record:
+        expires_at = record.get("expires_at", 0)
+        remaining = expires_at - time.time()
+        if remaining > 0:
+            days = int(remaining // 86400)
+            hours = int((remaining % 86400) // 3600)
+            minutes = int((remaining % 3600) // 60)
+            embed = discord.Embed(title="♾️ סטטוס Lifetime", color=COLOR_INFO)
+            embed.add_field(name="משתמש", value=member.mention, inline=True)
+            embed.add_field(name="נותר", value=f"{days} ימים {hours} שעות {minutes} דקות", inline=True)
+            embed.add_field(name="תפוגה", value=datetime.fromtimestamp(expires_at).strftime("%d/%m/%Y %H:%M"), inline=True)
+        else:
+            embed = discord.Embed(title="♾️ Lifetime פג", description=f"{member.mention} - התוקף פג", color=COLOR_WARNING)
+    else:
+        embed = discord.Embed(title="♾️ Lifetime", description=f"{member.mention} - אין lifetime פעיל", color=COLOR_INFO)
+    
+    await interaction.response.send_message(embed=embed)
 
 @tree.command(name="freecredits", description="[ADMIN] שלח הודעת קרדיטים")
 async def cmd_freecredits(interaction: discord.Interaction):
