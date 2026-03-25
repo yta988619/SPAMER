@@ -69,7 +69,7 @@ BROWSER_AGENTS = [
 def random_agent():
     return random.choice(BROWSER_AGENTS)
 
-async def fetch_balance(user_id):
+async def fetch_balance(user_id: int) -> int:
     record = await users_collection.find_one({"_id": user_id})
     if not record:
         return 0
@@ -77,25 +77,25 @@ async def fetch_balance(user_id):
         return 999999
     return record.get("credits", 0)
 
-async def has_unlimited(user_id):
+async def has_unlimited(user_id: int) -> bool:
     record = await users_collection.find_one({"_id": user_id})
     return bool(record and record.get("unlimited"))
 
-async def format_balance(user_id):
+async def format_balance(user_id: int) -> str:
     if await has_unlimited(user_id):
         return "ללא הגבלה"
     return str(await fetch_balance(user_id))
 
-async def add_credits(user_id, amount):
+async def add_credits(user_id: int, amount: int):
     await users_collection.update_one({"_id": user_id}, {"$inc": {"credits": amount}}, upsert=True)
 
-async def remove_credits(user_id, amount):
+async def remove_credits(user_id: int, amount: int):
     await users_collection.update_one({"_id": user_id}, {"$inc": {"credits": -amount}}, upsert=True)
 
-async def set_unlimited(user_id, status):
+async def set_unlimited(user_id: int, status: bool):
     await users_collection.update_one({"_id": user_id}, {"$set": {"unlimited": status}}, upsert=True)
 
-async def use_credit(user_id):
+async def use_credit(user_id: int) -> bool:
     if await has_unlimited(user_id):
         return True
     result = await users_collection.update_one(
@@ -104,7 +104,7 @@ async def use_credit(user_id):
     )
     return result.modified_count == 1
 
-async def check_cooldown(target):
+async def check_cooldown(target: str):
     record = await cooldown_collection.find_one({"target": target})
     if not record:
         return False, 0
@@ -113,13 +113,13 @@ async def check_cooldown(target):
         return True, int(COOLDOWN_TIME - elapsed)
     return False, 0
 
-async def apply_cooldown(target):
+async def apply_cooldown(target: str):
     await cooldown_collection.update_one({"target": target}, {"$set": {"last_attempt": time.time()}}, upsert=True)
 
-def is_admin(interaction):
+def is_admin(interaction: discord.Interaction) -> bool:
     return ADMIN_ROLE_ID in [role.id for role in interaction.user.roles]
 
-async def save_log(user_id, username, phone, cost, success, failed, duration):
+async def save_log(user_id: int, username: str, phone: str, cost: int, success: int, failed: int, duration: int):
     entry = {
         "user_id": user_id,
         "username": username,
@@ -135,15 +135,15 @@ async def save_log(user_id, username, phone, cost, success, failed, duration):
     }
     await logs_collection.insert_one(entry)
 
-async def get_user_logs(user_id, limit=20):
+async def get_user_logs(user_id: int, limit: int = 20):
     cursor = logs_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(limit)
     return await cursor.to_list(length=limit)
 
-async def get_all_logs(limit=100):
+async def get_all_logs(limit: int = 100):
     cursor = logs_collection.find().sort("timestamp", -1).limit(limit)
     return await cursor.to_list(length=limit)
 
-async def get_user_stats(user_id):
+async def get_user_stats(user_id: int):
     pipeline = [
         {"$match": {"user_id": user_id}},
         {"$group": {
@@ -177,7 +177,7 @@ async def get_global_stats():
         return result[0]
     return None
 
-async def get_top_targets(limit=10):
+async def get_top_targets(limit: int = 10):
     pipeline = [
         {"$group": {
             "_id": "$phone",
@@ -371,7 +371,7 @@ async def freeivr_request(session, phone):
     except Exception as e:
         return False, tag, str(type(e).__name__)
 
-async def run_all(phone):
+async def run_all(phone: str):
     raw = phone
     formatted = f"+972{raw[1:]}" if raw.startswith("0") else f"+972{raw}"
     sid = str(uuid.uuid4())
@@ -756,12 +756,12 @@ def create_gift_panel():
     return embed
 
 class StopAttack(discord.ui.View):
-    def __init__(self, user_id):
+    def __init__(self, user_id: int):
         super().__init__(timeout=600)
         self.user_id = user_id
 
     @discord.ui.button(label="🛑 Stop Spam", style=discord.ButtonStyle.danger)
-    async def stop_btn(self, interaction, button):
+    async def stop_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id and not is_admin(interaction):
             await interaction.response.send_message("❌ Not your attack.", ephemeral=True)
             return
@@ -772,7 +772,7 @@ class StopAttack(discord.ui.View):
         await interaction.response.edit_message(view=self)
 
 class ConfirmAttack(discord.ui.View):
-    def __init__(self, phone, rounds, cost, user_id):
+    def __init__(self, phone: str, rounds: int, cost: int, user_id: int):
         super().__init__(timeout=30)
         self.phone = phone
         self.rounds = rounds
@@ -780,7 +780,7 @@ class ConfirmAttack(discord.ui.View):
         self.user_id = user_id
 
     @discord.ui.button(label="✅ Yes, launch", style=discord.ButtonStyle.danger)
-    async def confirm_btn(self, interaction, button):
+    async def confirm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("❌ Not your confirmation.", ephemeral=True)
             return
@@ -842,7 +842,7 @@ class ConfirmAttack(discord.ui.View):
             await interaction.edit_original_response(embed=discord.Embed(title="❌ Error", description=str(e)[:180], color=COLOR_DANGER), view=None)
 
     @discord.ui.button(label="❌ Cancel", style=discord.ButtonStyle.secondary)
-    async def cancel_btn(self, interaction, button):
+    async def cancel_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("❌ Not yours.", ephemeral=True)
             return
@@ -853,7 +853,7 @@ class LaunchModal(discord.ui.Modal, title="Start Spamming"):
     phone = discord.ui.TextInput(label="Phone Number", placeholder="054XXXXXXX", min_length=10, max_length=10, style=discord.TextStyle.short)
     credits = discord.ui.TextInput(label="Credits to use (max 100)", placeholder="e.g. 5", min_length=1, max_length=3, style=discord.TextStyle.short)
 
-    async def on_submit(self, interaction):
+    async def on_submit(self, interaction: discord.Interaction):
         phone_num = self.phone.value.strip()
         if not re.match(r"^05[0-9]{8}$", phone_num):
             await interaction.response.send_message("❌ Invalid number — must be **05XXXXXXXX**", ephemeral=True)
@@ -891,7 +891,7 @@ class MainPanel(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.button(label="Start Spam", style=discord.ButtonStyle.danger, custom_id="start_spam")
-    async def start_btn(self, interaction, button):
+    async def start_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         now = time.time()
         last = cooldown_tracker.get(interaction.user.id, 0)
         if now - last < LAUNCH_DELAY:
@@ -902,7 +902,7 @@ class MainPanel(discord.ui.View):
         await interaction.response.send_modal(LaunchModal())
 
     @discord.ui.button(label="My Credits", style=discord.ButtonStyle.primary, custom_id="check_balance")
-    async def balance_btn(self, interaction, button):
+    async def balance_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         bal_str = await format_balance(uid)
         stats = await get_user_stats(uid)
@@ -921,7 +921,7 @@ class FreeCoins(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.button(label="🔒 Claim Free Coin", style=discord.ButtonStyle.success, emoji="💎", custom_id="claim_free")
-    async def claim_btn(self, interaction, button):
+    async def claim_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         now = time.time()
         try:
@@ -984,7 +984,7 @@ async def on_ready():
 
 @tree.command(name="checkmycredit", description="Check your current balance")
 @app_commands.describe(member="User to check (leave empty for yourself)")
-async def cmd_credits(interaction, member=None):
+async def cmd_credits(interaction: discord.Interaction, member: discord.Member = None):
     target = member or interaction.user
     bal = await format_balance(target.id)
     stats = await get_user_stats(target.id)
@@ -999,7 +999,7 @@ async def cmd_credits(interaction, member=None):
 
 @tree.command(name="addcredit", description="[ADMIN] Add credits to a user")
 @app_commands.describe(member="Target user", amount="Amount to add")
-async def cmd_addcredit(interaction, member, amount):
+async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1016,7 +1016,7 @@ async def cmd_addcredit(interaction, member, amount):
 
 @tree.command(name="removecredit", description="[ADMIN] Remove credits from a user")
 @app_commands.describe(member="Target user", amount="Amount to remove")
-async def cmd_removecredit(interaction, member, amount):
+async def cmd_removecredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1033,7 +1033,7 @@ async def cmd_removecredit(interaction, member, amount):
 
 @tree.command(name="lifetime", description="[ADMIN] Grant unlimited credits to a user")
 @app_commands.describe(member="Target user")
-async def cmd_lifetime(interaction, member):
+async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1044,7 +1044,7 @@ async def cmd_lifetime(interaction, member):
 
 @tree.command(name="removelifetime", description="[ADMIN] Remove lifetime from a user")
 @app_commands.describe(member="Target user")
-async def cmd_removelifetime(interaction, member):
+async def cmd_removelifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1054,7 +1054,7 @@ async def cmd_removelifetime(interaction, member):
     await interaction.followup.send(embed=embed)
 
 @tree.command(name="freecredits", description="[ADMIN] Post the free credits gift message")
-async def cmd_freecredits(interaction):
+async def cmd_freecredits(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1068,7 +1068,7 @@ async def cmd_freecredits(interaction):
 
 @tree.command(name="giveall", description="[ADMIN] Give credits to everyone")
 @app_commands.describe(amount="Amount to give to all users")
-async def cmd_giveall(interaction, amount):
+async def cmd_giveall(interaction: discord.Interaction, amount: int):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1081,7 +1081,7 @@ async def cmd_giveall(interaction, amount):
 
 @tree.command(name="checkcredit", description="[ADMIN] Check balance of a specific user")
 @app_commands.describe(member="User to check")
-async def cmd_checkcredit(interaction, member):
+async def cmd_checkcredit(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1102,7 +1102,7 @@ async def cmd_checkcredit(interaction, member):
 
 @tree.command(name="transfercredit", description="Transfer credits to another user (min 20)")
 @app_commands.describe(member="Recipient", amount="Amount to transfer (min 20)")
-async def cmd_transfer(interaction, member, amount):
+async def cmd_transfer(interaction: discord.Interaction, member: discord.Member, amount: int):
     await interaction.response.defer(ephemeral=True)
     if amount < 20:
         await interaction.followup.send("❌ Minimum transfer is **20** credits.", ephemeral=True)
@@ -1131,7 +1131,7 @@ async def cmd_transfer(interaction, member, amount):
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 @tree.command(name="restart", description="[ADMIN] Restart the bot")
-async def cmd_restart(interaction):
+async def cmd_restart(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1140,7 +1140,7 @@ async def cmd_restart(interaction):
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 @tree.command(name="checkstatus", description="[ADMIN] Check how many APIs are working")
-async def cmd_checkstatus(interaction):
+async def cmd_checkstatus(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1165,7 +1165,7 @@ async def cmd_checkstatus(interaction):
 
 @tree.command(name="attacklogs", description="[ADMIN] View recent attack logs")
 @app_commands.describe(limit="Number of logs to show (1-50)")
-async def cmd_attacklogs(interaction, limit=10):
+async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1191,7 +1191,7 @@ async def cmd_attacklogs(interaction, limit=10):
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 @tree.command(name="topnumbers", description="[ADMIN] Most attacked numbers")
-async def cmd_topnumbers(interaction):
+async def cmd_topnumbers(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1214,7 +1214,7 @@ async def cmd_topnumbers(interaction):
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 @tree.command(name="globalstats", description="[ADMIN] Global statistics")
-async def cmd_globalstats(interaction):
+async def cmd_globalstats(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Admins only.", ephemeral=True)
         return
@@ -1237,7 +1237,7 @@ async def cmd_globalstats(interaction):
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 @tree.command(name="mylogs", description="View your attack logs")
-async def cmd_mylogs(interaction):
+async def cmd_mylogs(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     logs = await get_user_logs(interaction.user.id, 10)
 
