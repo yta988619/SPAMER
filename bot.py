@@ -760,14 +760,15 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
     phone = discord.ui.TextInput(label="📱 מספר טלפון", placeholder="0501234567", min_length=9, max_length=10, style=discord.TextStyle.short)
     credits = discord.ui.TextInput(label="💎 כמות קרדיטים", placeholder="1-100", min_length=1, max_length=3, style=discord.TextStyle.short)
 
-   async def on_submit(self, interaction: discord.Interaction):
-    phone_num = self.phone.value.strip().replace("-", "").replace(" ", "")
-    if len(phone_num) == 9:
-        phone_num = "0" + phone_num
-    if not re.match(r"^05[0-9]{8}$", phone_num):
-        embed = discord.Embed(title="❌ שגיאה", description="מספר לא תקין (05XXXXXXXX)", color=COLOR_DANGER)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        return
+    async def on_submit(self, interaction: discord.Interaction):
+        phone_num = self.phone.value.strip().replace("-", "").replace(" ", "")
+        if len(phone_num) == 9:
+            phone_num = "0" + phone_num
+        if not re.match(r"^05[0-9]{8}$", phone_num):
+            embed = discord.Embed(title="❌ שגיאה", description="מספר לא תקין (05XXXXXXXX)", color=COLOR_DANGER)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
         try:
             credits_num = int(self.credits.value.strip())
             if credits_num < 1 or credits_num > MAX_CREDIT_SPEND:
