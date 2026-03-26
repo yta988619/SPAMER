@@ -760,8 +760,8 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
     phone = discord.ui.TextInput(
         label="📱 מספר טלפון", 
         placeholder="0501234567", 
-        min_length=10, 
-        max_length=10, 
+        min_length=9, 
+        max_length=13, 
         style=discord.TextStyle.short
     )
     credits = discord.ui.TextInput(
@@ -773,18 +773,18 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        phone_num = self.phone.value.strip().replace("-", "").replace(" ", "").replace("+", "")
+        phone_num = self.phone.value.strip().replace("-", "").replace(" ", "").replace("+", "").replace("(", "").replace(")", "")
         
         # הסרת קידומת 972 אם קיימת
         if phone_num.startswith("972"):
             phone_num = phone_num[3:]
         
-        # הוספת 0 אם יש 9 ספרות
+        # אם יש 9 ספרות - מוסיף 0
         if len(phone_num) == 9:
             phone_num = "0" + phone_num
         
-        # בדיקת תקינות
-        if not re.match(r"^05[0-9]{8}$", phone_num):
+        # בדיקה שהמספר תקין
+        if len(phone_num) != 10 or not phone_num.startswith("05") or not phone_num.isdigit():
             embed = discord.Embed(
                 title="❌ שגיאה", 
                 description="מספר לא תקין!\nפורמט תקין:\n- 0501234567\n- 501234567\n- 972501234567",
@@ -818,6 +818,7 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
+        
         on_cd, remain = await check_cooldown(phone_num)
         if on_cd:
             embed = discord.Embed(title="⏱️ דיליי", description=f"המתן {remain} שניות", color=COLOR_WARNING)
