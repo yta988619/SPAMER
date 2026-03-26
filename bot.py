@@ -113,7 +113,8 @@ async def has_unlimited(user_id: int) -> bool:
         return True
     lifetime_record = await lifetime_collection.find_one({"_id": user_id})
     if lifetime_record:
-        if lifetime_record.get("expires_at", 0) > time.time():
+        expires_at = lifetime_record.get("expires_at", 0)
+        if expires_at > time.time():
             return True
         else:
             await lifetime_collection.delete_one({"_id": user_id})
@@ -123,10 +124,13 @@ async def format_balance(user_id: int) -> str:
     if await has_unlimited(user_id):
         lifetime_record = await lifetime_collection.find_one({"_id": user_id})
         if lifetime_record:
-            remaining = int(lifetime_record.get("expires_at", 0) - time.time())
-            days = remaining // 86400
-            hours = (remaining % 86400) // 3600
-            return f"ללא הגבלה ({days} ימים {hours} שעות)"
+            expires_at = lifetime_record.get("expires_at", 0)
+            if expires_at > 0:
+                remaining = int(expires_at - time.time())
+                if remaining > 0:
+                    days = remaining // 86400
+                    hours = (remaining % 86400) // 3600
+                    return f"ללא הגבלה ({days} ימים {hours} שעות)"
         return "ללא הגבלה"
     return str(await fetch_balance(user_id))
 
@@ -136,13 +140,20 @@ async def add_credits(user_id: int, amount: int):
 async def remove_credits(user_id: int, amount: int):
     await users_collection.update_one({"_id": user_id}, {"$inc": {"credits": -amount}}, upsert=True)
 
-async def set_lifetime(user_id: int, duration_seconds: int):
-    expires_at = time.time() + duration_seconds
-    await lifetime_collection.update_one(
-        {"_id": user_id},
-        {"$set": {"expires_at": expires_at, "type": "lifetime"}},
-        upsert=True
-    )
+async def set_lifetime(user_id: int, duration_seconds: int = None):
+    if duration_seconds is None:
+        await lifetime_collection.update_one(
+            {"_id": user_id},
+            {"$set": {"expires_at": 0, "type": "lifetime", "permanent": True}},
+            upsert=True
+        )
+    else:
+        expires_at = time.time() + duration_seconds
+        await lifetime_collection.update_one(
+            {"_id": user_id},
+            {"$set": {"expires_at": expires_at, "type": "lifetime", "permanent": False}},
+            upsert=True
+        )
 
 async def remove_lifetime(user_id: int):
     await lifetime_collection.delete_one({"_id": user_id})
@@ -172,7 +183,7 @@ def is_admin(interaction: discord.Interaction) -> bool:
     return ADMIN_ROLE_ID in [role.id for role in interaction.user.roles]
 
 def is_staff(interaction: discord.Interaction) -> bool:
-    return ADMIN_ROLE_ID in [role.id for role in interaction.user.roles] or STAFF_ROLE_ID in [role.id for role in interaction.user.roles]
+    return ADMIN_ROLE_ID in [role.id for role in interaction.user.roles]
 
 async def save_log(user_id: int, username: str, phone: str, cost: int, success: int, failed: int, duration: int, ip: str):
     entry = {
@@ -742,7 +753,6 @@ async def run_spam_batch(phone: str):
 
         all_res = await asyncio.gather(*tasks, return_exceptions=True)
         success = 0
-        failed = []
         
         for r in all_res:
             if isinstance(r, Exception):
@@ -752,14 +762,10 @@ async def run_spam_batch(phone: str):
                     ok, name, reason = r
                     if ok:
                         success += 1
-                    else:
-                        failed.append(f"{name} ({reason})")
                 else:
                     ok, name = r
                     if ok:
                         success += 1
-                    else:
-                        failed.append(name)
 
         for r in atmos_sms:
             if isinstance(r, Exception):
@@ -769,14 +775,10 @@ async def run_spam_batch(phone: str):
                     ok, name, reason = r
                     if ok:
                         success += 1
-                    else:
-                        failed.append(f"{name} ({reason})")
                 else:
                     ok, name = r
                     if ok:
                         success += 1
-                    else:
-                        failed.append(name)
                         
         for r in atmos_call:
             if isinstance(r, Exception):
@@ -786,36 +788,32 @@ async def run_spam_batch(phone: str):
                     ok, name, reason = r
                     if ok:
                         success += 1
-                    else:
-                        failed.append(f"{name} ({reason})")
                 else:
                     ok, name = r
                     if ok:
                         success += 1
-                    else:
-                        failed.append(name)
 
-        return success, failed
+        return success
 
 def create_panel():
     embed = discord.Embed(
         title="**CYBERIL SPAMER**",
-        description="```המערכת המובילה בישראל```",
+        description="המערכת המובילה בישראל",
         color=COLOR_MAIN
     )
     embed.add_field(
-        name="**איך מתחילים?**",
-        value="```1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן```",
+        name="איך מתחילים?",
+        value="1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן",
         inline=False
     )
     embed.add_field(
-        name="**עלות**",
-        value=f"```כל קרדיט = דקה אחת של ספאם```",
+        name="עלות",
+        value=f"כל קרדיט = דקה אחת של ספאם",
         inline=False
     )
     embed.add_field(
-        name="**הערות**",
-        value=f"```דיליי של {COOLDOWN_TIME} שניות בין ספאם לאותו מספר```",
+        name="הערות",
+        value=f"דיליי של {COOLDOWN_TIME} שניות בין ספאם לאותו מספר",
         inline=False
     )
     embed.set_footer(text=f"CyberIL Spamer © 2026")
@@ -824,12 +822,12 @@ def create_panel():
 def create_gift_panel():
     embed = discord.Embed(
         title="**קרדיטים חינם**",
-        description="```קבל קרדיט אחד כל 24 שעות```",
+        description="קבל קרדיט אחד כל 24 שעות",
         color=0xFFD700
     )
     embed.add_field(
-        name="**איך מקבלים?**",
-        value="```לחץ על הכפתור למטה```",
+        name="איך מקבלים?",
+        value="לחץ על הכפתור למטה",
         inline=False
     )
     embed.set_footer(text="CyberIL Spamer © 2026")
@@ -887,7 +885,6 @@ class ConfirmAttack(discord.ui.View):
         await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
 
         total_success = 0
-        total_failed = 0
         start_time = time.time()
         end_time = start_time + (self.cost * 60)
         last_update = time.time()
@@ -898,15 +895,14 @@ class ConfirmAttack(discord.ui.View):
                 if stop_event.is_set() or is_shutting_down:
                     break
                 
-                s, f = await run_spam_batch(self.phone)
-                total_success += s
-                total_failed += f
+                success = await run_spam_batch(self.phone)
+                total_success += success
                 
                 if time.time() - last_update >= 5:
                     remaining = max(0, int((end_time - time.time()) / 60))
                     embed = discord.Embed(
                         title="🔄 ספאם בתהליך",
-                        description=f"מספמם את **{self.phone}**\nנותר: ~{remaining} דקות\n\n✅ הצלחות: {total_success}\n❌ כשלונות: {total_failed}",
+                        description=f"מספמם את **{self.phone}**\nנותר: ~{remaining} דקות\n\n✅ בקשות שנשלחו: {total_success}",
                         color=COLOR_WARNING
                     )
                     await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
@@ -924,7 +920,7 @@ class ConfirmAttack(discord.ui.View):
                 phone=self.phone,
                 cost=self.cost,
                 success=total_success,
-                failed=total_failed,
+                failed=0,
                 duration=self.cost * 60,
                 ip=ip
             )
@@ -938,8 +934,7 @@ class ConfirmAttack(discord.ui.View):
             
             final.add_field(name="📱 יעד", value=self.phone, inline=True)
             final.add_field(name="⏱️ משך", value=f"~{self.cost} דקות", inline=True)
-            final.add_field(name="✅ הצלחות", value=str(total_success), inline=True)
-            final.add_field(name="❌ כשלונות", value=str(total_failed), inline=True)
+            final.add_field(name="✅ בקשות", value=str(total_success), inline=True)
             final.add_field(name="💎 קרדיטים נותרים", value=bal, inline=True)
             
             await interaction.edit_original_response(embed=final, view=None)
@@ -998,7 +993,7 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
         
         confirm = discord.Embed(
             title="⚠️ אישור ספאם",
-            description=f"```\nיעד: {phone_num}\nמשך: {credits_num} דקות\nעלות: {credits_num} קרדיטים\nיתרה: {bal_str}\n```",
+            description=f"יעד: {phone_num}\nמשך: {credits_num} דקות\nעלות: {credits_num} קרדיטים\nיתרה: {bal_str}",
             color=COLOR_WARNING
         )
         
@@ -1033,14 +1028,13 @@ class MainPanel(discord.ui.View):
         
         if stats:
             embed.add_field(name="📊 סה\"כ מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
-            embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
-            embed.add_field(name="❌ כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
+            embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @discord.ui.button(label="📊 סטטוס", style=discord.ButtonStyle.secondary, emoji="📊", custom_id="stats")
     async def stats_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not is_staff(interaction):
+        if not is_admin(interaction):
             await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
             return
         await interaction.response.defer(ephemeral=True)
@@ -1055,7 +1049,7 @@ class MainPanel(discord.ui.View):
         embed.add_field(name="🎯 סה\"כ מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
         embed.add_field(name="👥 משתמשים", value=str(stats.get("unique_users", 0)), inline=True)
         embed.add_field(name="💎 קרדיטים בשימוש", value=str(stats.get("total_cost", 0)), inline=True)
-        embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
+        embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
         
         await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -1126,7 +1120,6 @@ async def get_user_stats(user_id: int):
             "total_attacks": {"$sum": 1},
             "total_cost": {"$sum": "$cost"},
             "total_success": {"$sum": "$success_count"},
-            "total_failed": {"$sum": "$failed_count"},
         }}
     ]
     result = await logs_collection.aggregate(pipeline).to_list(1)
@@ -1139,7 +1132,6 @@ async def get_global_stats():
             "total_attacks": {"$sum": 1},
             "total_cost": {"$sum": "$cost"},
             "total_success": {"$sum": "$success_count"},
-            "total_failed": {"$sum": "$failed_count"},
             "unique_users": {"$addToSet": "$user_id"}
         }}
     ]
@@ -1172,12 +1164,16 @@ async def get_top_targets(limit: int = 10):
 @client.event
 async def on_ready():
     await tree.sync()
+    
+    client.add_view(MainPanel())
+    client.add_view(FreeCoins())
+    
     await client.change_presence(activity=discord.Game(name="מערכת ספאם | CYBERIL"))
     print(f"✅ CyberIL Spamer פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
 
     now = time.time()
-    expired = await lifetime_collection.find({"expires_at": {"$lt": now}}).to_list(length=None)
+    expired = await lifetime_collection.find({"expires_at": {"$lt": now, "$gt": 0}}).to_list(length=None)
     for item in expired:
         await lifetime_collection.delete_one({"_id": item["_id"]})
 
@@ -1231,15 +1227,14 @@ async def cmd_credits(interaction: discord.Interaction, member: discord.Member =
     embed = discord.Embed(title="💎 קרדיטים", description=f"{target.mention} — **{bal}**", color=COLOR_INFO)
     if stats:
         embed.add_field(name="📊 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
-        embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
-        embed.add_field(name="❌ כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
+        embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
 
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="addcredit", description="[STAFF] הוסף קרדיטים")
+@tree.command(name="addcredit", description="[ADMIN] הוסף קרדיטים")
 @app_commands.describe(member="משתמש", amount="כמות")
 async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
-    if not is_staff(interaction):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     if amount <= 0:
@@ -1253,10 +1248,10 @@ async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="removecredit", description="[STAFF] הסר קרדיטים")
+@tree.command(name="removecredit", description="[ADMIN] הסר קרדיטים")
 @app_commands.describe(member="משתמש", amount="כמות")
 async def cmd_removecredit(interaction: discord.Interaction, member: discord.Member, amount: int):
-    if not is_staff(interaction):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     if amount <= 0:
@@ -1270,11 +1265,21 @@ async def cmd_removecredit(interaction: discord.Interaction, member: discord.Mem
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="lifetime", description="[STAFF] הענק ללא הגבלה לזמן מוגדר")
-@app_commands.describe(member="משתמש", duration="משך הזמן (במספרים)", unit="יחידת זמן (minutes/hours/days/months)")
-async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member, duration: int, unit: str):
-    if not is_staff(interaction):
+@tree.command(name="lifetime", description="[ADMIN] הענק ללא הגבלה")
+@app_commands.describe(member="משתמש", duration="משך זמן (במספרים, השאר ריק לקבוע)", unit="יחידת זמן (minutes/hours/days/months/forever)")
+async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member, duration: int = None, unit: str = "forever"):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
+        return
+    
+    await interaction.response.defer()
+    
+    if unit.lower() == "forever" or duration is None:
+        await set_lifetime(member.id)
+        embed = discord.Embed(title="♾️ Lifetime הוענק", color=COLOR_SUCCESS)
+        embed.add_field(name="משתמש", value=member.mention, inline=True)
+        embed.add_field(name="משך", value="לתמיד", inline=True)
+        await interaction.followup.send(embed=embed)
         return
     
     unit = unit.lower()
@@ -1291,10 +1296,9 @@ async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member,
         seconds = duration * 2592000
         unit_text = f"{duration} חודשים"
     else:
-        await interaction.response.send_message("❌ יחידה לא תקינה. השתמש ב: minutes, hours, days, months", ephemeral=True)
+        await interaction.followup.send("❌ יחידה לא תקינה. השתמש ב: minutes, hours, days, months, forever", ephemeral=True)
         return
     
-    await interaction.response.defer()
     await set_lifetime(member.id, seconds)
     
     expires_at = time.time() + seconds
@@ -1306,10 +1310,10 @@ async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member,
     embed.add_field(name="תפוגה", value=expires_date, inline=True)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="removelifetime", description="[STAFF] הסר ללא הגבלה")
+@tree.command(name="removelifetime", description="[ADMIN] הסר ללא הגבלה")
 @app_commands.describe(member="משתמש")
 async def cmd_removelifetime(interaction: discord.Interaction, member: discord.Member):
-    if not is_staff(interaction):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.defer()
@@ -1317,43 +1321,46 @@ async def cmd_removelifetime(interaction: discord.Interaction, member: discord.M
     embed = discord.Embed(title="♾️ Lifetime הוסר", description=f"{member.mention} איבד את ה-lifetime", color=COLOR_WARNING)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="checklifetime", description="[STAFF] בדוק סטטוס lifetime")
+@tree.command(name="checklifetime", description="[ADMIN] בדוק סטטוס lifetime")
 @app_commands.describe(member="משתמש")
 async def cmd_checklifetime(interaction: discord.Interaction, member: discord.Member):
-    if not is_staff(interaction):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     
     record = await lifetime_collection.find_one({"_id": member.id})
     if record:
         expires_at = record.get("expires_at", 0)
-        remaining = expires_at - time.time()
-        if remaining > 0:
-            days = int(remaining // 86400)
-            hours = int((remaining % 86400) // 3600)
-            minutes = int((remaining % 3600) // 60)
-            embed = discord.Embed(title="♾️ סטטוס Lifetime", color=COLOR_INFO)
-            embed.add_field(name="משתמש", value=member.mention, inline=True)
-            embed.add_field(name="נותר", value=f"{days} ימים {hours} שעות {minutes} דקות", inline=True)
-            embed.add_field(name="תפוגה", value=datetime.fromtimestamp(expires_at).strftime("%d/%m/%Y %H:%M"), inline=True)
+        if expires_at == 0:
+            embed = discord.Embed(title="♾️ Lifetime", description=f"{member.mention} - lifetime לתמיד", color=COLOR_INFO)
         else:
-            embed = discord.Embed(title="♾️ Lifetime פג", description=f"{member.mention} - התוקף פג", color=COLOR_WARNING)
+            remaining = expires_at - time.time()
+            if remaining > 0:
+                days = int(remaining // 86400)
+                hours = int((remaining % 86400) // 3600)
+                minutes = int((remaining % 3600) // 60)
+                embed = discord.Embed(title="♾️ סטטוס Lifetime", color=COLOR_INFO)
+                embed.add_field(name="משתמש", value=member.mention, inline=True)
+                embed.add_field(name="נותר", value=f"{days} ימים {hours} שעות {minutes} דקות", inline=True)
+                embed.add_field(name="תפוגה", value=datetime.fromtimestamp(expires_at).strftime("%d/%m/%Y %H:%M"), inline=True)
+            else:
+                embed = discord.Embed(title="♾️ Lifetime פג", description=f"{member.mention} - התוקף פג", color=COLOR_WARNING)
     else:
         embed = discord.Embed(title="♾️ Lifetime", description=f"{member.mention} - אין lifetime פעיל", color=COLOR_INFO)
     
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="freecredits", description="[STAFF] שלח הודעת קרדיטים")
+@tree.command(name="freecredits", description="[ADMIN] שלח הודעת קרדיטים")
 async def cmd_freecredits(interaction: discord.Interaction):
-    if not is_staff(interaction):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.send_message(embed=create_gift_panel(), view=FreeCoins())
 
-@tree.command(name="giveall", description="[STAFF] תן לכולם")
+@tree.command(name="giveall", description="[ADMIN] תן לכולם")
 @app_commands.describe(amount="כמות")
 async def cmd_giveall(interaction: discord.Interaction, amount: int):
-    if not is_staff(interaction):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.defer(ephemeral=True)
@@ -1406,33 +1413,31 @@ async def cmd_mylogs(interaction: discord.Interaction):
     for log in logs:
         embed.add_field(
             name=f"{log['date']} {log['time']}",
-            value=f"📱 {log['phone']}\n✅ {log['success_count']} | ❌ {log['failed_count']} | 💎 {log['cost']}",
+            value=f"📱 {log['phone']}\n✅ {log['success_count']} | 💎 {log['cost']}",
             inline=False
         )
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="checkstatus", description="[STAFF] בדוק סטטוס")
+@tree.command(name="checkstatus", description="[ADMIN] בדוק סטטוס")
 async def cmd_checkstatus(interaction: discord.Interaction):
-    if not is_staff(interaction):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
 
     await interaction.response.defer(ephemeral=True)
     test_num = "0506500708"
-    success, failed = await run_spam_batch(test_num)
+    success = await run_spam_batch(test_num)
 
     embed = discord.Embed(title="📊 בדיקת מערכת", color=COLOR_INFO)
-    embed.add_field(name="✅ הצלחות", value=str(success), inline=True)
-    embed.add_field(name="❌ כשלונות", value=str(failed), inline=True)
-    embed.add_field(name="🔢 סה\"כ", value=str(success + failed), inline=True)
+    embed.add_field(name="✅ בקשות שנשלחו", value=str(success), inline=True)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="attacklogs", description="[STAFF] לוגים")
+@tree.command(name="attacklogs", description="[ADMIN] לוגים")
 @app_commands.describe(limit="כמות")
 async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
-    if not is_staff(interaction):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
 
@@ -1447,15 +1452,15 @@ async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
     for log in logs[:10]:
         embed.add_field(
             name=f"{log['username']} | {log['date']} {log['time']}",
-            value=f"📱 {log['phone']}\n✅ {log['success_count']} | ❌ {log['failed_count']} | 💎 {log['cost']}\n🌐 {log.get('ip', 'unknown')}",
+            value=f"📱 {log['phone']}\n✅ {log['success_count']} | 💎 {log['cost']}\n🌐 {log.get('ip', 'unknown')}",
             inline=False
         )
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="topnumbers", description="[STAFF] מספרים מובילים")
+@tree.command(name="topnumbers", description="[ADMIN] מספרים מובילים")
 async def cmd_topnumbers(interaction: discord.Interaction):
-    if not is_staff(interaction):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
 
@@ -1470,15 +1475,15 @@ async def cmd_topnumbers(interaction: discord.Interaction):
     for i, item in enumerate(top, 1):
         embed.add_field(
             name=f"{i}. {item['_id']}",
-            value=f"מתקפות: {item['count']} | הצלחות: {item['success_total']}",
+            value=f"מתקפות: {item['count']}",
             inline=False
         )
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="globalstats", description="[STAFF] סטטיסטיקה גלובלית")
+@tree.command(name="globalstats", description="[ADMIN] סטטיסטיקה גלובלית")
 async def cmd_globalstats(interaction: discord.Interaction):
-    if not is_staff(interaction):
+    if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
 
@@ -1493,8 +1498,7 @@ async def cmd_globalstats(interaction: discord.Interaction):
     embed.add_field(name="🎯 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
     embed.add_field(name="👥 משתמשים", value=str(stats.get("unique_users", 0)), inline=True)
     embed.add_field(name="💎 קרדיטים", value=str(stats.get("total_cost", 0)), inline=True)
-    embed.add_field(name="✅ הצלחות", value=str(stats.get("total_success", 0)), inline=True)
-    embed.add_field(name="❌ כשלונות", value=str(stats.get("total_failed", 0)), inline=True)
+    embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
