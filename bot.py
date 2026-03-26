@@ -757,15 +757,39 @@ class ConfirmAttack(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=None)
 
 class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
-    phone = discord.ui.TextInput(label="📱 מספר טלפון", placeholder="0501234567", min_length=9, max_length=10, style=discord.TextStyle.short)
-    credits = discord.ui.TextInput(label="💎 כמות קרדיטים", placeholder="1-100", min_length=1, max_length=3, style=discord.TextStyle.short)
+    phone = discord.ui.TextInput(
+        label="📱 מספר טלפון", 
+        placeholder="0501234567", 
+        min_length=10, 
+        max_length=10, 
+        style=discord.TextStyle.short
+    )
+    credits = discord.ui.TextInput(
+        label="💎 כמות קרדיטים", 
+        placeholder="1-100", 
+        min_length=1, 
+        max_length=3, 
+        style=discord.TextStyle.short
+    )
 
     async def on_submit(self, interaction: discord.Interaction):
-        phone_num = self.phone.value.strip().replace("-", "").replace(" ", "")
+        phone_num = self.phone.value.strip().replace("-", "").replace(" ", "").replace("+", "")
+        
+        # הסרת קידומת 972 אם קיימת
+        if phone_num.startswith("972"):
+            phone_num = phone_num[3:]
+        
+        # הוספת 0 אם יש 9 ספרות
         if len(phone_num) == 9:
             phone_num = "0" + phone_num
+        
+        # בדיקת תקינות
         if not re.match(r"^05[0-9]{8}$", phone_num):
-            embed = discord.Embed(title="❌ שגיאה", description="מספר לא תקין (05XXXXXXXX)", color=COLOR_DANGER)
+            embed = discord.Embed(
+                title="❌ שגיאה", 
+                description="מספר לא תקין!\nפורמט תקין:\n- 0501234567\n- 501234567\n- 972501234567",
+                color=COLOR_DANGER
+            )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
@@ -774,7 +798,11 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
             if credits_num < 1 or credits_num > MAX_CREDIT_SPEND:
                 raise ValueError
         except ValueError:
-            embed = discord.Embed(title="❌ שגיאה", description=f"כמות לא תקינה (1-{MAX_CREDIT_SPEND})", color=COLOR_DANGER)
+            embed = discord.Embed(
+                title="❌ שגיאה", 
+                description=f"כמות לא תקינה (1-{MAX_CREDIT_SPEND})", 
+                color=COLOR_DANGER
+            )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
@@ -783,10 +811,13 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
         unlimited = await has_unlimited(uid)
 
         if bal < credits_num and not unlimited:
-            embed = discord.Embed(title="❌ שגיאה", description=f"חסרים קרדיטים (יש: {bal}, צריך: {credits_num})", color=COLOR_DANGER)
+            embed = discord.Embed(
+                title="❌ שגיאה", 
+                description=f"חסרים קרדיטים (יש: {bal}, צריך: {credits_num})", 
+                color=COLOR_DANGER
+            )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-
         on_cd, remain = await check_cooldown(phone_num)
         if on_cd:
             embed = discord.Embed(title="⏱️ דיליי", description=f"המתן {remain} שניות", color=COLOR_WARNING)
