@@ -1078,7 +1078,8 @@ async def shutdown_handler():
 
 # ========== פקודות OWNER בלבד - לא יופיעו בפקודות הסלאש ==========
 
-@tree.command(name="addcredit", description="[OWNER] הוסף קרדיטים", default_permission=False)
+@tree.command(name="addcredit", description="[OWNER] הוסף קרדיטים")
+@app_commands.default_permissions(administrator=False)
 @app_commands.describe(member="משתמש", amount="כמות")
 async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_owner(interaction):
@@ -1095,7 +1096,8 @@ async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="removecredit", description="[OWNER] הסר קרדיטים", default_permission=False)
+@tree.command(name="removecredit", description="[OWNER] הסר קרדיטים")
+@app_commands.default_permissions(administrator=False)
 @app_commands.describe(member="משתמש", amount="כמות")
 async def cmd_removecredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_owner(interaction):
@@ -1112,7 +1114,8 @@ async def cmd_removecredit(interaction: discord.Interaction, member: discord.Mem
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="lifetime", description="[OWNER] הענק ללא הגבלה", default_permission=False)
+@tree.command(name="lifetime", description="[OWNER] הענק ללא הגבלה")
+@app_commands.default_permissions(administrator=False)
 @app_commands.describe(member="משתמש", duration="משך זמן (השאר ריק לקבוע)", unit="יחידת זמן (minutes/hours/days/months/forever)")
 async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member, duration: int = None, unit: str = "forever"):
     if not is_owner(interaction):
@@ -1157,7 +1160,8 @@ async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member,
     embed.add_field(name="תפוגה", value=expires_date, inline=True)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="removelifetime", description="[OWNER] הסר ללא הגבלה", default_permission=False)
+@tree.command(name="removelifetime", description="[OWNER] הסר ללא הגבלה")
+@app_commands.default_permissions(administrator=False)
 @app_commands.describe(member="משתמש")
 async def cmd_removelifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_owner(interaction):
@@ -1168,7 +1172,8 @@ async def cmd_removelifetime(interaction: discord.Interaction, member: discord.M
     embed = discord.Embed(title="♾️ Lifetime הוסר", description=f"{member.mention} איבד את ה-lifetime", color=COLOR_WARNING)
     await interaction.followup.send(embed=embed)
 
-@tree.command(name="checklifetime", description="[OWNER] בדוק סטטוס lifetime", default_permission=False)
+@tree.command(name="checklifetime", description="[OWNER] בדוק סטטוס lifetime")
+@app_commands.default_permissions(administrator=False)
 @app_commands.describe(member="משתמש")
 async def cmd_checklifetime(interaction: discord.Interaction, member: discord.Member):
     if not is_owner(interaction):
@@ -1197,14 +1202,16 @@ async def cmd_checklifetime(interaction: discord.Interaction, member: discord.Me
     
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="freecredits", description="[OWNER] שלח הודעת קרדיטים", default_permission=False)
+@tree.command(name="freecredits", description="[OWNER] שלח הודעת קרדיטים")
+@app_commands.default_permissions(administrator=False)
 async def cmd_freecredits(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.send_message(embed=create_gift_panel(), view=FreeCoins())
 
-@tree.command(name="giveall", description="[OWNER] תן לכולם", default_permission=False)
+@tree.command(name="giveall", description="[OWNER] תן לכולם")
+@app_commands.default_permissions(administrator=False)
 @app_commands.describe(amount="כמות")
 async def cmd_giveall(interaction: discord.Interaction, amount: int):
     if not is_owner(interaction):
@@ -1217,7 +1224,8 @@ async def cmd_giveall(interaction: discord.Interaction, amount: int):
     await users_collection.update_many({}, {"$inc": {"credits": amount}})
     await interaction.followup.send(f"✅ ניתנו {amount} קרדיטים לכולם", ephemeral=True)
 
-@tree.command(name="attacklogs", description="[OWNER] לוגים", default_permission=False)
+@tree.command(name="attacklogs", description="[OWNER] לוגים")
+@app_commands.default_permissions(administrator=False)
 @app_commands.describe(limit="כמות")
 async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
     if not is_owner(interaction):
@@ -1241,7 +1249,8 @@ async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="topnumbers", description="[OWNER] מספרים מובילים", default_permission=False)
+@tree.command(name="topnumbers", description="[OWNER] מספרים מובילים")
+@app_commands.default_permissions(administrator=False)
 async def cmd_topnumbers(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
@@ -1264,7 +1273,8 @@ async def cmd_topnumbers(interaction: discord.Interaction):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="globalstats", description="[OWNER] סטטיסטיקה גלובלית", default_permission=False)
+@tree.command(name="globalstats", description="[OWNER] סטטיסטיקה גלובלית")
+@app_commands.default_permissions(administrator=False)
 async def cmd_globalstats(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
@@ -1285,7 +1295,8 @@ async def cmd_globalstats(interaction: discord.Interaction):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-@tree.command(name="stopall", description="[OWNER] עצור את כל המתקפות", default_permission=False)
+@tree.command(name="stopall", description="[OWNER] עצור את כל המתקפות")
+@app_commands.default_permissions(administrator=False)
 async def cmd_stopall(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
@@ -1306,7 +1317,8 @@ async def cmd_stopall(interaction: discord.Interaction):
     )
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@tree.command(name="restart", description="[OWNER] אתחל בוט", default_permission=False)
+@tree.command(name="restart", description="[OWNER] אתחל בוט")
+@app_commands.default_permissions(administrator=False)
 async def cmd_restart(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
@@ -1315,7 +1327,8 @@ async def cmd_restart(interaction: discord.Interaction):
     await shutdown_handler()
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
-@tree.command(name="checkstatus", description="[OWNER] בדוק סטטוס", default_permission=False)
+@tree.command(name="checkstatus", description="[OWNER] בדוק סטטוס")
+@app_commands.default_permissions(administrator=False)
 async def cmd_checkstatus(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
@@ -1330,7 +1343,6 @@ async def cmd_checkstatus(interaction: discord.Interaction):
     embed.add_field(name="📞 סוג", value="SMS + CALL (150+ שירותים)", inline=True)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
-
 # ========== פקודות לכולם ==========
 
 @tree.command(name="credits", description="בדוק יתרת קרדיטים")
