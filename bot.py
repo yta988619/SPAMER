@@ -959,7 +959,7 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
 
     async def on_submit(self, interaction: discord.Interaction):
         phone_num = self.phone.value.strip()
-        if not re.match(r"^05[0-9]{8}$", phone_num):
+        if not re.match(r"^0?5[0-9]{8}$", phone_num):
             embed = discord.Embed(title="❌ שגיאה", description="מספר לא תקין", color=COLOR_DANGER)
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
